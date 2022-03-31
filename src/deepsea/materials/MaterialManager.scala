@@ -94,17 +94,14 @@ class MaterialManager extends Actor{
             case Some(mongo) =>
               val materials: MongoCollection[Material] = mongo.getCollection(collection)
               val materialsHistory: MongoCollection[MaterialHistory] = mongo.getCollection(collectionHistory)
-              Await.result(mongo.getCollection(collection).find[Material](new BasicDBObject("id", material.id)).toFuture(), Duration(30, SECONDS)) match {
-                case dbMaterials =>
-                  materialsHistory.insertMany(dbMaterials.map(x => MaterialHistory(x, user)))
-                  materials.deleteMany(new BasicDBObject("id", material.id))
+              Await.result(mongo.getCollection(collection).find[Material](new BasicDBObject("id", material.id)).first().toFuture(), Duration(30, SECONDS)) match {
+                case oldMaterial =>
+                  Await.result(materialsHistory.insertOne(MaterialHistory(oldMaterial, user)).toFuture(), Duration(30, SECONDS))
+                  Await.result(materials.deleteOne(new BasicDBObject("id", material.id)).toFuture(), Duration(30, SECONDS))
                 case _ =>
               }
               if (remove == "0"){
-                Await.result(materials.insertOne(material).toFuture(), Duration(30, SECONDS)) match {
-                  case res: InsertOneResult => res.getInsertedId.toString
-                  case _ =>
-                }
+                Await.result(materials.insertOne(material).toFuture(), Duration(30, SECONDS))
               }
             case _ =>
           }
