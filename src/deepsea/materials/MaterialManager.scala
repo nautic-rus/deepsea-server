@@ -57,7 +57,7 @@ object MaterialManager{
                        comment: String = "",
                        coefficient: Double = 1,
                        id: String = UUID.randomUUID().toString)
-  case class MaterialNode(label: String = "", data: String = "", expandedIcon: String = "", collapsedIcon: String = "", icon: String = "", children: List[MaterialNode] = List.empty[MaterialNode])
+  case class MaterialNode(label: String = "", data: String = "", layer: String = "")
 }
 class MaterialManager extends Actor{
 
