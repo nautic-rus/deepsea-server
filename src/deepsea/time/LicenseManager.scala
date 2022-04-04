@@ -18,7 +18,7 @@ class LicenseManager extends Actor{
     case _ => None
   }
   def getForanLicenses(): HttpEntity.Strict = {
-    val foranLicense = Process("\\\\nautic-dc\\configs\\LMTools\\lmutil.exe lmstat -a -c 27001@192.168.1.21").!!
+    val foranLicense = Process("\\\\nautic-dc.nautic.rus\\configs\\LMTools\\lmutil.exe lmstat -a -c 27001@192.168.1.21").!!
     var readForan = false
     var readThinkDesign = false
     var readFCM = false
