@@ -259,7 +259,7 @@ class HTTPManager extends Actor{
       (get & path("festStories")){
         askFor(ActorManager.fest, GetFestStories())
       },
-      (get & path("setFestStories") & parameter("file_name") & parameter("url")){ (file_name, url)
+      (get & path("setFestStories") & parameter("file_name") & parameter("url")){ (file_name, url) =>
         askFor(ActorManager.fest, SetFestStories(file_name, url))
       },
     )
