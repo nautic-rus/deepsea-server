@@ -23,6 +23,7 @@ object ActorManager {
   var license: ActorRef = _
   var timeControl: ActorRef = _
   var timeAndWeather: ActorRef = _
+  var fest: ActorRef = _
 
   def init(): Unit ={
     system = ActorSystem()

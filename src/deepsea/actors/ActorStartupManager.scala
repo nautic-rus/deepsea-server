@@ -6,6 +6,7 @@ import deepsea.actors.ActorManager.system
 import deepsea.actors.ActorStartupManager.{DatabaseManagerStarted, HTTPManagerStarted, Start}
 import deepsea.auth.AuthManager
 import deepsea.database.DatabaseManager
+import deepsea.fest.FestManager
 import deepsea.files.FileManager
 import deepsea.http.HTTPManager
 import deepsea.issues.IssueManager
@@ -36,5 +37,6 @@ class ActorStartupManager extends Actor{
       ActorManager.license = system.actorOf(RoundRobinPool(1).props(Props[LicenseManager]))
       ActorManager.timeControl = system.actorOf(RoundRobinPool(1).props(Props[TimeControlManager]))
       ActorManager.timeAndWeather = system.actorOf(RoundRobinPool(1).props(Props[TimeAndWeatherManager]))
+      ActorManager.fest = system.actorOf(RoundRobinPool(3).props(Props[FestManager]))
   }
 }

@@ -17,6 +17,7 @@ import deepsea.App
 import deepsea.actors.ActorManager
 import deepsea.actors.ActorStartupManager.HTTPManagerStarted
 import deepsea.auth.AuthManager.{GetUsers, Login, ShareRights}
+import deepsea.fest.FestManager.{GetFestStories, SetFestStories}
 import deepsea.files.FileManager.{CreateFile, GetPdSpList}
 import deepsea.files.classes.FileAttachment
 import deepsea.issues.IssueManager._
@@ -255,7 +256,12 @@ class HTTPManager extends Actor{
           complete(HttpEntity(Json.toJson(new FileAttachment(fileName, fileUrl, date, "fest")).toString()))
         }
       },
-
+      (get & path("festStories")){
+        askFor(ActorManager.fest, GetFestStories())
+      },
+      (get & path("setFestStories")){
+        askFor(ActorManager.fest, SetFestStories())
+      },
     )
   }
 

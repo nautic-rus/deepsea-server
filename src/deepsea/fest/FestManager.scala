@@ -4,8 +4,10 @@ import akka.actor.Actor
 import deepsea.database.DatabaseManager.GetConnection
 import deepsea.fest.FestManager._
 import deepsea.fest.classes.{BestPlayer, Mark, TeamWon}
+import deepsea.files.classes.FileAttachment
 import play.api.libs.json.Json
 
+import java.util.Date
 import scala.collection.mutable.ListBuffer
 
 object FestManager{
@@ -18,6 +20,9 @@ object FestManager{
 
   case class GetBestPlayers()
   case class SetBestPlayer(player: String)
+
+  case class SetFestStories(file_name: String, url: String)
+  case class GetFestStories()
 
 }
 class FestManager extends Actor{
@@ -52,6 +57,15 @@ class FestManager extends Actor{
         case _ =>
           sender() ! Json.toJson("error")
       }
+
+
+    case GetFestStories() =>
+      sender() ! Json.toJson(getFestStories())
+    case SetFestStories(file_name, url) =>
+      setFestStories(file_name, url)
+      sender() ! Json.toJson("success")
+
+
 
 
     case _ => None
@@ -153,6 +167,38 @@ class FestManager extends Actor{
           s.execute(s"insert into fest_best_players values (${player.name}, ${player.disc})")
         }
         s.close()
+        c.close()
+      case _ =>
+    }
+  }
+
+  def getFestStories(): ListBuffer[FileAttachment] ={
+    val res = ListBuffer.empty[FileAttachment]
+    GetConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val rs = s.executeQuery(s"select * from file_attachments where author = 'fest'")
+        while (rs.next()){
+          res += new FileAttachment(
+            rs.getString("file_name"),
+            rs.getString("url"),
+            rs.getLong("upload_date"),
+            rs.getString("author"),
+          )
+        }
+        rs.close()
+        s.close()
+        c.close()
+      case _ =>
+    }
+    res
+  }
+  def setFestStories(file_name: String, url: String): Unit ={
+    GetConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val date = new Date().getTime
+        s.execute(s"insert into file_attachments (issue_id, file_name, url, upload_date, author) values (0, '${file_name}', '${url}', $date, 'fest')")
         c.close()
       case _ =>
     }
