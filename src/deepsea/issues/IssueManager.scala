@@ -1193,7 +1193,7 @@ class IssueManager extends Actor{
             rs.getString("issue_revision"),
             rs.getString("group_name"),
           ){
-            removed = rs.getLong("removed")
+            removed_date = rs.getLong("removed_date")
             removed_by = rs.getString("removed_by")
           }
         }
