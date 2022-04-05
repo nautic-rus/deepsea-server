@@ -371,7 +371,7 @@ class IssueManager extends Actor{
     GetConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val rs = s.executeQuery(s"insert into issue_messages (issue_id, author, content, date, prefix) values ($id, '${message.author}', '${message.content}', ${new Date().getTime}, ${message.prefix}) returning id")
+        val rs = s.executeQuery(s"insert into issue_messages (issue_id, author, content, date, prefix) values ($id, '${message.author}', '${message.content}', ${new Date().getTime}, '${message.prefix}') returning id")
         while (rs.next()){
           result = rs.getInt("id")
         }
