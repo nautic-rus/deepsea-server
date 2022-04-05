@@ -43,6 +43,7 @@ object Issue{
         "delivered_date" -> x.delivered_date,
         "revision" -> x.revision,
         "revision_files" -> x.revision_files,
+        "archive_revision_files" -> x.archive_revision_files,
         "labor" -> x.labor,
         "checks" -> x.checks,
         "ready" -> x.ready
