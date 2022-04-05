@@ -11,7 +11,8 @@ object IssueMessage{
       case Some(x) => JsSuccess(new IssueMessage(
         author = (x \ "author").asOpt[String].getOrElse(""),
         content = (x \ "content").asOpt[String].getOrElse(""),
-        date = (x \ "date").asOpt[Long].getOrElse(0)
+        date = (x \ "date").asOpt[Long].getOrElse(0),
+        prefix = (x \ "prefix").asOpt[String].getOrElse("")
       ){
         file_attachments ++= (x \ "file_attachments").asOpt[ListBuffer[FileAttachment]].getOrElse(ListBuffer.empty[FileAttachment])
       })
@@ -24,12 +25,13 @@ object IssueMessage{
         "author" -> x.author,
         "content" -> x.content,
         "date" -> x.date,
+        "prefix" -> x.prefix,
         "file_attachments" -> x.file_attachments,
       )
       case _ => JsNull
     }
   }
 }
-class IssueMessage(val author: String, val content: String, val date: Long) {
+class IssueMessage(val author: String, val content: String, val date: Long, val prefix: String = "") {
   var file_attachments: ListBuffer[FileAttachment] = ListBuffer.empty[FileAttachment]
 }

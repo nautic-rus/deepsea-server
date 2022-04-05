@@ -354,6 +354,7 @@ class IssueManager extends Actor{
             rs.getString("author"),
             rs.getString("content"),
             rs.getLong("date"),
+            rs.getString("prefix")
           ){
             file_attachments = getMessageFileAttachments(rs.getInt("id"))
           }
@@ -370,7 +371,7 @@ class IssueManager extends Actor{
     GetConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val rs = s.executeQuery(s"insert into issue_messages (issue_id, author, content, date) values ($id, '${message.author}', '${message.content}', ${new Date().getTime}) returning id")
+        val rs = s.executeQuery(s"insert into issue_messages (issue_id, author, content, date, prefix) values ($id, '${message.author}', '${message.content}', ${new Date().getTime}, ${message.prefix}) returning id")
         while (rs.next()){
           result = rs.getInt("id")
         }
