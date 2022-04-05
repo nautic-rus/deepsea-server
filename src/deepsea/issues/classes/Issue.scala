@@ -111,6 +111,7 @@ class Issue(var id: Int, var status: String, var project: String, var department
   var delivered_date: Long = 0
   var revision: String = ""
   var revision_files: ListBuffer[FileAttachment] = ListBuffer.empty[FileAttachment]
+  var archive_revision_files: ListBuffer[FileAttachment] = ListBuffer.empty[FileAttachment]
   var first_local_approval_date: Long = 0
   var labor: Double = 0
   var checks: ListBuffer[IssueCheck] = ListBuffer.empty[IssueCheck]

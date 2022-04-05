@@ -25,12 +25,16 @@ object FileAttachment{
         "author" -> x.author,
         "revision" -> x.revision,
         "group" -> x.group,
-        "issue_id" -> x.issue_id
+        "issue_id" -> x.issue_id,
+        "removed" -> x.removed,
+        "removed_by" -> x.removed_by
       )
       case _ => JsNull
     }
   }
 }
 class FileAttachment(val name: String, val url: String, val upload_date: Long, val author: String, val revision: String = "", val group: String = "") {
-  var issue_id = 0
+  var issue_id: Int = 0
+  var removed: Long = 0
+  var removed_by: String = ""
 }

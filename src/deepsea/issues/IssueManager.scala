@@ -793,6 +793,7 @@ class IssueManager extends Actor{
               case _ => ""
             }
             revision_files = getRevisionFiles(id)
+            archive_revision_files = getRemovedRevisionFiles(id)
             labor = getIssueLabor(id)
             checks = getIssueChecks(id)
           })
@@ -1177,6 +1178,33 @@ class IssueManager extends Actor{
     }
     res
   }
+  def getRemovedRevisionFiles(id: Int): ListBuffer[FileAttachment] ={
+    val res = ListBuffer.empty[FileAttachment]
+    GetConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val rs = s.executeQuery(s"select * from revision_files where issue_id = $id and removed = 1")
+        while (rs.next()){
+          res += new FileAttachment(
+            rs.getString("file_name"),
+            rs.getString("file_url"),
+            rs.getLong("upload_date"),
+            rs.getString("upload_user"),
+            rs.getString("issue_revision"),
+            rs.getString("group_name"),
+          ){
+            removed = rs.getLong("removed")
+            removed_by = rs.getString("removed_by")
+          }
+        }
+        rs.close()
+        s.close()
+        c.close()
+      case _ =>
+    }
+    res
+  }
+
   def getNestingRevisionFiles: ListBuffer[FileAttachment] ={
     val res = ListBuffer.empty[FileAttachment]
     GetConnection() match {
