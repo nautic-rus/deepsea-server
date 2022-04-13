@@ -5,7 +5,7 @@ import deepsea.database.DatabaseManager.GetConnection
 import deepsea.fest.FestManager._
 import deepsea.fest.classes.{BestPlayer, Mark, TeamWon}
 import deepsea.files.classes.FileAttachment
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, OWrites}
 
 import java.util.Date
 import scala.collection.mutable.ListBuffer
@@ -21,8 +21,11 @@ object FestManager{
   case class GetBestPlayers()
   case class SetBestPlayer(player: String)
 
-  case class SetFestStories(file_name: String, url: String)
+  case class SetFestStories(url: String, thumb: String)
   case class GetFestStories()
+
+  case class FestStories(url: String, thumb: String, date: Long)
+  implicit val writesUser: OWrites[FestStories] = Json.writes[FestStories]
 
 }
 class FestManager extends Actor{
@@ -60,9 +63,9 @@ class FestManager extends Actor{
 
 
     case GetFestStories() =>
-      sender() ! Json.toJson(getFestStories())
-    case SetFestStories(file_name, url) =>
-      setFestStories(file_name, url)
+      sender() ! Json.toJson(getFestStories)
+    case SetFestStories(url, thumb) =>
+      setFestStories(url, thumb)
       sender() ! Json.toJson("success")
 
 
@@ -172,18 +175,17 @@ class FestManager extends Actor{
     }
   }
 
-  def getFestStories(): ListBuffer[FileAttachment] ={
-    val res = ListBuffer.empty[FileAttachment]
+  def getFestStories: ListBuffer[FestStories] ={
+    val res = ListBuffer.empty[FestStories]
     GetConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val rs = s.executeQuery(s"select * from file_attachments where author = 'fest'")
+        val rs = s.executeQuery(s"select * from fest_stories")
         while (rs.next()){
-          res += new FileAttachment(
-            rs.getString("file_name"),
+          res += FestStories(
             rs.getString("url"),
-            rs.getLong("upload_date"),
-            rs.getString("author"),
+            rs.getString("thumb"),
+            rs.getLong("date"),
           )
         }
         rs.close()
@@ -193,12 +195,12 @@ class FestManager extends Actor{
     }
     res
   }
-  def setFestStories(file_name: String, url: String): Unit ={
+  def setFestStories(url: String, thumb: String): Unit ={
     GetConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val date = new Date().getTime
-        s.execute(s"insert into file_attachments (issue_id, file_name, url, upload_date, author) values (0, '${file_name}', '${url}', $date, 'fest')")
+        s.execute(s"insert into fest_stories values ('${url}', '${thumb}', $date)")
         c.close()
       case _ =>
     }
