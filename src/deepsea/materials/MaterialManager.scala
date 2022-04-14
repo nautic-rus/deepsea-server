@@ -57,7 +57,7 @@ object MaterialManager{
                        comment: String = "",
                        coefficient: Double = 1,
                        id: String = UUID.randomUUID().toString)
-  case class MaterialNode(label: String = "", data: String = "", layer: String = "")
+  case class MaterialNode(label: String = "", data: String = "")
 }
 class MaterialManager extends Actor{
 
@@ -73,7 +73,7 @@ class MaterialManager extends Actor{
       DatabaseManager.GetMongoConnection() match {
         case Some(mongo) =>
           Await.result(mongo.getCollection(collectionNodes).find[MaterialNode].toFuture(), Duration(30, SECONDS)) match {
-            case dbMaterials => sender() ! dbMaterials.toList.asJson.noSpaces
+            case nodes => sender() ! nodes.toList.asJson.noSpaces
             case _ => List.empty[MaterialNode]
           }
         case _ => List.empty[MaterialNode]

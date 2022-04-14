@@ -23,10 +23,24 @@ object FestManager{
 
   case class SetFestStories(url: String, thumb: String)
   case class GetFestStories()
+  case class DeleteFestStories(url: String)
+
+  case class SetFestKaraoke(users: String, song: String)
+  case class GetFestKaraoke()
+  case class DeleteFestKaraoke(date: String)
+
+  case class SetFestSauna(users: String, time: String)
+  case class GetFestSauna()
+  case class DeleteFestSauna(time: String)
 
   case class FestStories(url: String, thumb: String, date: Long)
-  implicit val writesUser: OWrites[FestStories] = Json.writes[FestStories]
+  implicit val writesFestStories: OWrites[FestStories] = Json.writes[FestStories]
 
+  case class FestKaraoke(users: String, song: String, date: Long)
+  implicit val writesFestKaraoke: OWrites[FestKaraoke] = Json.writes[FestKaraoke]
+
+  case class FestSauna(users: String, time: String)
+  implicit val writesFestSauna: OWrites[FestSauna] = Json.writes[FestSauna]
 }
 class FestManager extends Actor{
   override def receive: Receive = {
@@ -61,15 +75,32 @@ class FestManager extends Actor{
           sender() ! Json.toJson("error")
       }
 
-
     case GetFestStories() =>
       sender() ! Json.toJson(getFestStories)
     case SetFestStories(url, thumb) =>
       setFestStories(url, thumb)
       sender() ! Json.toJson("success")
+    case DeleteFestStories(url) =>
+      deleteFestStories(url)
+      sender() ! Json.toJson("success")
 
+    case GetFestKaraoke() =>
+      sender() ! Json.toJson(getFestKaraoke)
+    case SetFestKaraoke(users, song) =>
+      setFestKaraoke(users, song)
+      sender() ! Json.toJson("success")
+    case DeleteFestKaraoke(date) =>
+      deleteFestKaraoke(date.toLongOption.getOrElse(0))
+      sender() ! Json.toJson("success")
 
-
+    case GetFestSauna() =>
+      sender() ! Json.toJson(getFestSauna)
+    case SetFestSauna(users, time) =>
+      setFestSauna(users, time)
+      sender() ! Json.toJson("success")
+    case DeleteFestSauna(time) =>
+      deleteFestSauna(time)
+      sender() ! Json.toJson("success")
 
     case _ => None
   }
@@ -201,6 +232,100 @@ class FestManager extends Actor{
         val s = c.createStatement()
         val date = new Date().getTime
         s.execute(s"insert into fest_stories values ('${url}', '${thumb}', $date)")
+        c.close()
+      case _ =>
+    }
+  }
+  def deleteFestStories(url: String): Unit ={
+    GetConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val date = new Date().getTime
+        s.execute(s"delete from fest_stories where url = '${url}'")
+        c.close()
+      case _ =>
+    }
+  }
+
+  def getFestKaraoke: ListBuffer[FestKaraoke] ={
+    val res = ListBuffer.empty[FestKaraoke]
+    GetConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val rs = s.executeQuery(s"select * from fest_karaoke")
+        while (rs.next()){
+          res += FestKaraoke(
+            rs.getString("song"),
+            rs.getString("users"),
+            rs.getLong("date"),
+          )
+        }
+        rs.close()
+        s.close()
+        c.close()
+      case _ =>
+    }
+    res
+  }
+  def setFestKaraoke(users: String, song: String): Unit ={
+    GetConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val date = new Date().getTime
+        s.execute(s"insert into fest_karaoke values ('${song}', '${users}',  ${date})")
+        s.close()
+        c.close()
+      case _ =>
+    }
+  }
+  def deleteFestKaraoke(date: Long): Unit ={
+    GetConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        s.execute(s"delete from fest_karaoke where date = ${date}")
+        s.close()
+        c.close()
+      case _ =>
+    }
+  }
+
+  def getFestSauna: ListBuffer[FestSauna] ={
+    val res = ListBuffer.empty[FestSauna]
+    GetConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val rs = s.executeQuery(s"select * from fest_sauna")
+        while (rs.next()){
+          res += FestSauna(
+            rs.getString("users"),
+            rs.getString("time")
+          )
+        }
+        rs.close()
+        s.close()
+        c.close()
+      case _ =>
+    }
+    res
+  }
+  def setFestSauna(users: String, time: String): Unit ={
+    GetConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val date = new Date().getTime
+        s.execute(s"insert into fest_sauna values ('${users}', '${time}',  ${date})")
+        s.close()
+        c.close()
+      case _ =>
+    }
+  }
+  def deleteFestSauna(time: String): Unit ={
+    GetConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val date = new Date().getTime
+        s.execute(s"delete from fest_sauna where time = ${time}")
+        s.close()
         c.close()
       case _ =>
     }
