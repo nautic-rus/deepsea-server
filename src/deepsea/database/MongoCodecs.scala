@@ -1,5 +1,6 @@
 package deepsea.database
 
+import deepsea.files.FileManager.{TreeDirectory, TreeFile, TreeFileHistory}
 import deepsea.materials.MaterialManager.{Material, MaterialHistory, MaterialNode}
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.{Decoder, Encoder}
@@ -19,9 +20,22 @@ trait MongoCodecs {
   implicit val MaterialNodeDecoder: Decoder[MaterialNode] = deriveDecoder[MaterialNode]
   implicit val MaterialNodeEncoder: Encoder[MaterialNode] = deriveEncoder[MaterialNode]
 
+  implicit val TreeFileDecoder: Decoder[TreeFile] = deriveDecoder[TreeFile]
+  implicit val TreeFileEncoder: Encoder[TreeFile] = deriveEncoder[TreeFile]
+
+  implicit val TreeDirectoryDecoder: Decoder[TreeDirectory] = deriveDecoder[TreeDirectory]
+  implicit val TreeDirectoryEncoder: Encoder[TreeDirectory] = deriveEncoder[TreeDirectory]
+
+  implicit val TreeFileHistoryDecoder: Decoder[TreeFileHistory] = deriveDecoder[TreeFileHistory]
+  implicit val TreeFileHistoryEncoder: Encoder[TreeFileHistory] = deriveEncoder[TreeFileHistory]
+
+
   def codecRegistry: CodecRegistry = fromRegistries(fromProviders(
     classOf[Material],
     classOf[MaterialHistory],
     classOf[MaterialNode],
+    classOf[TreeFile],
+    classOf[TreeDirectory],
+    classOf[TreeFileHistory],
   ), DEFAULT_CODEC_REGISTRY)
 }

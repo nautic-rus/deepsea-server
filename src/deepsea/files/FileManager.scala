@@ -1,26 +1,69 @@
 package deepsea.files
 
 import akka.actor.Actor
+import com.mongodb.BasicDBObject
 import deepsea.App
-import deepsea.files.FileManager.{CreateFile, GetPdSpList}
+import deepsea.database.{DatabaseManager, MongoCodecs}
+import deepsea.database.DatabaseManager.GetConnection
+import deepsea.files.FileManager._
 import deepsea.files.classes.FileAttachment
+import deepsea.issues.classes.IssueMessage
+import deepsea.materials.MaterialManager.{Material, MaterialHistory, MaterialNode}
+import io.circe.parser.decode
+import io.circe.syntax.EncoderOps
 import org.aarboard.nextcloud.api.NextcloudConnector
 import org.aarboard.nextcloud.api.filesharing.{SharePermissions, ShareType}
+import org.mongodb.scala.MongoCollection
+import org.mongodb.scala.model.Filters.equal
 import play.api.libs.json.{JsValue, Json}
 
 import java.io.InputStream
+import java.util.Date
 import scala.collection.mutable.ListBuffer
+import scala.concurrent.Await
+import scala.concurrent.duration.{Duration, SECONDS}
 
 object FileManager{
   case class CreateFile(fileName: String, stream: InputStream, filePath: String, login: String, password: String)
   case class GetPdSpList()
+
+  case class TreeFile(url: String, path: String, size: Long, name: String, created_by: String, date: Long)
+  case class TreeFileHistory(user: String, date: Long, file: TreeFile)
+  case class TreeDirectory(path: String, data: String, name: String, date: Long, created_by: String)
+
+  case class GetTreeFiles()
+  case class SetTreeFiles(value: String)
+  case class DeleteTreeFiles(values: String, user: String)
+
+  case class GetTreeDirectories()
+  case class SetTreeDirectory(value: String)
+
+  val treeFilesCollection = "tree-files"
+  val treeFilesHistoryCollection: String = treeFilesCollection + "-history"
+
+  val treeFileDirectories = "tree-directories"
+  val treeFileDirectoriesCollection: String = treeFileDirectories + "-history"
 }
-class FileManager extends Actor{
+class FileManager extends Actor with MongoCodecs{
   override def receive: Receive = {
     case CreateFile(fileName, stream, filePath, login, password) =>
 //      sender() ! Json.toJson(new FileAttachment(fileName, uploadFile(fileName, stream, filePath, login, password)))
     case GetPdSpList() =>
       sender() ! getPDSPList
+
+
+    case GetTreeFiles() => sender() ! getTreeFiles.asJson.noSpaces
+    case SetTreeFiles(value) =>
+      setTreeFiles(value)
+      sender() ! "success"
+    case DeleteTreeFiles(values, user) =>
+      deleteTeeFiles(values, user)
+      sender() ! "success"
+    case GetTreeDirectories() => getTreeDirectories.asJson.noSpaces
+    case SetTreeDirectory(value) =>
+      setTreeDirectory(value)
+      sender() ! "success"
+
     case _ => None
   }
   def uploadFile(fileName: String, stream: InputStream, filePath: String, login: String, password: String): String ={
@@ -58,4 +101,73 @@ class FileManager extends Actor{
     })
    Json.toJson(res)
   }
+
+
+  def getTreeFiles: List[TreeFile] ={
+    DatabaseManager.GetMongoConnection() match {
+      case Some(mongo) =>
+        Await.result(mongo.getCollection(treeFilesCollection).find[TreeFile].toFuture(), Duration(30, SECONDS)) match {
+          case files => files.toList
+          case _ => List.empty[TreeFile]
+        }
+      case _ => List.empty[TreeFile]
+    }
+  }
+  def setTreeFiles(value: String): Unit ={
+    decode[List[TreeFile]](value) match {
+      case Right(files) =>
+        DatabaseManager.GetMongoConnection() match {
+          case Some(mongo) =>
+            val treeFiles: MongoCollection[TreeFile] = mongo.getCollection(treeFilesCollection)
+            Await.result(treeFiles.insertMany(files).toFuture(), Duration(30, SECONDS))
+          case _ =>
+        }
+      case Left(value) =>
+    }
+  }
+  def deleteTeeFiles(urlsValue: String, user: String): Unit={
+    decode[List[String]](urlsValue) match {
+      case Right(urls) =>
+        DatabaseManager.GetMongoConnection() match {
+          case Some(mongo) =>
+            val files: MongoCollection[TreeFile] = mongo.getCollection(treeFilesCollection)
+            val filesHistory: MongoCollection[TreeFileHistory] = mongo.getCollection(treeFilesHistoryCollection)
+            urls.foreach(url => {
+              Await.result(mongo.getCollection(treeFilesCollection).find[TreeFile](equal("url", url)).first().toFuture(), Duration(30, SECONDS)) match {
+                case oldFile: TreeFile =>
+                  Await.result(filesHistory.insertOne(TreeFileHistory(user, new Date().getTime, oldFile)).toFuture(), Duration(30, SECONDS))
+                  Await.result(files.deleteOne(equal(treeFilesCollection, oldFile)).toFuture(), Duration(30, SECONDS))
+                case _ =>
+              }
+            })
+          case _ =>
+        }
+      case Left(value) =>
+    }
+  }
+
+  def getTreeDirectories: List[TreeDirectory] ={
+    DatabaseManager.GetMongoConnection() match {
+      case Some(mongo) =>
+        Await.result(mongo.getCollection(treeFileDirectoriesCollection).find[TreeDirectory].toFuture(), Duration(30, SECONDS)) match {
+          case files => files.toList
+          case _ => List.empty[TreeDirectory]
+        }
+      case _ => List.empty[TreeDirectory]
+    }
+  }
+  def setTreeDirectory(jsValue: String): Unit ={
+    decode[TreeDirectory](jsValue) match {
+      case Right(value) =>
+        DatabaseManager.GetMongoConnection() match {
+          case Some(mongo) =>
+            val files: MongoCollection[TreeDirectory] = mongo.getCollection(treeFileDirectoriesCollection)
+            Await.result(files.insertOne(value).toFuture(), Duration(30, SECONDS))
+          case _ =>
+        }
+      case Left(value) =>
+    }
+  }
+
+
 }

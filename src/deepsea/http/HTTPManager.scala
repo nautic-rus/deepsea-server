@@ -276,6 +276,7 @@ class HTTPManager extends Actor{
         askFor(ActorManager.fest, DeleteFestKaraoke(time))
       },
 
+
     )
   }
 
