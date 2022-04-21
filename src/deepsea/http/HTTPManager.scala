@@ -17,7 +17,7 @@ import deepsea.App
 import deepsea.actors.ActorManager
 import deepsea.actors.ActorStartupManager.HTTPManagerStarted
 import deepsea.auth.AuthManager.{GetUsers, Login, ShareRights}
-import deepsea.fest.FestManager.{DeleteFestKaraoke, DeleteFestStories, GetFestKaraoke, GetFestStories, SetFestKaraoke, SetFestStories}
+import deepsea.fest.FestManager.{DeleteFestKaraoke, DeleteFestSauna, DeleteFestStories, GetFestKaraoke, GetFestSauna, GetFestStories, SetFestKaraoke, SetFestSauna, SetFestStories}
 import deepsea.files.FileManager.{CreateFile, GetPdSpList}
 import deepsea.files.classes.FileAttachment
 import deepsea.issues.IssueManager._
@@ -274,6 +274,16 @@ class HTTPManager extends Actor{
       },
       (get & path("deleteFestKaraoke") & parameter("time")){ (time) =>
         askFor(ActorManager.fest, DeleteFestKaraoke(time))
+      },
+
+      (get & path("festSauna")){
+        askFor(ActorManager.fest, GetFestSauna())
+      },
+      (get & path("setFestSauna") & parameter("users") & parameter("time")){ (users, time) =>
+        askFor(ActorManager.fest, SetFestSauna(users, time))
+      },
+      (get & path("deleteFestSauna") & parameter("time")){ (time) =>
+        askFor(ActorManager.fest, DeleteFestSauna(time))
       },
 
 
