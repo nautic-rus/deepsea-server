@@ -17,7 +17,7 @@ import deepsea.App
 import deepsea.actors.ActorManager
 import deepsea.actors.ActorStartupManager.HTTPManagerStarted
 import deepsea.auth.AuthManager.{GetUsers, Login, ShareRights}
-import deepsea.fest.FestManager.{DeleteFestKaraoke, DeleteFestSauna, DeleteFestStories, GetFestKaraoke, GetFestSauna, GetFestStories, SetFestKaraoke, SetFestSauna, SetFestStories}
+import deepsea.fest.FestManager.{DeleteFestKaraoke, DeleteFestSauna, DeleteFestStories, GetFestKaraoke, GetFestSauna, GetFestStories, GetTeamsWon, SetFestKaraoke, SetFestSauna, SetFestStories, SetMarks, SetTeamsWon}
 import deepsea.files.FileManager.{CreateFile, GetPdSpList}
 import deepsea.files.classes.FileAttachment
 import deepsea.issues.IssueManager._
@@ -286,7 +286,19 @@ class HTTPManager extends Actor{
         askFor(ActorManager.fest, DeleteFestSauna(time))
       },
 
+      (get & path("teamsWon")){
+        askFor(ActorManager.fest, GetTeamsWon())
+      },
+      (post & path("setTeamsWon") & entity(as[String])){ (teamsWon) =>
+        askFor(ActorManager.fest, SetTeamsWon(teamsWon))
+      },
 
+      (get & path("marks")){
+        askFor(ActorManager.fest, GetTeamsWon())
+      },
+      (post & path("setMarks") & entity(as[String])){ (marks) =>
+        askFor(ActorManager.fest, SetMarks(marks))
+      },
     )
   }
 
