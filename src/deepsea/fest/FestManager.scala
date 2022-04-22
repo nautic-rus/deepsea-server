@@ -112,10 +112,10 @@ class FestManager extends Actor{
         val s = c.createStatement()
         marks.foreach(mark => {
           if (current.exists(x => x.team == mark.team && x.disc == mark.disc)){
-            s.execute(s"update fest_marks set value = ${mark.value} where team = ${mark.team} and disc = ${mark.disc}")
+            s.execute(s"update fest_marks set value = ${mark.value} where team = '${mark.team}' and disc = '${mark.disc}'")
           }
           else {
-            s.execute(s"insert into fest_marks values (${mark.disc}, ${mark.team}, ${mark.value})")
+            s.execute(s"insert into fest_marks values ('${mark.disc}', '${mark.team}', ${mark.value})")
           }
         })
         s.close()
@@ -162,10 +162,10 @@ class FestManager extends Actor{
         val s = c.createStatement()
         teams.foreach(team => {
           if (current.exists(x => x.game == team.game && x.sport == team.sport)){
-            s.execute(s"update fest_teams_won set team = ${team.team} where sport = ${team.sport} and game = ${team.game}")
+            s.execute(s"update fest_teams_won set team = '${team.team}' where sport = '${team.sport}' and game = '${team.game}'")
           }
           else{
-            s.execute(s"insert into fest_teams_won values (${team.sport}, ${team.game}, ${team.team})")
+            s.execute(s"insert into fest_teams_won values ('${team.sport}', '${team.game}', '${team.team}')")
           }
         })
         s.close()
@@ -195,10 +195,10 @@ class FestManager extends Actor{
       case Some(c) =>
         val s = c.createStatement()
         if (current.exists(x => x.disc == player.disc)){
-          s.execute(s"update fest_best_players set name = ${player.name} where disc = ${player.disc}")
+          s.execute(s"update fest_best_players set name = '${player.name}' where disc = '${player.disc}'")
         }
         else{
-          s.execute(s"insert into fest_best_players values (${player.name}, ${player.disc})")
+          s.execute(s"insert into fest_best_players values ('${player.name}', '${player.disc}')")
         }
         s.close()
         c.close()
