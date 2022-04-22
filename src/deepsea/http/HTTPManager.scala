@@ -310,7 +310,7 @@ class HTTPManager extends Actor{
       (get & path("bestPlayers")){
         askFor(ActorManager.fest, GetBestPlayers())
       },
-      (post & path("bestPlayer") & entity(as[String])){ (bestPlayer) =>
+      (post & path("setBestPlayer") & entity(as[String])){ (bestPlayer) =>
         askFor(ActorManager.fest, SetBestPlayer(bestPlayer))
       },
 
