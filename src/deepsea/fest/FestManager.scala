@@ -55,7 +55,7 @@ class FestManager extends Actor{
           sender() ! Json.toJson("error")
       }
 
-    case GetTeamsWon() => sender() ! getTeamsWon
+    case GetTeamsWon() => sender() ! Json.toJson(getTeamsWon)
     case SetTeamsWon(teams) =>
       Json.parse(teams).asOpt[ListBuffer[TeamWon]] match {
         case Some(teams) =>
@@ -65,7 +65,7 @@ class FestManager extends Actor{
           sender() ! Json.toJson("error")
       }
 
-    case GetBestPlayers() => sender() ! getBestPlayers
+    case GetBestPlayers() => sender() ! Json.toJson(getBestPlayers)
     case SetBestPlayer(player) =>
       Json.parse(player).asOpt[BestPlayer] match {
         case Some(player) =>
