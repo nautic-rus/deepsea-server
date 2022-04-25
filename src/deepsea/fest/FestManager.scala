@@ -29,7 +29,7 @@ object FestManager{
   case class GetFestKaraoke()
   case class DeleteFestKaraoke(date: String)
 
-  case class SetFestSauna(users: String, time: String)
+  case class SetFestSauna(kind: String, users: String, time: String)
   case class GetFestSauna()
   case class DeleteFestSauna(time: String)
 
@@ -39,7 +39,7 @@ object FestManager{
   case class FestKaraoke(users: String, song: String, date: Long)
   implicit val writesFestKaraoke: OWrites[FestKaraoke] = Json.writes[FestKaraoke]
 
-  case class FestSauna(users: String, time: String)
+  case class FestSauna(kind: String, users: String, time: String)
   implicit val writesFestSauna: OWrites[FestSauna] = Json.writes[FestSauna]
 }
 class FestManager extends Actor{
@@ -95,8 +95,8 @@ class FestManager extends Actor{
 
     case GetFestSauna() =>
       sender() ! Json.toJson(getFestSauna)
-    case SetFestSauna(users, time) =>
-      setFestSauna(users, time)
+    case SetFestSauna(kind, users, time) =>
+      setFestSauna(kind, users, time)
       sender() ! Json.toJson("success")
     case DeleteFestSauna(time) =>
       deleteFestSauna(time)
@@ -308,12 +308,12 @@ class FestManager extends Actor{
     }
     res
   }
-  def setFestSauna(users: String, time: String): Unit ={
+  def setFestSauna(kind: String, users: String, time: String): Unit ={
     GetConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val date = new Date().getTime
-        s.execute(s"insert into fest_sauna values ('${users}', '${time}',  ${date})")
+        s.execute(s"insert into fest_sauna values ('${kind}', '${users}', '${time}',  ${date})")
         s.close()
         c.close()
       case _ =>
@@ -323,7 +323,6 @@ class FestManager extends Actor{
     GetConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val date = new Date().getTime
         s.execute(s"delete from fest_sauna where time = ${time}")
         s.close()
         c.close()
