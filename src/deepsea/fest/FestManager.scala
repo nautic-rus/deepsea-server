@@ -297,6 +297,7 @@ class FestManager extends Actor{
         val rs = s.executeQuery(s"select * from fest_sauna")
         while (rs.next()){
           res += FestSauna(
+            rs.getString("kind"),
             rs.getString("users"),
             rs.getString("time")
           )
