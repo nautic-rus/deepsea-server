@@ -47,6 +47,7 @@ object IssueManager{
   case class SetRevisionFiles(id: String, revision: String, filesJson: String)
   case class DeleteRevisionFile(file_url: String, user: String)
   case class ClearRevisionFiles(issueId: String, user: String, fileGroup: String, revision: String)
+  case class GetRevisionFiles()
   case class SetIssueLabor(user: String, issue_id: String, labor_value: String, labor_comment: String, date: String)
   case class GetSfiCodes()
   case class GetIssueSpentTime()
@@ -183,6 +184,8 @@ class IssueManager extends Actor{
     case ClearRevisionFiles(issueId, user, fileGroup, revision) =>
       clearRevisionFiles(issueId.toIntOption.getOrElse(0), user, fileGroup, revision)
       sender() ! Json.toJson("success")
+    case GetRevisionFiles() =>
+      sender() ! Json.toJson(getRevisionFiles)
     case SetIssueLabor(user, issue_id, labor_value, labor_comment, date) =>
       setIssueLabor(user, issue_id.toIntOption.getOrElse(0), labor_value.toDoubleOption.getOrElse(0), labor_comment, date.toLongOption.getOrElse(0))
       sender() ! Json.toJson("success")
@@ -1163,6 +1166,29 @@ class IssueManager extends Actor{
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from revision_files where issue_id = $id and removed = 0")
+        while (rs.next()){
+          res += new FileAttachment(
+            rs.getString("file_name"),
+            rs.getString("file_url"),
+            rs.getLong("upload_date"),
+            rs.getString("upload_user"),
+            rs.getString("issue_revision"),
+            rs.getString("group_name"),
+          )
+        }
+        rs.close()
+        s.close()
+        c.close()
+      case _ =>
+    }
+    res
+  }
+  def getRevisionFiles: ListBuffer[FileAttachment] ={
+    val res = ListBuffer.empty[FileAttachment]
+    GetConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val rs = s.executeQuery(s"select * from revision_files")
         while (rs.next()){
           res += new FileAttachment(
             rs.getString("file_name"),

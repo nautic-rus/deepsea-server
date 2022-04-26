@@ -118,6 +118,9 @@ class HTTPManager extends Actor{
       (get & path("clearRevisionFiles") & parameter("issueId") & parameter("user") & parameter("fileGroup") & parameter("revision")){ (issueId, user, fileGroup, revision) =>
         askFor(ActorManager.issue, ClearRevisionFiles(issueId, user, fileGroup, revision))
       },
+      (get & path("revisionFiles")){
+        askFor(ActorManager.issue, GetRevisionFiles())
+      },
       (get & path("activeLicenses")){
         askFor(ActorManager.license, GetForanLicenses())
       },
