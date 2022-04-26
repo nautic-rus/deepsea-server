@@ -279,7 +279,7 @@ class HTTPManager extends Actor{
       (get & path("festSauna")){
         askFor(ActorManager.fest, GetFestSauna())
       },
-      (get & path("setFestSauna") & parameter("users") & parameter("time")){ (kind, users, time) =>
+      (get & path("setFestSauna") & parameter("kind") & parameter("users") & parameter("time")){ (kind, users, time) =>
         askFor(ActorManager.fest, SetFestSauna(kind, users, time))
       },
       (get & path("deleteFestSauna") & parameter("time")){ (time) =>
