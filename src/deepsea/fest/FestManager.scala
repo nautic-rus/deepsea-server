@@ -314,7 +314,7 @@ class FestManager extends Actor{
       case Some(c) =>
         val s = c.createStatement()
         val date = new Date().getTime
-        s.execute(s"insert into fest_sauna values ('${kind}', '${users}', '${time}',  ${date})")
+        s.execute(s"insert into fest_sauna values ('${users}', '${time}',  ${date}, '${kind}')")
         s.close()
         c.close()
       case _ =>
