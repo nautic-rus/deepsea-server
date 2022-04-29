@@ -210,11 +210,11 @@ class IssueManager extends Actor{
       sender() ! Json.toJson(getCheckTemplates(user))
     case GetNestingFiles() =>
       sender() ! Json.toJson(getNestingRevisionFiles)
-    case _ => None
-    case GetAmountTask(project, departments, status) => //request amount of task
-      //sender() ! Json.toJson(getAmountTask(project, departments, status))
+    case GetAmountTask(project, departments, status) => None//request amount of task
+    //sender() ! Json.toJson(getAmountTask(project, departments, status))
     case GetDrawings() =>
       sender() ! Json.toJson(getDrawings)
+    case _ => None
   }
 
   def setDayCalendar(user: String, day: String, status: String): ListBuffer[IssueView] ={
