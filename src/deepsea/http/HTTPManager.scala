@@ -157,6 +157,9 @@ class HTTPManager extends Actor{
       (get & path("getAmountTask") & parameter("project") & parameter("status") & parameter("department")){ (project,status,department) =>
         askFor(ActorManager.issue, GetAmountTask(project,status,department))
       },
+      (get & path("drawings")){
+        askFor(ActorManager.issue, GetDrawings())
+      },
       //FILE MANAGER COMMANDS
 //      (post & path("createFileUrl") & entity(as[Multipart.FormData])){ formData =>
 //        var fileName = ""

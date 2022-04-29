@@ -6,17 +6,21 @@ import akka.util.Timeout
 import deepsea.App
 import deepsea.actors.ActorManager
 import deepsea.auth.AuthManager.{GetUser, User}
+import deepsea.database.DatabaseManager
 import deepsea.database.DatabaseManager.GetConnection
+import deepsea.files.FileManager.{TreeFile, treeFilesCollection}
 import deepsea.files.classes.FileAttachment
 import deepsea.issues.IssueManager._
 import deepsea.issues.classes.{ChildIssue, Issue, IssueAction, IssueCheck, IssueHistory, IssueMessage, IssuePeriod, IssueType, IssueView, SfiCode}
 import deepsea.rocket.RocketChatManager.SendNotification
+import org.mongodb.scala.Document
 import play.api.libs.json.{JsValue, Json, OWrites}
 
 import java.util.Date
 import java.util.concurrent.TimeUnit
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
+import scala.concurrent.duration.{Duration, SECONDS}
 import scala.util.Try
 
 object IssueManager{
@@ -57,6 +61,7 @@ object IssueManager{
   case class UpdateIssueCheck(issue_id: String, user: String, check_description: String, check_group: String, check_status: String)
   case class GetNestingFiles()
   case class GetAmountTask(project: String, department: String, status: String)
+  case class GetDrawings()
 
   case class IssueDef(id: String, issueTypes: List[String], issueProjects: List[String])
   implicit val writesIssueDef: OWrites[IssueDef] = Json.writes[IssueDef]
@@ -208,6 +213,8 @@ class IssueManager extends Actor{
     case _ => None
     case GetAmountTask(project, departments, status) => //request amount of task
       //sender() ! Json.toJson(getAmountTask(project, departments, status))
+    case GetDrawings() =>
+      sender() ! Json.toJson(getDrawings)
   }
 
   def setDayCalendar(user: String, day: String, status: String): ListBuffer[IssueView] ={
@@ -1397,4 +1404,15 @@ class IssueManager extends Actor{
     }
     res
   }
+  def getDrawings: List[String] ={
+    DatabaseManager.GetMongoConnection() match {
+      case Some(mongo) =>
+        Await.result(mongo.getCollection("drawings").find[Document].toFuture(), Duration(30, SECONDS)) match {
+          case files => files.toList.map(x => x.getString("name"))
+          case _ => List.empty[String]
+        }
+      case _ => List.empty[String]
+    }
+  }
+
 }
