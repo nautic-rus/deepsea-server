@@ -1395,6 +1395,8 @@ class IssueManager extends Actor{
             rs.getString("name_template"),
             0,
             0,
+            rs.getInt("id"),
+            rs.getInt("sort")
           )
         }
         rs.close()

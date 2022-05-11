@@ -14,6 +14,8 @@ object IssueCheck{
         template = (x \ "template").asOpt[String].getOrElse(""),
         check_date = (x \ "check_date").asOpt[Long].getOrElse(0),
         check_status = (x \ "check_status").asOpt[Int].getOrElse(0),
+        id = (x \ "id").asOpt[Int].getOrElse(0),
+        sort = (x \ "sort").asOpt[Int].getOrElse(0),
       ))
       case _ => JsSuccess(null)
     }
@@ -28,11 +30,13 @@ object IssueCheck{
         "template" -> x.template,
         "check_date" -> x.check_date,
         "check_status" -> x.check_status,
+        "id" -> x.id,
+        "sort" -> x.sort
       )
       case _ => JsNull
     }
   }
 }
-class IssueCheck(val issue_id: Int, val check_description: String, val check_group: String, val user: String, val template: String, val check_date: Long, val check_status: Int) {
+class IssueCheck(val issue_id: Int, val check_description: String, val check_group: String, val user: String, val template: String, val check_date: Long, val check_status: Int, val id: Int, val sort: Int) {
 
 }
