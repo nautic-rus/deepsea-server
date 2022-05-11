@@ -1347,6 +1347,8 @@ class IssueManager extends Actor{
             "No Template",
             rs.getLong("check_date"),
             rs.getInt("check_status"),
+            rs.getInt("id"),
+            rs.getInt("sort")
           )
         }
         rs.close()
