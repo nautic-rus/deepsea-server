@@ -3,9 +3,9 @@ package deepsea.materials
 import akka.actor.Actor
 import com.mongodb.BasicDBObject
 import com.mongodb.client.model.Filters
-import deepsea.database.DatabaseManager
+import deepsea.database.{DatabaseManager, MongoCodecs}
 import deepsea.database.DatabaseManager.GetMongoConnection
-import deepsea.materials.MaterialManager.{GetMaterialNodes, GetMaterials, Material, MaterialHistory, MaterialNode, UpdateMaterial}
+import deepsea.materials.MaterialManager.{GetMaterialNodes, GetMaterials, GetWeightControl, Material, MaterialHistory, MaterialNode, SetWeightControl, UpdateMaterial, WeightControl}
 import io.circe.{jawn, parser}
 import org.bson.Document
 import play.api.libs.json.{JsValue, Json}
@@ -42,6 +42,8 @@ object MaterialManager{
   case class GetMaterials(project: String)
   case class UpdateMaterial(material: String, user: String, remove: String = "0")
   case class GetMaterialNodes()
+  case class GetWeightControl()
+  case class SetWeightControl(controlValue: String)
   case class MaterialHistory(material: Material, user: String, date: Long = new Date().getTime)
   case class Material(
                        name: String = "",
@@ -58,8 +60,9 @@ object MaterialManager{
                        coefficient: Double = 1,
                        id: String = UUID.randomUUID().toString)
   case class MaterialNode(label: String = "", data: String = "")
+  case class WeightControl(docNumber: String, docName: String, zone: String, mount: String, weight: Double, x: Double, y: Double, z: Double, momX: Double, momY: Double, momZ: Double, user: String, date: Long)
 }
-class MaterialManager extends Actor{
+class MaterialManager extends Actor with MongoCodecs{
 
   val collection = "materials-n"
   val collectionNodes = "materials-n-nodes"
@@ -108,6 +111,28 @@ class MaterialManager extends Actor{
         case Left(value) =>
       }
       sender() ! Json.toJson("success")
+    case GetWeightControl() =>
+      DatabaseManager.GetMongoConnection() match {
+        case Some(mongo) =>
+          Await.result(mongo.getCollection("weightControl").find[WeightControl]().toFuture(), Duration(30, SECONDS)) match {
+            case dbValues => sender() ! dbValues.toList.asJson.noSpaces
+            case _ => List.empty[WeightControl]
+          }
+        case _ => List.empty[WeightControl]
+      }
+    case SetWeightControl(controlValue) =>
+      decode[WeightControl](controlValue) match {
+        case Right(weightControl) =>
+          DatabaseManager.GetMongoConnection() match {
+            case Some(mongo) =>
+              val controls: MongoCollection[WeightControl] = mongo.getCollection("weightControl")
+              Await.result(controls.insertOne(weightControl).toFuture(), Duration(30, SECONDS))
+            case _ =>
+          }
+        case Left(value) =>
+      }
+      sender() ! Json.toJson("success")
+
 //    case GetMaterials(project) =>
 //      GetMongoConnection() match {
 //        case Some(connection) =>
