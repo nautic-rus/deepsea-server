@@ -1,7 +1,7 @@
 package deepsea.database
 
 import deepsea.files.FileManager.{TreeDirectory, TreeFile, TreeFileHistory}
-import deepsea.materials.MaterialManager.{Material, MaterialHistory, MaterialNode, WeightControl}
+import deepsea.materials.MaterialManager.{Material, MaterialHistory, MaterialNode, WCNumberName, WeightControl}
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.{Decoder, Encoder}
 import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}
@@ -32,6 +32,9 @@ trait MongoCodecs {
   implicit val WeightControlDecoder: Decoder[WeightControl] = deriveDecoder[WeightControl]
   implicit val WeightControlEncoder: Encoder[WeightControl] = deriveEncoder[WeightControl]
 
+  implicit val WCNumberNameDecoder: Decoder[WCNumberName] = deriveDecoder[WCNumberName]
+  implicit val WCNumberNameEncoder: Encoder[WCNumberName] = deriveEncoder[WCNumberName]
+
 
   def codecRegistry: CodecRegistry = fromRegistries(fromProviders(
     classOf[Material],
@@ -41,5 +44,6 @@ trait MongoCodecs {
     classOf[TreeDirectory],
     classOf[TreeFileHistory],
     classOf[WeightControl],
+    classOf[WCNumberName],
   ), DEFAULT_CODEC_REGISTRY)
 }
