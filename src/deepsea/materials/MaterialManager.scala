@@ -62,7 +62,7 @@ object MaterialManager{
                        coefficient: Double = 1,
                        id: String = UUID.randomUUID().toString)
   case class MaterialNode(label: String = "", data: String = "")
-  case class WeightControl(docNumber: String, docName: String, zone: String, mount: String, weight: Double, x: Double, y: Double, z: Double, momX: Double, momY: Double, momZ: Double, user: String, date: Long)
+  case class WeightControl(docNumber: String, docName: String, zoneNumber: String, zoneName: String, mount: String, weight: Double, x: Double, y: Double, z: Double, user: String, date: Long)
   case class WCNumberName(number: String, name: String)
 }
 class MaterialManager extends Actor with MongoCodecs{
