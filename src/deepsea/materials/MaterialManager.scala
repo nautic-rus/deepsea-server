@@ -5,7 +5,7 @@ import com.mongodb.BasicDBObject
 import com.mongodb.client.model.Filters
 import deepsea.database.{DatabaseManager, MongoCodecs}
 import deepsea.database.DatabaseManager.GetMongoConnection
-import deepsea.materials.MaterialManager.{GetMaterialNodes, GetMaterials, GetWeightControl, Material, MaterialHistory, MaterialNode, SetWeightControl, UpdateMaterial, WeightControl}
+import deepsea.materials.MaterialManager.{GetMaterialNodes, GetMaterials, GetWCDrawings, GetWCZones, GetWeightControl, Material, MaterialHistory, MaterialNode, SetWeightControl, UpdateMaterial, WCNumberName, WeightControl}
 import io.circe.{jawn, parser}
 import org.bson.Document
 import play.api.libs.json.{JsValue, Json}
@@ -43,6 +43,8 @@ object MaterialManager{
   case class UpdateMaterial(material: String, user: String, remove: String = "0")
   case class GetMaterialNodes()
   case class GetWeightControl()
+  case class GetWCDrawings()
+  case class GetWCZones()
   case class SetWeightControl(controlValue: String)
   case class MaterialHistory(material: Material, user: String, date: Long = new Date().getTime)
   case class Material(
@@ -61,6 +63,7 @@ object MaterialManager{
                        id: String = UUID.randomUUID().toString)
   case class MaterialNode(label: String = "", data: String = "")
   case class WeightControl(docNumber: String, docName: String, zone: String, mount: String, weight: Double, x: Double, y: Double, z: Double, momX: Double, momY: Double, momZ: Double, user: String, date: Long)
+  case class WCNumberName(number: String, name: String)
 }
 class MaterialManager extends Actor with MongoCodecs{
 
@@ -132,7 +135,24 @@ class MaterialManager extends Actor with MongoCodecs{
         case Left(value) =>
       }
       sender() ! Json.toJson("success")
-
+    case GetWCDrawings() =>
+      DatabaseManager.GetMongoConnection() match {
+        case Some(mongo) =>
+          Await.result(mongo.getCollection("wcDrawings").find[WCNumberName]().toFuture(), Duration(30, SECONDS)) match {
+            case dbValues => sender() ! dbValues.toList.asJson.noSpaces
+            case _ => List.empty[WCNumberName]
+          }
+        case _ => List.empty[WCNumberName]
+      }
+    case GetWCZones() =>
+      DatabaseManager.GetMongoConnection() match {
+        case Some(mongo) =>
+          Await.result(mongo.getCollection("wcZones").find[WCNumberName]().toFuture(), Duration(30, SECONDS)) match {
+            case dbValues => sender() ! dbValues.toList.asJson.noSpaces
+            case _ => List.empty[WCNumberName]
+          }
+        case _ => List.empty[WCNumberName]
+      }
 //    case GetMaterials(project) =>
 //      GetMongoConnection() match {
 //        case Some(connection) =>
