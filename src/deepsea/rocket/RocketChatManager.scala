@@ -26,7 +26,7 @@ class RocketChatManager extends Actor{
   }
   override def receive: Receive = {
     case msg: SendNotification =>
-      val response = http.singleRequest(HttpRequest(method = HttpMethods.POST, uri = s"https://rocket.nautic-rus.ru/api/v1/login", entity = HttpEntity(ContentTypes.`application/json`, "{\"user\":\"deepsea\",\"password\":\"Ship1234\"}")))
+      val response = http.singleRequest(HttpRequest(method = HttpMethods.POST, uri = s"https://rocket.nautic-rus.com/api/v1/login", entity = HttpEntity(ContentTypes.`application/json`, "{\"user\":\"deepsea\",\"password\":\"Ship1234\"}")))
       response.onComplete({
         case Success(value) =>
           value.entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
@@ -42,7 +42,7 @@ class RocketChatManager extends Actor{
             }
             val h1 = new RawHeader("X-User-Id", userId)
             val h2 = new RawHeader("X-Auth-Token", authToken)
-            val postMessage = http.singleRequest(HttpRequest(method = HttpMethods.POST, uri = s"https://rocket.nautic-rus.ru/api/v1/chat.postMessage", headers = List(h1, h2), entity = HttpEntity(ContentTypes.`application/json`, "{\"channel\":\"@" + msg.toUser + "\",\"text\":\"" + msg.message + "\"}")))
+            val postMessage = http.singleRequest(HttpRequest(method = HttpMethods.POST, uri = s"https://rocket.nautic-rus.com/api/v1/chat.postMessage", headers = List(h1, h2), entity = HttpEntity(ContentTypes.`application/json`, "{\"channel\":\"@" + msg.toUser + "\",\"text\":\"" + msg.message + "\"}")))
           }
         case Failure(exception) =>
           val jkk = 0
