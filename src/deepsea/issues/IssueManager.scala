@@ -61,7 +61,6 @@ object IssueManager{
   case class UpdateIssueCheck(issue_id: String, user: String, check_description: String, check_group: String, check_status: String)
   case class GetNestingFiles()
   case class GetAmountTask(project: String, department: String, status: String)
-  case class GetDrawings()
 
   case class IssueDef(id: String, issueTypes: List[String], issueProjects: List[String])
   implicit val writesIssueDef: OWrites[IssueDef] = Json.writes[IssueDef]
@@ -210,10 +209,9 @@ class IssueManager extends Actor{
       sender() ! Json.toJson(getCheckTemplates(user))
     case GetNestingFiles() =>
       sender() ! Json.toJson(getNestingRevisionFiles)
-    case GetAmountTask(project, departments, status) => None//request amount of task
+    case GetAmountTask(project, departments, status) => None
+    //request amount of task
     //sender() ! Json.toJson(getAmountTask(project, departments, status))
-    case GetDrawings() =>
-      sender() ! Json.toJson(getDrawings)
     case _ => None
   }
 
@@ -1407,16 +1405,6 @@ class IssueManager extends Actor{
       case _ =>
     }
     res
-  }
-  def getDrawings: List[String] ={
-    DatabaseManager.GetMongoConnection() match {
-      case Some(mongo) =>
-        Await.result(mongo.getCollection("drawings").find[Document].toFuture(), Duration(30, SECONDS)) match {
-          case files => files.toList.map(x => x.getString("name"))
-          case _ => List.empty[String]
-        }
-      case _ => List.empty[String]
-    }
   }
 
 }

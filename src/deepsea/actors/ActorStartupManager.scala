@@ -12,6 +12,7 @@ import deepsea.http.HTTPManager
 import deepsea.issues.IssueManager
 import deepsea.mail.MailManager
 import deepsea.materials.MaterialManager
+import deepsea.mobile.MobileManager
 import deepsea.rocket.RocketChatManager
 import deepsea.time.{LicenseManager, TimeAndWeatherManager, TimeControlManager}
 
@@ -38,5 +39,6 @@ class ActorStartupManager extends Actor{
       ActorManager.timeControl = system.actorOf(RoundRobinPool(1).props(Props[TimeControlManager]))
       ActorManager.timeAndWeather = system.actorOf(RoundRobinPool(1).props(Props[TimeAndWeatherManager]))
       ActorManager.fest = system.actorOf(RoundRobinPool(3).props(Props[FestManager]))
+      ActorManager.mobile = system.actorOf(RoundRobinPool(1).props(Props[MobileManager]))
   }
 }

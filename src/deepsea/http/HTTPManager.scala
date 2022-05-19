@@ -22,6 +22,7 @@ import deepsea.files.FileManager.{CreateFile, GetPdSpList}
 import deepsea.files.classes.FileAttachment
 import deepsea.issues.IssueManager._
 import deepsea.materials.MaterialManager.{GetMaterialNodes, GetMaterials, GetWCDrawings, GetWCZones, GetWeightControl, SetWeightControl, UpdateMaterial}
+import deepsea.mobile.MobileManager.{GetDrawingInfo, GetDrawings}
 import deepsea.time.LicenseManager.GetForanLicenses
 import deepsea.time.TimeAndWeatherManager.GetTimeAndWeather
 import deepsea.time.TimeControlManager.GetUserTimeControl
@@ -157,9 +158,6 @@ class HTTPManager extends Actor{
       (get & path("getAmountTask") & parameter("project") & parameter("status") & parameter("department")){ (project,status,department) =>
         askFor(ActorManager.issue, GetAmountTask(project,status,department))
       },
-      (get & path("drawings")){
-        askFor(ActorManager.issue, GetDrawings())
-      },
       (get & path("weightControl")){
         askFor(ActorManager.materials, GetWeightControl())
       },
@@ -171,6 +169,12 @@ class HTTPManager extends Actor{
       },
       (get & path("wcZones")){
         askFor(ActorManager.materials, GetWCZones())
+      },
+      (get & path("mobileDrawings")){
+        askFor(ActorManager.mobile, GetDrawings())
+      },
+      (get & path("mobileDrawingInfo") & parameter("drawing")){ (drawing) =>
+        askFor(ActorManager.mobile, GetDrawingInfo(drawing))
       },
       //FILE MANAGER COMMANDS
 //      (post & path("createFileUrl") & entity(as[Multipart.FormData])){ formData =>
