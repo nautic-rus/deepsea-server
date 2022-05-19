@@ -4,7 +4,7 @@ import akka.actor.Actor
 import com.mongodb.BasicDBObject
 import deepsea.database.{DatabaseManager, MongoCodecs}
 import deepsea.materials.MaterialManager.{GetMaterials, Material}
-import deepsea.mobile.MobileManager.{Drawing, DrawingInfo, GetDrawingInfo, GetDrawings, OrizInfo, Test}
+import deepsea.mobile.MobileManager.{Drawing, DrawingInfo, GetDrawingInfo, GetDrawings, OrizInfo}
 import io.circe.syntax.EncoderOps
 import org.mongodb.scala.{Document, documentToUntypedDocument}
 import play.api.libs.json.Json
@@ -17,12 +17,9 @@ object MobileManager{
   case class GetDrawings()
   case class GetDrawingInfo(drawingName: String)
 
-  case class DrawingInfo(name: String, docNumber: String, docName: String, revision: String, user: String, date: Long, oriz: List[OrizInfo])
-
-  case class Drawing(name: String, descr: String, rev: String, user: String, date: Long)
   case class OrizInfo(oriz: String, name: String, user: String, date: Long, status: String, dateSend: String, dateApproved: String)
-
-  case class Test(oriz: String)
+  case class DrawingInfo(name: String, docNumber: String, docName: String, revision: String, user: String, date: Long, oriz: List[OrizInfo])
+  case class Drawing(name: String, descr: String, rev: String, user: String, date: Long)
 }
 class MobileManager extends Actor with MongoCodecs{
   override def receive: Receive = {

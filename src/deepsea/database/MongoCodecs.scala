@@ -42,9 +42,6 @@ trait MongoCodecs {
   implicit val DrawingDecoder: Decoder[Drawing] = deriveDecoder[Drawing]
   implicit val DrawingEncoder: Encoder[Drawing] = deriveEncoder[Drawing]
 
-  implicit val OrizInfoDecoder: Decoder[OrizInfo] = deriveDecoder[OrizInfo]
-  implicit val OrizInfoEncoder: Encoder[OrizInfo] = deriveEncoder[OrizInfo]
-
   implicit val DrawingInfoDecoder: Decoder[DrawingInfo] = deriveDecoder[DrawingInfo]
   implicit val DrawingInfoEncoder: Encoder[DrawingInfo] = deriveEncoder[DrawingInfo]
 
@@ -58,8 +55,7 @@ trait MongoCodecs {
     classOf[TreeFileHistory],
     classOf[WeightControl],
     classOf[WCNumberName],
-    classOf[OrizInfo],
     classOf[Drawing],
-    classOf[OrizInfo],
+    classOf[DrawingInfo],
   ), DEFAULT_CODEC_REGISTRY)
 }
