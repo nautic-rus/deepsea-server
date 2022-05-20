@@ -10,10 +10,10 @@ object App {
     val Port = 1112
     val Url = "https://deep-sea.ru"
     val RestUrl = "https://deep-sea.ru/rest"
-    val FestRestUrl = "https://fest.nautic-rus.ru/rest"
+    val FestRestUrl = "https://fest.nautic-rus.com/rest"
   }
   object Cloud{
-    val Host = "cloud.nautic-rus.ru"
+    val Host = "cloud.nautic-rus.com"
     val Protocol = "https"
     val Directory = "/cloud"
     val Url: String = App.HTTPServer.RestUrl + "/files"

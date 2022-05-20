@@ -67,7 +67,7 @@ class FileManager extends Actor with MongoCodecs{
     case _ => None
   }
   def uploadFile(fileName: String, stream: InputStream, filePath: String, login: String, password: String): String ={
-    val nextCloud = new NextcloudConnector("cloud.nautic-rus.ru", true, 443, login, password)
+    val nextCloud = new NextcloudConnector("cloud.nautic-rus.com", true, 443, login, password)
     var path = ""
     filePath.split('/').foreach(split => {
       path += split + "/"
@@ -85,7 +85,7 @@ class FileManager extends Actor with MongoCodecs{
     App.Cloud.Protocol + "://" + App.Cloud.Host + "/s/" + shareToken + "/download/" + fileNameRes
   }
   def getPDSPList: JsValue ={
-    val cloud = new NextcloudConnector("cloud.nautic-rus.ru", true, 443, "nnovikov", "Ship1234")
+    val cloud = new NextcloudConnector("cloud.nautic-rus.com", true, 443, "nnovikov", "Ship1234")
     val list = cloud.listFolderContent("ПДСП", 10).toArray.toList.map(x => x.toString)
     val res = ListBuffer.empty[(String, String, String)]
     list.foreach(name => {
