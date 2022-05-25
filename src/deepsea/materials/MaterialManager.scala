@@ -42,7 +42,7 @@ object MaterialManager{
   case class GetMaterials(project: String)
   case class UpdateMaterial(material: String, user: String, remove: String = "0")
   case class GetMaterialNodes()
-  case class UpdateMaterialNode(jsonValue: String, user: String, remove: String = "0")
+  case class UpdateMaterialNode(data: String, label: String, user: String, remove: String = "0")
   case class GetWeightControl()
   case class GetWCDrawings()
   case class GetWCZones()
@@ -88,25 +88,22 @@ class MaterialManager extends Actor with MongoCodecs{
           }
         case _ => List.empty[MaterialNode]
       }
-    case UpdateMaterialNode(jsonValue, user, remove) =>
-      decode[MaterialNode](jsonValue) match {
-        case Right(node) =>
-          DatabaseManager.GetMongoConnection() match {
-            case Some(mongo) =>
-              val nodes: MongoCollection[MaterialNode] = mongo.getCollection(collectionNodes)
-              val nodesHistory: MongoCollection[MaterialNodeHistory] = mongo.getCollection(collectionNodesHistory)
-              Await.result(nodes.find(new BasicDBObject("data", node.data)).first().toFuture(), Duration(30, SECONDS)) match {
-                case oldValue: MaterialNode =>
-                  Await.result(nodesHistory.insertOne(MaterialNodeHistory(oldValue, user)).toFuture(), Duration(30, SECONDS))
-                  Await.result(nodes.deleteOne(new BasicDBObject("data", node.data)).toFuture(), Duration(30, SECONDS))
-                case _ =>
-              }
-              if (remove == "0"){
-                Await.result(nodes.insertOne(node).toFuture(), Duration(30, SECONDS))
-              }
+    case UpdateMaterialNode(data, label, user, remove) =>
+      val node = MaterialNode(label, data, user, new Date().getTime)
+      DatabaseManager.GetMongoConnection() match {
+        case Some(mongo) =>
+          val nodes: MongoCollection[MaterialNode] = mongo.getCollection(collectionNodes)
+          val nodesHistory: MongoCollection[MaterialNodeHistory] = mongo.getCollection(collectionNodesHistory)
+          Await.result(nodes.find(new BasicDBObject("data", node.data)).first().toFuture(), Duration(30, SECONDS)) match {
+            case oldValue: MaterialNode =>
+              Await.result(nodesHistory.insertOne(MaterialNodeHistory(oldValue, user)).toFuture(), Duration(30, SECONDS))
+              Await.result(nodes.deleteOne(new BasicDBObject("data", node.data)).toFuture(), Duration(30, SECONDS))
             case _ =>
           }
-        case Left(value) =>
+          if (remove == "0"){
+            Await.result(nodes.insertOne(node).toFuture(), Duration(30, SECONDS))
+          }
+        case _ =>
       }
       sender() ! Json.toJson("success")
     case GetMaterials(project) =>
