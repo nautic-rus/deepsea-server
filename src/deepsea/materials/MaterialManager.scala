@@ -42,7 +42,7 @@ object MaterialManager{
   case class GetMaterials(project: String)
   case class UpdateMaterial(material: String, user: String, remove: String = "0")
   case class GetMaterialNodes()
-  case class UpdateMaterialNode(jsonValue: String)
+  case class UpdateMaterialNode(jsonValue: String, user: String, remove: String = "0")
   case class GetWeightControl()
   case class GetWCDrawings()
   case class GetWCZones()
@@ -62,7 +62,7 @@ object MaterialManager{
                        comment: String = "",
                        coefficient: Double = 1,
                        id: String = UUID.randomUUID().toString)
-  case class MaterialNode(label: String, data: String, user: String, date: Long, removed: Int = 0)
+  case class MaterialNode(label: String, data: String, user: String, date: Long)
   case class MaterialNodeHistory(node: MaterialNode, user: String, date: Long = new Date().getTime)
 
   case class WeightControl(docNumber: String, docName: String, zoneNumber: String, moveElement: String, zoneName: String, mount: String, weight: Double, x: Double, y: Double, z: Double, user: String, date: Long)
@@ -88,7 +88,7 @@ class MaterialManager extends Actor with MongoCodecs{
           }
         case _ => List.empty[MaterialNode]
       }
-    case UpdateMaterialNode(jsonValue) =>
+    case UpdateMaterialNode(jsonValue, user, remove) =>
       decode[MaterialNode](jsonValue) match {
         case Right(node) =>
           DatabaseManager.GetMongoConnection() match {
@@ -97,11 +97,11 @@ class MaterialManager extends Actor with MongoCodecs{
               val nodesHistory: MongoCollection[MaterialNodeHistory] = mongo.getCollection(collectionNodesHistory)
               Await.result(nodes.find(new BasicDBObject("data", node.data)).first().toFuture(), Duration(30, SECONDS)) match {
                 case oldValue: MaterialNode =>
-                  Await.result(nodesHistory.insertOne(MaterialNodeHistory(oldValue, node.user)).toFuture(), Duration(30, SECONDS))
+                  Await.result(nodesHistory.insertOne(MaterialNodeHistory(oldValue, user)).toFuture(), Duration(30, SECONDS))
                   Await.result(nodes.deleteOne(new BasicDBObject("data", node.data)).toFuture(), Duration(30, SECONDS))
                 case _ =>
               }
-              if (node.removed == 0){
+              if (remove == "0"){
                 Await.result(nodes.insertOne(node).toFuture(), Duration(30, SECONDS))
               }
             case _ =>

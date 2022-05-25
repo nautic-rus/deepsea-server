@@ -21,7 +21,7 @@ import deepsea.fest.FestManager.{DeleteFestKaraoke, DeleteFestSauna, DeleteFestS
 import deepsea.files.FileManager.{CreateFile, GetPdSpList}
 import deepsea.files.classes.FileAttachment
 import deepsea.issues.IssueManager._
-import deepsea.materials.MaterialManager.{GetMaterialNodes, GetMaterials, GetWCDrawings, GetWCZones, GetWeightControl, SetWeightControl, UpdateMaterial}
+import deepsea.materials.MaterialManager.{GetMaterialNodes, GetMaterials, GetWCDrawings, GetWCZones, GetWeightControl, SetWeightControl, UpdateMaterial, UpdateMaterialNode}
 import deepsea.mobile.MobileManager.{GetDrawingInfo, GetDrawings}
 import deepsea.time.LicenseManager.GetForanLicenses
 import deepsea.time.TimeAndWeatherManager.GetTimeAndWeather
@@ -251,6 +251,9 @@ class HTTPManager extends Actor{
       },
       (get & path("materialNodes")){
         askFor(ActorManager.materials, GetMaterialNodes())
+      },
+      (post & path("materialNodes") & entity(as[String]) & parameter("user") & parameter("remove")){ (node, user, remove) =>
+        askFor(ActorManager.materials, UpdateMaterialNode(node, user, remove))
       },
 
       //FEST
