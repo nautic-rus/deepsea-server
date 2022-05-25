@@ -1,7 +1,7 @@
 package deepsea.database
 
 import deepsea.files.FileManager.{TreeDirectory, TreeFile, TreeFileHistory}
-import deepsea.materials.MaterialManager.{Material, MaterialHistory, MaterialNode, WCNumberName, WeightControl}
+import deepsea.materials.MaterialManager.{Material, MaterialHistory, MaterialNode, MaterialNodeHistory, WCNumberName, WeightControl}
 import deepsea.mobile.MobileManager.{Drawing, DrawingInfo, OrizInfo}
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.{Decoder, Encoder}
@@ -45,6 +45,9 @@ trait MongoCodecs {
   implicit val DrawingInfoDecoder: Decoder[DrawingInfo] = deriveDecoder[DrawingInfo]
   implicit val DrawingInfoEncoder: Encoder[DrawingInfo] = deriveEncoder[DrawingInfo]
 
+  implicit val MaterialNodeHistoryDecoder: Decoder[MaterialNodeHistory] = deriveDecoder[MaterialNodeHistory]
+  implicit val MaterialNodeHistoryEncoder: Encoder[MaterialNodeHistory] = deriveEncoder[MaterialNodeHistory]
+
 
   def codecRegistry: CodecRegistry = fromRegistries(fromProviders(
     classOf[Material],
@@ -57,5 +60,6 @@ trait MongoCodecs {
     classOf[WCNumberName],
     classOf[Drawing],
     classOf[DrawingInfo],
+    classOf[MaterialNodeHistory],
   ), DEFAULT_CODEC_REGISTRY)
 }

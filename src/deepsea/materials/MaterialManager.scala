@@ -5,7 +5,7 @@ import com.mongodb.BasicDBObject
 import com.mongodb.client.model.Filters
 import deepsea.database.{DatabaseManager, MongoCodecs}
 import deepsea.database.DatabaseManager.GetMongoConnection
-import deepsea.materials.MaterialManager.{GetMaterialNodes, GetMaterials, GetWCDrawings, GetWCZones, GetWeightControl, Material, MaterialHistory, MaterialNode, SetWeightControl, UpdateMaterial, WCNumberName, WeightControl}
+import deepsea.materials.MaterialManager.{GetMaterialNodes, GetMaterials, GetWCDrawings, GetWCZones, GetWeightControl, Material, MaterialHistory, MaterialNode, MaterialNodeHistory, SetWeightControl, UpdateMaterial, UpdateMaterialNode, WCNumberName, WeightControl}
 import io.circe.{jawn, parser}
 import org.bson.Document
 import play.api.libs.json.{JsValue, Json}
@@ -42,6 +42,7 @@ object MaterialManager{
   case class GetMaterials(project: String)
   case class UpdateMaterial(material: String, user: String, remove: String = "0")
   case class GetMaterialNodes()
+  case class UpdateMaterialNode(jsonValue: String)
   case class GetWeightControl()
   case class GetWCDrawings()
   case class GetWCZones()
@@ -61,7 +62,9 @@ object MaterialManager{
                        comment: String = "",
                        coefficient: Double = 1,
                        id: String = UUID.randomUUID().toString)
-  case class MaterialNode(label: String = "", data: String = "")
+  case class MaterialNode(label: String, data: String, user: String, date: Long, removed: Int = 0)
+  case class MaterialNodeHistory(node: MaterialNode, user: String, date: Long = new Date().getTime)
+
   case class WeightControl(docNumber: String, docName: String, zoneNumber: String, moveElement: String, zoneName: String, mount: String, weight: Double, x: Double, y: Double, z: Double, user: String, date: Long)
   case class WCNumberName(number: String, name: String)
 }
@@ -69,6 +72,7 @@ class MaterialManager extends Actor with MongoCodecs{
 
   val collection = "materials-n"
   val collectionNodes = "materials-n-nodes"
+  val collectionNodesHistory = "materials-n-nodes-h"
   val collectionHistory = "materials-n-h"
 
   override def preStart(): Unit = {
@@ -84,6 +88,27 @@ class MaterialManager extends Actor with MongoCodecs{
           }
         case _ => List.empty[MaterialNode]
       }
+    case UpdateMaterialNode(jsonValue) =>
+      decode[MaterialNode](jsonValue) match {
+        case Right(node) =>
+          DatabaseManager.GetMongoConnection() match {
+            case Some(mongo) =>
+              val nodes: MongoCollection[MaterialNode] = mongo.getCollection(collectionNodes)
+              val nodesHistory: MongoCollection[MaterialNodeHistory] = mongo.getCollection(collectionNodesHistory)
+              Await.result(nodes.find(new BasicDBObject("data", node.data)).first().toFuture(), Duration(30, SECONDS)) match {
+                case oldValue: MaterialNode =>
+                  Await.result(nodesHistory.insertOne(MaterialNodeHistory(oldValue, node.user)).toFuture(), Duration(30, SECONDS))
+                  Await.result(nodes.deleteOne(new BasicDBObject("data", node.data)).toFuture(), Duration(30, SECONDS))
+                case _ =>
+              }
+              if (node.removed == 0){
+                Await.result(nodes.insertOne(node).toFuture(), Duration(30, SECONDS))
+              }
+            case _ =>
+          }
+        case Left(value) =>
+      }
+      sender() ! Json.toJson("success")
     case GetMaterials(project) =>
       DatabaseManager.GetMongoConnection() match {
         case Some(mongo) =>
