@@ -42,8 +42,6 @@ trait MongoCodecs {
   implicit val DrawingDecoder: Decoder[Drawing] = deriveDecoder[Drawing]
   implicit val DrawingEncoder: Encoder[Drawing] = deriveEncoder[Drawing]
 
-  implicit val DrawingInfoDecoder: Decoder[DrawingInfo] = deriveDecoder[DrawingInfo]
-  implicit val DrawingInfoEncoder: Encoder[DrawingInfo] = deriveEncoder[DrawingInfo]
 
   implicit val MaterialNodeHistoryDecoder: Decoder[MaterialNodeHistory] = deriveDecoder[MaterialNodeHistory]
   implicit val MaterialNodeHistoryEncoder: Encoder[MaterialNodeHistory] = deriveEncoder[MaterialNodeHistory]

@@ -90,7 +90,7 @@ class DatabaseManager extends Actor{
     ds = new HikariDataSource(config)
 
     configOracle.setDriverClassName("oracle.jdbc.driver.OracleDriver")
-    configOracle.setJdbcUrl("jdbc:oracle:thin:@office.nautic-rus.ru:1521:ORA3DB")
+    configOracle.setJdbcUrl("jdbc:oracle:thin:@office.nautic-rus.com:1521:ORA3DB")
     configOracle.setUsername("CN002")
     configOracle.setPassword("Whatab0utus")
     configOracle.setMaximumPoolSize(3)
