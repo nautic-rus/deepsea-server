@@ -46,7 +46,8 @@ object Issue{
         "archive_revision_files" -> x.archive_revision_files,
         "labor" -> x.labor,
         "checks" -> x.checks,
-        "ready" -> x.ready
+        "ready" -> x.ready,
+        "for_revision" -> x.for_revision
       )
       case _ => JsNull
     }
@@ -83,6 +84,7 @@ object Issue{
         delivered_date = (x \ "delivered_date").asOpt[Long].getOrElse(0)
         revision = (x \ "revision").asOpt[String].getOrElse("")
         ready = (x \ "ready").asOpt[String].getOrElse("000")
+        for_revision = (x \ "for_revision").asOpt[String].getOrElse("-")
       })
       case _ => JsSuccess (null)
     }
@@ -117,6 +119,7 @@ class Issue(var id: Int, var status: String, var project: String, var department
   var labor: Double = 0
   var checks: ListBuffer[IssueCheck] = ListBuffer.empty[IssueCheck]
   var ready: String = "000"
+  var for_revision: String = ""
   def toChildIssue: ChildIssue ={
     new ChildIssue(id, status, started_by, started_date, issue_type, name, assigned_to)
   }

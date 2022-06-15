@@ -802,6 +802,10 @@ class IssueManager extends Actor{
               case value: String => value
               case _ => ""
             }
+            for_revision = rs.getString("for_revision") match {
+              case value: String => value
+              case _ => "-"
+            }
             revision_files = getRevisionFiles(id)
             archive_revision_files = getRemovedRevisionFiles(id)
             labor = getIssueLabor(id)
@@ -976,6 +980,10 @@ class IssueManager extends Actor{
             ready = rs.getString("ready") match {
               case value: String => value
               case _ => ""
+            }
+            for_revision = rs.getString("for_revision") match {
+              case value: String => value
+              case _ => "-"
             }
           }
         }
