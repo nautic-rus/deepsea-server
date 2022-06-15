@@ -48,7 +48,6 @@ class RocketChatManager extends Actor{
         case Failure(exception) =>
           val jkk = 0
           println(exception)
-          sender() ! "error"
       })
     case _ => None
   }
