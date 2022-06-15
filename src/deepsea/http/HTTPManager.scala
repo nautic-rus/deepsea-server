@@ -23,6 +23,7 @@ import deepsea.files.classes.FileAttachment
 import deepsea.issues.IssueManager._
 import deepsea.materials.MaterialManager.{GetMaterialNodes, GetMaterials, GetWCDrawings, GetWCZones, GetWeightControl, SetWeightControl, UpdateMaterial, UpdateMaterialNode}
 import deepsea.mobile.MobileManager.{GetDrawingInfo, GetDrawings}
+import deepsea.rocket.RocketChatManager.SendNotification
 import deepsea.time.LicenseManager.GetForanLicenses
 import deepsea.time.TimeAndWeatherManager.GetTimeAndWeather
 import deepsea.time.TimeControlManager.GetUserTimeControl
@@ -338,7 +339,9 @@ class HTTPManager extends Actor{
       (post & path("setBestPlayer") & entity(as[String])){ (bestPlayer) =>
         askFor(ActorManager.fest, SetBestPlayer(bestPlayer))
       },
-
+      (get & path("sendNotificationToUser") & parameter("user") & parameter("message")){ (user, message) =>
+        askFor(ActorManager.rocket, SendNotification(user, message))
+      },
     )
   }
 
