@@ -43,10 +43,12 @@ class RocketChatManager extends Actor{
             val h1 = new RawHeader("X-User-Id", userId)
             val h2 = new RawHeader("X-Auth-Token", authToken)
             val postMessage = http.singleRequest(HttpRequest(method = HttpMethods.POST, uri = s"https://rocket.nautic-rus.com/api/v1/chat.postMessage", headers = List(h1, h2), entity = HttpEntity(ContentTypes.`application/json`, "{\"channel\":\"@" + msg.toUser + "\",\"text\":\"" + msg.message + "\"}")))
+            sender() ! "success"
           }
         case Failure(exception) =>
           val jkk = 0
           println(exception)
+          sender() ! "error"
       })
     case _ => None
   }
