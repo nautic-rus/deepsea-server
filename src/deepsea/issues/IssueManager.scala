@@ -324,7 +324,7 @@ class IssueManager extends Actor{
     GetConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val rs = s.executeQuery(s"select * from issue_departments")
+        val rs = s.executeQuery(s"select * from issue_departments order by id")
         while (rs.next()){
           res += rs.getString("name")
         }
