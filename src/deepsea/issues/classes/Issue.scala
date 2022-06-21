@@ -121,6 +121,8 @@ class Issue(var id: Int, var status: String, var project: String, var department
   var ready: String = "000"
   var for_revision: String = ""
   def toChildIssue: ChildIssue ={
-    new ChildIssue(id, status, started_by, started_date, issue_type, name, assigned_to)
+    new ChildIssue(id, status, started_by, started_date, issue_type, name, assigned_to){
+      responsible = responsible
+    }
   }
 }
