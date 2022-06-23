@@ -1370,7 +1370,7 @@ class IssueManager extends Actor{
         val s = c.createStatement()
         s.execute(s"delete from issue_check where issue_id = $issue_id")
         checks.foreach(check => {
-          s.execute(s"insert into issue_check (issue_id, check_description, user_login, check_date, check_status, check_group, id, sort) values ($issue_id, '${check.check_description}', '', 0, 0, '${check.check_group}', ${check.id}, ${check.sort})")
+          s.execute(s"insert into issue_check (issue_id, check_description, user_login, check_date, check_status, check_group, id, sort) values ($issue_id, '${check.check_description}', '${check.user}', '${check.check_date}', '${check.check_status}', '${check.check_group}', ${check.id}, ${check.sort})")
         })
         s.close()
         c.close()
