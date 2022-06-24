@@ -342,6 +342,17 @@ class HTTPManager extends Actor{
       (get & path("sendNotificationToUser") & parameter("user") & parameter("message")){ (user, message) =>
         askFor(ActorManager.rocket, SendNotification(user, message))
       },
+
+      (get & path("messageReactions")){
+        askFor(ActorManager.issue, GetMessageReactions())
+      },
+      (post & path("setMessageReaction") & entity(as[String])){ (reaction) =>
+        askFor(ActorManager.issue, SetMessageReaction(reaction))
+      },
+      (get & path("deleteMessageReaction") & parameter("id")){ (id) =>
+        askFor(ActorManager.issue, DeleteMessageReaction(id.toIntOption.getOrElse(0)))
+      },
+
     )
   }
 

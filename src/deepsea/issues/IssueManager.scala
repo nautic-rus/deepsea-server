@@ -6,16 +6,25 @@ import akka.util.Timeout
 import deepsea.App
 import deepsea.actors.ActorManager
 import deepsea.auth.AuthManager.{GetUser, User}
-import deepsea.database.DatabaseManager
+import deepsea.database.{DatabaseManager, MongoCodecs}
 import deepsea.database.DatabaseManager.GetConnection
 import deepsea.files.FileManager.{TreeFile, treeFilesCollection}
 import deepsea.files.classes.FileAttachment
 import deepsea.issues.IssueManager._
 import deepsea.issues.classes.{ChildIssue, Issue, IssueAction, IssueCheck, IssueHistory, IssueMessage, IssuePeriod, IssueType, IssueView, SfiCode}
 import deepsea.rocket.RocketChatManager.SendNotification
-import org.mongodb.scala.Document
+import org.mongodb.scala.{Document, MongoCollection}
 import play.api.libs.json.{JsValue, Json, OWrites}
-
+import io.circe.parser._
+import io.circe.{Decoder, Encoder}
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
+import io.circe.syntax.EncoderOps
+import io.circe._
+import io.circe.generic.JsonCodec
+import io.circe.parser._
+import io.circe.generic.auto._
+import io.circe.syntax._
+import io.circe.generic.semiauto._
 import java.util.Date
 import java.util.concurrent.TimeUnit
 import scala.collection.mutable.ListBuffer
@@ -61,6 +70,10 @@ object IssueManager{
   case class UpdateIssueCheck(issue_id: String, user: String, check_description: String, check_group: String, check_status: String)
   case class GetNestingFiles()
   case class GetAmountTask(project: String, department: String, status: String)
+  case class MessageReaction(message_id: Int, reaction_icon: String, user_reacted: String, date_reacted: Long)
+  case class GetMessageReactions()
+  case class SetMessageReaction(jsValue: String)
+  case class DeleteMessageReaction(id: Int)
 
   case class IssueDef(id: String, issueTypes: List[String], issueProjects: List[String])
   implicit val writesIssueDef: OWrites[IssueDef] = Json.writes[IssueDef]
@@ -77,7 +90,7 @@ object IssueManager{
 
 
 }
-class IssueManager extends Actor{
+class IssueManager extends Actor with MongoCodecs {
   implicit val timeout: Timeout = Timeout(30, TimeUnit.SECONDS)
 
   override def receive: Receive = {
@@ -212,6 +225,11 @@ class IssueManager extends Actor{
     case GetAmountTask(project, departments, status) => None
     //request amount of task
     //sender() ! Json.toJson(getAmountTask(project, departments, status))
+    case GetMessageReactions() => getMessageReactions.asJson.noSpaces
+    case SetMessageReaction(jsValue: String) => setMessageReaction(jsValue)
+    case DeleteMessageReaction(id: Int) =>
+      deleteMessageReaction(id)
+      sender() ! "success".asJson.noSpaces
     case _ => None
   }
 
@@ -385,6 +403,17 @@ class IssueManager extends Actor{
           result = rs.getInt("id")
         }
         rs.close()
+        c.close()
+      case _ =>
+    }
+    result
+  }
+  def updateIssueMessage(id: Int, message: IssueMessage): Int ={
+    var result = 0
+    GetConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        s.execute(s"update issue_messages set content = '${message.content}' where id = $id")
         c.close()
       case _ =>
     }
@@ -1413,6 +1442,53 @@ class IssueManager extends Actor{
       case _ =>
     }
     res
+  }
+
+  def setMessageReaction(jsValue: String): Unit ={
+    decode[MessageReaction](jsValue) match {
+      case Right(reaction) =>
+        GetConnection() match {
+          case Some(c) =>
+            val s = c.createStatement()
+            val date = new Date().getTime
+            s.execute(s"insert into message_reactions (message_id, reaction_icon, user_reacted, date_reacted) values (${reaction.message_id}, '${reaction.reaction_icon}', '${reaction.user_reacted}', ${date})")
+            s.close()
+            c.close()
+          case _ =>
+        }
+      case Left(value) =>
+    }
+  }
+  def deleteMessageReaction(reaction_id: Int): Unit ={
+    GetConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        s.execute(s"delete from message_reactions where id = ${reaction_id}")
+        s.close()
+        c.close()
+      case _ =>
+    }
+  }
+  def getMessageReactions: List[MessageReaction] ={
+    val res = ListBuffer.empty[MessageReaction]
+    GetConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val rs = s.executeQuery(s"select * from message_reactions")
+        while (rs.next()){
+          res += MessageReaction(
+            rs.getInt("message_id"),
+            rs.getString("reaction_icon"),
+            rs.getString("user_reacted"),
+            rs.getLong("date_reacted")
+          )
+        }
+        rs.close()
+        s.close()
+        c.close()
+      case _ =>
+    }
+    res.toList
   }
 
 }
