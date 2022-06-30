@@ -69,8 +69,8 @@ class MobileManager extends Actor with MongoCodecs{
             val drawing = drawings.head
             sender() ! DrawingInfo(
               drawingName,
-              drawing.descr,
               drawing.name,
+              drawing.descr,
               drawing.rev,
               drawing.user,
               drawing.date,
