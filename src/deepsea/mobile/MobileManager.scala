@@ -65,21 +65,21 @@ class MobileManager extends Actor with MongoCodecs{
             }
           }
 
-//          if (drawings.nonEmpty){
-//            val drawing = drawings.head
-//            sender() ! DrawingInfo(
-//              drawingName,
-//              drawing.descr,
-//              drawing.name,
-//              drawing.rev,
-//              drawing.user,
-//              drawing.date,
-//              oriz
-//            ).asJson.noSpaces
-//          }
-//          else{
-//            sender() ! "not found"
-//          }
+          if (drawings.nonEmpty){
+            val drawing = drawings.head
+            sender() ! DrawingInfo(
+              drawingName,
+              drawing.descr,
+              drawing.name,
+              drawing.rev,
+              drawing.user,
+              drawing.date,
+              oriz
+            ).asJson.noSpaces
+          }
+          else{
+            sender() ! "not found"
+          }
 
         case _ => sender() ! "not found"
       }

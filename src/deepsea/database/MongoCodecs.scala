@@ -50,6 +50,9 @@ trait MongoCodecs {
   implicit val MessageReactionDecoder: Decoder[MessageReaction] = deriveDecoder[MessageReaction]
   implicit val MessageReactionEncoder: Encoder[MessageReaction] = deriveEncoder[MessageReaction]
 
+  implicit val DrawingInfoDecoder: Decoder[DrawingInfo] = deriveDecoder[DrawingInfo]
+  implicit val DrawingInfoEncoder: Encoder[DrawingInfo] = deriveEncoder[DrawingInfo]
+
 
   def codecRegistry: CodecRegistry = fromRegistries(fromProviders(
     classOf[Material],
