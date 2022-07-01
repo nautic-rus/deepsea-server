@@ -197,7 +197,7 @@ class AuthManager extends Actor{
     GetConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        s.execute(s"update users set shared_access = '$with_user' where login = '$user'")
+        s.execute(s"update users set shared_access = '$user' where login = '$with_user'")
         s.close()
         c.close()
       case _ => None
