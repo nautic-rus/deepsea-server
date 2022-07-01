@@ -352,6 +352,9 @@ class HTTPManager extends Actor{
       (get & path("deleteMessageReaction") & parameter("id")){ (id) =>
         askFor(ActorManager.issue, DeleteMessageReaction(id.toIntOption.getOrElse(0)))
       },
+      (get & path("ping")){
+        complete(HttpEntity("pong"))
+      },
 
     )
   }
