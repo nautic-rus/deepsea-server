@@ -4,6 +4,7 @@ import deepsea.files.FileManager.{TreeDirectory, TreeFile, TreeFileHistory}
 import deepsea.issues.IssueManager.MessageReaction
 import deepsea.materials.MaterialManager.{Material, MaterialHistory, MaterialNode, MaterialNodeHistory, WCNumberName, WeightControl}
 import deepsea.mobile.MobileManager.{Drawing, DrawingInfo, OrizInfo}
+import deepsea.time.TimeControlManager.UserWatch
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.{Decoder, Encoder}
 import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}
@@ -53,6 +54,9 @@ trait MongoCodecs {
   implicit val DrawingInfoDecoder: Decoder[DrawingInfo] = deriveDecoder[DrawingInfo]
   implicit val DrawingInfoEncoder: Encoder[DrawingInfo] = deriveEncoder[DrawingInfo]
 
+  implicit val UserWatchDecoder: Decoder[UserWatch] = deriveDecoder[UserWatch]
+  implicit val UserWatchEncoder: Encoder[UserWatch] = deriveEncoder[UserWatch]
+
 
   def codecRegistry: CodecRegistry = fromRegistries(fromProviders(
     classOf[Material],
@@ -66,5 +70,6 @@ trait MongoCodecs {
     classOf[Drawing],
     classOf[DrawingInfo],
     classOf[MaterialNodeHistory],
+    classOf[UserWatch],
   ), DEFAULT_CODEC_REGISTRY)
 }

@@ -36,7 +36,7 @@ class ActorStartupManager extends Actor{
       ActorManager.materials = system.actorOf(RoundRobinPool(1).props(Props[MaterialManager]))
       ActorManager.rocket = system.actorOf(RoundRobinPool(1).props(Props[RocketChatManager]))
       ActorManager.license = system.actorOf(RoundRobinPool(1).props(Props[LicenseManager]))
-      ActorManager.timeControl = system.actorOf(RoundRobinPool(1).props(Props[TimeControlManager]))
+      ActorManager.timeControl = system.actorOf(RoundRobinPool(5).props(Props[TimeControlManager]))
       ActorManager.timeAndWeather = system.actorOf(RoundRobinPool(1).props(Props[TimeAndWeatherManager]))
       ActorManager.fest = system.actorOf(RoundRobinPool(3).props(Props[FestManager]))
       ActorManager.mobile = system.actorOf(RoundRobinPool(1).props(Props[MobileManager]))

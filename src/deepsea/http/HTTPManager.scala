@@ -26,7 +26,7 @@ import deepsea.mobile.MobileManager.{GetDrawingInfo, GetDrawings}
 import deepsea.rocket.RocketChatManager.SendNotification
 import deepsea.time.LicenseManager.GetForanLicenses
 import deepsea.time.TimeAndWeatherManager.GetTimeAndWeather
-import deepsea.time.TimeControlManager.GetUserTimeControl
+import deepsea.time.TimeControlManager.{AddUserWatch, GetUserTimeControl, GetUserWatches}
 import org.apache.log4j.{LogManager, Logger}
 import play.api.libs.json.{JsValue, Json}
 
@@ -354,6 +354,13 @@ class HTTPManager extends Actor{
       },
       (get & path("ping")){
         complete(HttpEntity("pong"))
+      },
+
+      (post & path("grabInfo") & entity(as[String])){ (data) =>
+        askFor(ActorManager.timeControl, AddUserWatch(data))
+      },
+      (get & path("userWatches")){
+        askFor(ActorManager.timeControl, GetUserWatches())
       },
 
     )
