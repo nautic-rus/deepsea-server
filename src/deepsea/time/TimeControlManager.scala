@@ -47,7 +47,7 @@ class TimeControlManager extends Actor with MongoCodecs{
         DatabaseManager.GetMongoConnection() match {
           case Some(mongo) =>
             val userWatches: MongoCollection[UserWatch] = mongo.getCollection("userWatches")
-            Await.result(userWatches.replaceOne(and(equal("user", value.user)), value, ReplaceOptions().upsert(true)).toFuture(), Duration(30, SECONDS))
+            Await.result(userWatches.replaceOne(and(equal("user", value.user)), value, org.mongodb.scala.model.ReplaceOptions().upsert(true)).toFuture(), Duration(30, SECONDS))
 //
 //            Await.result(userWatches.deleteMany(and(equal("user", value.user))).toFuture(), Duration(30, SECONDS))
 //            Await.result(userWatches.insertOne(value).toFuture(), Duration(30, SECONDS))
