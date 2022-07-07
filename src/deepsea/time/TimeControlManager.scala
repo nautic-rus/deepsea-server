@@ -25,7 +25,7 @@ object TimeControlManager {
   case class AddUserWatch(json: String)
   case class GetUserWatches()
 
-  case class UserWatch(user: String, activity: Long, image: String)
+  case class UserWatch(user: String, var activity: Long, image: String)
 
   case class TimeControlInterval(userId: String, startTime: Long, endTime: Long, startDate: Long, endDate: Long, addDoor: Int = -1, closeDoor: Int = -1)
   implicit val writesTimeControlInterval: OWrites[TimeControlInterval] = Json.writes[TimeControlInterval]
@@ -46,6 +46,7 @@ class TimeControlManager extends Actor with MongoCodecs{
       case Right(value) =>
         DatabaseManager.GetMongoConnection() match {
           case Some(mongo) =>
+            value.activity = new Date().getTime
             val userWatches: MongoCollection[UserWatch] = mongo.getCollection("userWatches")
             Await.result(userWatches.replaceOne(and(equal("user", value.user)), value, org.mongodb.scala.model.ReplaceOptions().upsert(true)).toFuture(), Duration(30, SECONDS))
 //
