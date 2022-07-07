@@ -2,6 +2,7 @@ package deepsea.time
 
 import akka.actor.Actor
 import com.mongodb.BasicDBObject
+import com.mongodb.client.model.{ReplaceOptions, UpdateOptions}
 import deepsea.database.DatabaseManager.{GetConnection, GetFireBaseConnection}
 import deepsea.database.{DatabaseManager, MongoCodecs}
 import deepsea.files.FileManager.{TreeDirectory, treeFileDirectoriesCollection}
@@ -12,6 +13,7 @@ import play.api.libs.json.{Json, OWrites, __}
 import io.circe.parser.decode
 import io.circe.syntax.EncoderOps
 import org.mongodb.scala.model.Filters._
+import org.mongodb.scala.model.ReplaceOptions
 
 import java.util.Date
 import scala.collection.mutable.ListBuffer
@@ -45,8 +47,10 @@ class TimeControlManager extends Actor with MongoCodecs{
         DatabaseManager.GetMongoConnection() match {
           case Some(mongo) =>
             val userWatches: MongoCollection[UserWatch] = mongo.getCollection("userWatches")
-            Await.result(userWatches.deleteMany(and(equal("user", value.user))).toFuture(), Duration(30, SECONDS))
-            Await.result(userWatches.insertOne(value).toFuture(), Duration(30, SECONDS))
+            Await.result(userWatches.replaceOne(and(equal("user", value.user)), value, ReplaceOptions().upsert(true)).toFuture(), Duration(30, SECONDS))
+//
+//            Await.result(userWatches.deleteMany(and(equal("user", value.user))).toFuture(), Duration(30, SECONDS))
+//            Await.result(userWatches.insertOne(value).toFuture(), Duration(30, SECONDS))
           case _ =>
         }
       case Left(value) =>
