@@ -1239,7 +1239,9 @@ class IssueManager extends Actor with MongoCodecs {
             rs.getString("upload_user"),
             rs.getString("issue_revision"),
             rs.getString("group_name"),
-          )
+          ){
+            issue_id = rs.getInt("issue_id")
+          }
         }
         rs.close()
         s.close()
