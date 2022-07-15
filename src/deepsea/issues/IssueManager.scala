@@ -126,7 +126,7 @@ class IssueManager extends Actor with MongoCodecs {
             case Some(update) =>
               if (updateMessage.contains("status")){
                 List(update.assigned_to, update.responsible, update.started_by).filter(_ != user).distinct.foreach(u => {
-                  ActorManager.rocket ! SendNotification(u, s"Изменился статус на '${update.status}' у задачи " + s"<${App.HTTPServer.Url}/?taskId=${issue.id}|${issue.name}>")
+                  ActorManager.rocket ! SendNotification(u, s"Изменился статус на '${update.status}' у задачи " + s"<${App.HTTPServer.Url}/?taskId=${issue.id}|${(issue.doc_number + " " + issue.name).trim}>")
                 })
               }
               else if (updateMessage.contains("edit")){
