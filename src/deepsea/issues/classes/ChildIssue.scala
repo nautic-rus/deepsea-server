@@ -30,17 +30,16 @@ object ChildIssue{
         issue_type = (x \ "issue_type").asOpt[String].getOrElse(""),
         name = (x \ "name").asOpt[String].getOrElse(""),
         assigned_to = (x \ "assigned_to").asOpt[String].getOrElse(""),
-        responsible = (x \ "responsible").asOpt[String].getOrElse("")
+        responsible = (x \ "responsible").asOpt[String].getOrElse(""),
+        doc_number = (x \ "doc_number").asOpt[String].getOrElse("")
       ){
         last_update = (x \ "last_update").asOpt[String].getOrElse("")
-        doc_number = (x \ "doc_number").asOpt[String].getOrElse("")
       })
       case _ => JsSuccess (null)
     }
   }
 }
 class ChildIssue(var id: Int, var status: String, var started_by: String,
-            var started_date: Long, var issue_type: String, var name: String, var assigned_to: String, var responsible: String) {
+            var started_date: Long, var issue_type: String, var name: String, var assigned_to: String, var responsible: String, var doc_number: String) {
   var last_update: String = ""
-  var doc_number: String = ""
 }
