@@ -61,7 +61,24 @@ object MaterialManager{
                        note: String = "",
                        comment: String = "",
                        coefficient: Double = 1,
-                       id: String = UUID.randomUUID().toString)
+                       id: String = UUID.randomUUID().toString,
+                       translations: List[MaterialTranslation] = List.empty[MaterialTranslation],
+                       itt: Int = 0,
+                       approved: Int = 0) {
+    def name(lang: String = "en"): String = {
+      translations.find(_.lang == lang) match {
+        case Some(translation) => translation.name
+        case _ => name
+      }
+    }
+    def description(lang: String = "en"): String = {
+      translations.find(_.lang == lang) match {
+        case Some(translation) => translation.description
+        case _ => description
+      }
+    }
+  }
+  case class MaterialTranslation(lang: String, name: String, description: String)
   case class MaterialNode(label: String, data: String, user: String, date: Long)
   case class MaterialNodeHistory(node: MaterialNode, user: String, date: Long = new Date().getTime)
 
