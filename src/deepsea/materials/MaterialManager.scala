@@ -93,7 +93,7 @@ class MaterialManager extends Actor with MongoCodecs{
   val collectionHistory = "materials-n-h"
 
   override def preStart(): Unit = {
-    self ! GetMaterials("P701")
+    self ! GetMaterials("200101")
   }
   override def receive: Receive = {
     case GetMaterialNodes() =>
@@ -127,7 +127,14 @@ class MaterialManager extends Actor with MongoCodecs{
       DatabaseManager.GetMongoConnection() match {
         case Some(mongo) =>
           Await.result(mongo.getCollection(collection).find[Material](new BasicDBObject("projects", project)).toFuture(), Duration(30, SECONDS)) match {
-            case dbMaterials => sender() ! dbMaterials.toList.asJson.noSpaces
+            case dbMaterials =>
+              val errors = ListBuffer.empty[String]
+              dbMaterials.toList.groupBy(_.code).toList.foreach(g => {
+                if (g._2.length > 1){
+                  errors += g._1
+                }
+              })
+              sender() ! dbMaterials.toList.asJson.noSpaces
             case _ => List.empty[Material]
           }
         case _ => List.empty[Material]

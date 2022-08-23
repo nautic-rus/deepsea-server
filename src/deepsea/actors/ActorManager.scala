@@ -25,6 +25,7 @@ object ActorManager {
   var timeAndWeather: ActorRef = _
   var fest: ActorRef = _
   var mobile: ActorRef = _
+  var backups: ActorRef = _
 
   def init(): Unit ={
     system = ActorSystem()
