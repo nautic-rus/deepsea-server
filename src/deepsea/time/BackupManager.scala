@@ -3,7 +3,9 @@ package deepsea.time
 import akka.actor.{Actor, ActorSystem}
 import akka.http.scaladsl.{Http, HttpExt}
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
+import deepsea.actors.ActorManager
 import deepsea.database.DatabaseManager
+import deepsea.mail.MailManager.Mail
 import deepsea.time.BackupManager.BackupForan
 import deepsea.time.TimeAndWeatherManager.{SetTimeAndWeather, Weather}
 
@@ -29,7 +31,9 @@ class BackupManager extends Actor{
   override def receive: Receive = {
     case BackupForan() =>
       if (Calendar.getInstance().get(Calendar.HOUR_OF_DAY) == 2){
+        ActorManager.mail ! Mail("Bogdan Isaev", "redeeming.fury@gmail.com", "Foran Backup Notification", "Foran Backup started")
         backupForan()
+        ActorManager.mail ! Mail("Bogdan Isaev", "redeeming.fury@gmail.com", "Foran Backup Notification", "Foran Backup completed")
       }
   }
   def backupForan(): Unit ={

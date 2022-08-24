@@ -11,13 +11,12 @@ object MailManager{
 }
 class MailManager extends Actor{
   override def preStart(): Unit = {
-//    self ! Mail("Bogdan Isaev", "redeeming.fury@gmail.com", "subject", "Some message")
+    //self ! Mail("Bogdan Isaev", "redeeming.fury@gmail.com", "subject", "Some message")
   }
   override def receive: Receive = {
     case mailInfo: Mail =>
       val mailer = MailerBuilder
-        .withSMTPServer("mail.nautic-rus.com", 25, "noreply@nautic-rus.com", "9W5z]ateUZ")
-        .withTransportStrategy(TransportStrategy.SMTP)
+        .withSMTPServer("mail.nautic-rus.com", 587, "noreply@nautic-rus.com", "9W5z]ateUZ")
         .withDebugLogging(true)
         .buildMailer()
 
