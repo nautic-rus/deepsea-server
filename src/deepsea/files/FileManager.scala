@@ -9,6 +9,7 @@ import deepsea.files.FileManager._
 import deepsea.files.classes.FileAttachment
 import deepsea.issues.classes.IssueMessage
 import deepsea.materials.MaterialManager.{Material, MaterialHistory, MaterialNode}
+import deepsea.materials.MaterialManagerHelper
 import io.circe.parser.decode
 import io.circe.syntax.EncoderOps
 import org.aarboard.nextcloud.api.NextcloudConnector
@@ -38,20 +39,24 @@ object FileManager{
   case class GetTreeDirectories()
   case class SetTreeDirectory(value: String)
 
+  case class DocumentDirectories(project: String, department: String, directories: List[String])
+
   val treeFilesCollection = "tree-files"
   val treeFilesHistoryCollection: String = treeFilesCollection + "-history"
 
   val treeFileDirectories = "tree-directories"
   val treeFileDirectoriesCollection: String = treeFileDirectories + "-history"
 }
-class FileManager extends Actor with MongoCodecs{
+class FileManager extends Actor with MongoCodecs with MaterialManagerHelper with FileManagerHelper {
+
+  override def preStart(): Unit = {
+    createMaterialDirectory("200101", "MTLPIPSTLNON0016")
+  }
+
   override def receive: Receive = {
     case CreateFile(fileName, stream, filePath, login, password) =>
-//      sender() ! Json.toJson(new FileAttachment(fileName, uploadFile(fileName, stream, filePath, login, password)))
-    case GetPdSpList() =>
-      sender() ! getPDSPList
 
-
+    case GetPdSpList() => sender() ! getPDSPList
     case GetTreeFiles() => sender() ! getTreeFiles.asJson.noSpaces
     case SetTreeFiles(value) =>
       setTreeFiles(value)
@@ -66,6 +71,7 @@ class FileManager extends Actor with MongoCodecs{
 
     case _ => None
   }
+
   def uploadFile(fileName: String, stream: InputStream, filePath: String, login: String, password: String): String ={
     val nextCloud = new NextcloudConnector("cloud.nautic-rus.com", true, 443, login, password)
     var path = ""
@@ -145,7 +151,6 @@ class FileManager extends Actor with MongoCodecs{
       case Left(value) =>
     }
   }
-
   def getTreeDirectories: List[TreeDirectory] ={
     DatabaseManager.GetMongoConnection() match {
       case Some(mongo) =>
@@ -166,6 +171,99 @@ class FileManager extends Actor with MongoCodecs{
           case _ =>
         }
       case Left(value) =>
+    }
+  }
+
+
+  def createMaterialDirectory(project: String, code: String): String = {
+    val cloud = new NextcloudConnector(App.Cloud.Host, true, 443, App.Cloud.UserName, App.Cloud.Password)
+    val nodes = getNodes
+    val projectNames = getProjectNames
+    projectNames.find(_.rkd == project) match {
+      case Some(cloudPath) =>
+        val paths = ListBuffer.empty[String]
+        1.to(4).foreach(x => {
+          val nodePath = code.substring(0, 3 * x)
+          nodes.find(_.data == nodePath) match {
+            case Some(value) => paths += value.label
+            case _ => None
+          }
+        })
+        val sp = "/"
+        var path = cloudPath.cloud + sp + "Materials"
+        paths.foreach(p => {
+          path = path + sp + p
+          if (!cloud.folderExists(path)){
+            cloud.createFolder(path)
+          }
+        })
+        val res = App.Cloud.Protocol + "://" + App.Cloud.Host + "/apps/files/?dir=/" + path
+        res
+      case _ => s"ERROR: There is no defined cloud path for project $project"
+    }
+  }
+  def createDocumentDirectory(docNumber: String, department: String): String ={
+    val cloud = new NextcloudConnector(App.Cloud.Host, true, 443, App.Cloud.UserName, App.Cloud.Password)
+    val project = if (docNumber.contains("-")) docNumber.split("-").head else ""
+    getDocumentDirectories.find(_.project == project) match {
+      case Some(docDirectories) =>
+        getProjectNames.find(_.rkd == project) match {
+          case Some(cloudPath) =>
+            val sp = "/"
+            var path = cloudPath.cloud + sp + "Documents"
+            if (!cloud.folderExists(path)){
+              cloud.createFolder(path)
+            }
+            path = path + sp + department
+            if (!cloud.folderExists(path)){
+              cloud.createFolder(path)
+            }
+            path = path + sp + docNumber
+            if (!cloud.folderExists(path)){
+              cloud.createFolder(path)
+            }
+            docDirectories.directories.map(x => path + sp + x).foreach(d => {
+              if (!cloud.folderExists(d)){
+                cloud.createFolder(d)
+              }
+            })
+            path
+          case _ => s"ERROR: There is no defined cloud path for project $project"
+        }
+
+      case _ => "ERROR: There is no defined directories for this document"
+    }
+  }
+  def cloneDocumentFilesToCloud(docNumber: String, department: String): String ={
+    val cloud = new NextcloudConnector(App.Cloud.Host, true, 443, App.Cloud.UserName, App.Cloud.Password)
+    val project = if (docNumber.contains("-")) docNumber.split("-").head else ""
+    getDocumentDirectories.find(_.project == project) match {
+      case Some(docDirectories) =>
+        getProjectNames.find(_.rkd == project) match {
+          case Some(cloudPath) =>
+            val sp = "/"
+            var path = cloudPath.cloud + sp + "Documents"
+            if (!cloud.folderExists(path)){
+              cloud.createFolder(path)
+            }
+            path = path + sp + department
+            if (!cloud.folderExists(path)){
+              cloud.createFolder(path)
+            }
+            path = path + sp + docNumber
+            if (!cloud.folderExists(path)){
+              cloud.createFolder(path)
+            }
+            docDirectories.directories.map(x => path + sp + x).foreach(d => {
+              if (!cloud.folderExists(d)){
+                cloud.createFolder(d)
+              }
+            })
+            path
+          case _ => s"ERROR: There is no defined cloud path for project $project"
+        }
+
+      case _ => "ERROR: There is no defined directories for this document"
     }
   }
 

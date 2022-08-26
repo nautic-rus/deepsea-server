@@ -78,6 +78,7 @@ object MaterialManager{
       }
     }
   }
+  case class ProjectName(id: String, rkd: String, pdsp: String, foran: String, cloud: String)
   case class MaterialTranslation(lang: String, name: String, description: String)
   case class MaterialNode(label: String, data: String, user: String, date: Long)
   case class MaterialNodeHistory(node: MaterialNode, user: String, date: Long = new Date().getTime)

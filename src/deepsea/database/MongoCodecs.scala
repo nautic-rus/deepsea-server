@@ -1,8 +1,8 @@
 package deepsea.database
 
-import deepsea.files.FileManager.{TreeDirectory, TreeFile, TreeFileHistory}
+import deepsea.files.FileManager.{DocumentDirectories, TreeDirectory, TreeFile, TreeFileHistory}
 import deepsea.issues.IssueManager.MessageReaction
-import deepsea.materials.MaterialManager.{Material, MaterialHistory, MaterialNode, MaterialNodeHistory, MaterialTranslation, WCNumberName, WeightControl}
+import deepsea.materials.MaterialManager.{Material, MaterialHistory, MaterialNode, MaterialNodeHistory, MaterialTranslation, ProjectName, WCNumberName, WeightControl}
 import deepsea.mobile.MobileManager.{Drawing, DrawingInfo, OrizInfo}
 import deepsea.time.TimeControlManager.UserWatch
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
@@ -57,9 +57,14 @@ trait MongoCodecs {
   implicit val UserWatchDecoder: Decoder[UserWatch] = deriveDecoder[UserWatch]
   implicit val UserWatchEncoder: Encoder[UserWatch] = deriveEncoder[UserWatch]
 
-
   implicit val MaterialTranslationDecoder: Decoder[MaterialTranslation] = deriveDecoder[MaterialTranslation]
   implicit val MaterialTranslationEncoder: Encoder[MaterialTranslation] = deriveEncoder[MaterialTranslation]
+
+  implicit val ProjectNameDecoder: Decoder[ProjectName] = deriveDecoder[ProjectName]
+  implicit val ProjectNameEncoder: Encoder[ProjectName] = deriveEncoder[ProjectName]
+
+  implicit val DocumentDirectoriesDecoder: Decoder[DocumentDirectories] = deriveDecoder[DocumentDirectories]
+  implicit val DocumentDirectoriesEncoder: Encoder[DocumentDirectories] = deriveEncoder[DocumentDirectories]
 
 
 
@@ -77,5 +82,7 @@ trait MongoCodecs {
     classOf[MaterialNodeHistory],
     classOf[UserWatch],
     classOf[MaterialTranslation],
+    classOf[ProjectName],
+    classOf[DocumentDirectories],
   ), DEFAULT_CODEC_REGISTRY)
 }

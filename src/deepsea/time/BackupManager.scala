@@ -31,9 +31,10 @@ class BackupManager extends Actor{
   override def receive: Receive = {
     case BackupForan() =>
       if (Calendar.getInstance().get(Calendar.HOUR_OF_DAY) == 2){
-        ActorManager.mail ! Mail("Bogdan Isaev", "redeeming.fury@gmail.com", "Foran Backup Notification", "Foran Backup started")
+        val start = new Date().toString
         backupForan()
-        ActorManager.mail ! Mail("Bogdan Isaev", "redeeming.fury@gmail.com", "Foran Backup Notification", "Foran Backup completed")
+        val complete = new Date().toString
+        ActorManager.mail ! Mail("Bogdan Isaev", "redeeming.fury@gmail.com", "Foran Backup Notification", s"Foran Backup started at $start and successfully completed at $complete")
       }
   }
   def backupForan(): Unit ={
