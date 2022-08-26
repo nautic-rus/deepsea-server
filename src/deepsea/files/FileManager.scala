@@ -191,14 +191,22 @@ class FileManager extends Actor with MongoCodecs with MaterialManagerHelper with
         })
         val sp = "/"
         var path = cloudPath.cloud + sp + "Materials"
+        var pathFull = path
         paths.foreach(p => {
-          path = path + sp + p
-          if (!cloud.folderExists(path)){
-            cloud.createFolder(path)
-          }
+          pathFull = pathFull + sp + p
         })
-        val res = App.Cloud.Protocol + "://" + App.Cloud.Host + "/apps/files/?dir=/" + path
-        res
+        if (cloud.folderExists(path)){
+          App.Cloud.Protocol + "://" + App.Cloud.Host + "/apps/files/?dir=/" + pathFull
+        }
+        else{
+          paths.foreach(p => {
+            path = path + sp + p
+            if (!cloud.folderExists(path)){
+              cloud.createFolder(path)
+            }
+          })
+          App.Cloud.Protocol + "://" + App.Cloud.Host + "/apps/files/?dir=/" + pathFull
+        }
       case _ => s"ERROR: There is no defined cloud path for project $project"
     }
   }
