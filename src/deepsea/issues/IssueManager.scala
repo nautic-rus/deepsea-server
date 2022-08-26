@@ -131,12 +131,12 @@ class IssueManager extends Actor with MongoCodecs {
               }
               else if (updateMessage.contains("edit")){
                 List(update.assigned_to, update.responsible, update.started_by).filter(_ != user).distinct.foreach(u => {
-                  ActorManager.rocket ! SendNotification(u, s"Изменилась информация в задаче " + s"<${App.HTTPServer.Url}/?taskId=${issue.id}|${issue.name}>")
+                  ActorManager.rocket ! SendNotification(u, s"Изменилась информация в задаче " + s"<${App.HTTPServer.Url}/?taskId=${issue.id}|${(issue.doc_number + " " + issue.name).trim}>")
                 })
               }
               else {
                 List(update.assigned_to, update.responsible, update.started_by).filter(_ != user).distinct.foreach(u => {
-                  ActorManager.rocket ! SendNotification(u, s"Что-то поменялось в задаче " + s"<${App.HTTPServer.Url}/?taskId=${issue.id}|${issue.name}>")
+                  ActorManager.rocket ! SendNotification(u, s"Что-то поменялось в задаче " + s"<${App.HTTPServer.Url}/?taskId=${issue.id}|${(issue.doc_number + " " + issue.name).trim}>")
                 })
               }
               Json.toJson(update)
