@@ -18,7 +18,7 @@ import deepsea.actors.ActorManager
 import deepsea.actors.ActorStartupManager.HTTPManagerStarted
 import deepsea.auth.AuthManager.{GetUsers, Login, ShareRights}
 import deepsea.fest.FestManager.{DeleteFestKaraoke, DeleteFestSauna, DeleteFestStories, GetBestPlayers, GetFestKaraoke, GetFestSauna, GetFestStories, GetMarks, GetTeamsWon, SetBestPlayer, SetFestKaraoke, SetFestSauna, SetFestStories, SetMarks, SetTeamsWon}
-import deepsea.files.FileManager.{CreateFile, GetPdSpList}
+import deepsea.files.FileManager.{CreateFile, CreateMaterialCloudDirectory, GetPdSpList}
 import deepsea.files.classes.FileAttachment
 import deepsea.issues.IssueManager._
 import deepsea.materials.MaterialManager.{GetMaterialNodes, GetMaterials, GetWCDrawings, GetWCZones, GetWeightControl, SetWeightControl, UpdateMaterial, UpdateMaterialNode}
@@ -363,6 +363,10 @@ class HTTPManager extends Actor{
         askFor(ActorManager.timeControl, GetUserWatches())
       },
 
+
+      (get & path("createMaterialCloudDirectory") & parameter("project") & parameter("code")){ (project, code) =>
+        askFor(ActorManager.files, CreateMaterialCloudDirectory(project, code))
+      },
     )
   }
 

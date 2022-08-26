@@ -27,6 +27,7 @@ import scala.concurrent.duration.{Duration, SECONDS}
 object FileManager{
   case class CreateFile(fileName: String, stream: InputStream, filePath: String, login: String, password: String)
   case class GetPdSpList()
+  case class CreateMaterialCloudDirectory(project: String, code: String)
 
   case class TreeFile(url: String, path: String, size: Long, name: String, created_by: String, date: Long)
   case class TreeFileHistory(user: String, date: Long, file: TreeFile)
@@ -68,6 +69,9 @@ class FileManager extends Actor with MongoCodecs with MaterialManagerHelper with
     case SetTreeDirectory(value) =>
       setTreeDirectory(value)
       sender() ! "success"
+    case CreateMaterialCloudDirectory(project, code) =>
+      sender() ! createMaterialDirectory(project, code).asJson.noSpaces
+
 
     case _ => None
   }
