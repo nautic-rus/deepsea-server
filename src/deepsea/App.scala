@@ -19,6 +19,8 @@ object App {
     val Directory = "/cloud"
     val Url: String = App.HTTPServer.RestUrl + "/files"
     val FestUrl: String = App.HTTPServer.FestRestUrl + "/files"
+    val UserName: String = "op"
+    val Password: String = "5ZMqdqMc"
   }
   def main(args: Array[String]): Unit = {
     org.apache.log4j.BasicConfigurator.configure()

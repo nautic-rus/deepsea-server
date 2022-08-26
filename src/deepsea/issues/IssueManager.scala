@@ -232,7 +232,6 @@ class IssueManager extends Actor with MongoCodecs {
       sender() ! "success".asJson.noSpaces
     case _ => None
   }
-
   def setDayCalendar(user: String, day: String, status: String): ListBuffer[IssueView] ={
     val res = ListBuffer.empty[IssueView]
     GetConnection() match {
