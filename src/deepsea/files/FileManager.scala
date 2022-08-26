@@ -199,7 +199,7 @@ class FileManager extends Actor with MongoCodecs with MaterialManagerHelper with
         paths.foreach(p => {
           pathFull = pathFull + sp + p
         })
-        if (cloud.folderExists(path)){
+        if (cloud.folderExists(pathFull)){
           App.Cloud.Protocol + "://" + App.Cloud.Host + "/apps/files/?dir=/" + pathFull
         }
         else{
