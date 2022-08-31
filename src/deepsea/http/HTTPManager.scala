@@ -18,7 +18,7 @@ import deepsea.actors.ActorManager
 import deepsea.actors.ActorStartupManager.HTTPManagerStarted
 import deepsea.auth.AuthManager.{GetUsers, Login, ShareRights}
 import deepsea.fest.FestManager.{DeleteFestKaraoke, DeleteFestSauna, DeleteFestStories, GetBestPlayers, GetFestKaraoke, GetFestSauna, GetFestStories, GetMarks, GetTeamsWon, SetBestPlayer, SetFestKaraoke, SetFestSauna, SetFestStories, SetMarks, SetTeamsWon}
-import deepsea.files.FileManager.{CreateFile, CreateMaterialCloudDirectory, GetPdSpList}
+import deepsea.files.FileManager.{CreateDocumentCloudDirectory, CreateFile, CreateMaterialCloudDirectory, GetFileFromCloud, GetPdSpList}
 import deepsea.files.classes.FileAttachment
 import deepsea.issues.IssueManager._
 import deepsea.materials.MaterialManager.{GetMaterialNodes, GetMaterials, GetWCDrawings, GetWCZones, GetWeightControl, SetWeightControl, UpdateMaterial, UpdateMaterialNode}
@@ -363,9 +363,24 @@ class HTTPManager extends Actor{
         askFor(ActorManager.timeControl, GetUserWatches())
       },
 
+      (get & path("dailyTasks")){
+        askFor(ActorManager.issue, GetDailyTasks())
+      },
+      (post & path("addDailyTask") & entity(as[String])){ (data) =>
+        askFor(ActorManager.issue, AddDailyTask(data))
+      },
+      (get & path("deleteDailyTask") & parameter("id")){ (id) =>
+        askFor(ActorManager.issue, DeleteDailyTask(id))
+      },
 
       (get & path("createMaterialCloudDirectory") & parameter("project") & parameter("code")){ (project, code) =>
         askFor(ActorManager.files, CreateMaterialCloudDirectory(project, code))
+      },
+      (get & path("createDocumentCloudDirectory") & parameter("id")){ (id) =>
+        askFor(ActorManager.files, CreateDocumentCloudDirectory(id))
+      },
+      (get & path("cloud") & parameter("path")){ (path) =>
+        askFor(ActorManager.files, GetFileFromCloud(path))
       },
     )
   }
@@ -378,6 +393,7 @@ class HTTPManager extends Actor{
         case response: String => complete(HttpEntity(response))
         case response: io.circe.Json => complete(HttpEntity(response.noSpaces))
         case response: HttpEntity.Strict => complete(response)
+//        case response: File => getFromFile(response)
         case _ => complete(HttpEntity(Json.toJson("Error: Wrong response from actor.").toString()))
       }
     }

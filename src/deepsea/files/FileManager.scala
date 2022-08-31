@@ -7,10 +7,11 @@ import deepsea.database.{DatabaseManager, MongoCodecs}
 import deepsea.database.DatabaseManager.GetConnection
 import deepsea.files.FileManager._
 import deepsea.files.classes.FileAttachment
+import deepsea.issues.IssueManagerHelper
 import deepsea.issues.classes.IssueMessage
 import deepsea.materials.MaterialManager.{Material, MaterialHistory, MaterialNode}
 import deepsea.materials.MaterialManagerHelper
-import io.circe.parser.decode
+import io.circe.parser.{decode, parse}
 import io.circe.syntax.EncoderOps
 import org.aarboard.nextcloud.api.NextcloudConnector
 import org.aarboard.nextcloud.api.filesharing.{SharePermissions, ShareType}
@@ -18,7 +19,7 @@ import org.mongodb.scala.MongoCollection
 import org.mongodb.scala.model.Filters.equal
 import play.api.libs.json.{JsValue, Json}
 
-import java.io.InputStream
+import java.io.{File, FileOutputStream, InputStream}
 import java.util.Date
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
@@ -28,6 +29,8 @@ object FileManager{
   case class CreateFile(fileName: String, stream: InputStream, filePath: String, login: String, password: String)
   case class GetPdSpList()
   case class CreateMaterialCloudDirectory(project: String, code: String)
+  case class CreateDocumentCloudDirectory(id: String)
+  case class GetFileFromCloud(path: String)
 
   case class TreeFile(url: String, path: String, size: Long, name: String, created_by: String, date: Long)
   case class TreeFileHistory(user: String, date: Long, file: TreeFile)
@@ -48,10 +51,11 @@ object FileManager{
   val treeFileDirectories = "tree-directories"
   val treeFileDirectoriesCollection: String = treeFileDirectories + "-history"
 }
-class FileManager extends Actor with MongoCodecs with MaterialManagerHelper with FileManagerHelper {
+class FileManager extends Actor with MongoCodecs with MaterialManagerHelper with FileManagerHelper with IssueManagerHelper {
 
   override def preStart(): Unit = {
-    createMaterialDirectory("200101", "MTLPIPSTLNON0016")
+    //createMaterialDirectory("200101", "MTLPIPSTLNON0016")
+    //createDocumentDirectory(25)
   }
 
   override def receive: Receive = {
@@ -71,7 +75,10 @@ class FileManager extends Actor with MongoCodecs with MaterialManagerHelper with
       sender() ! "success"
     case CreateMaterialCloudDirectory(project, code) =>
       sender() ! createMaterialDirectory(project, code).asJson.noSpaces
-
+    case CreateDocumentCloudDirectory(id) =>
+      sender() ! createDocumentDirectory(id.toIntOption.getOrElse(0)).asJson.noSpaces
+    case GetFileFromCloud(path) =>
+      sender() ! getFileFromCloud(path)
 
     case _ => None
   }
@@ -219,38 +226,60 @@ class FileManager extends Actor with MongoCodecs with MaterialManagerHelper with
       case _ => s"ERROR: There is no defined cloud path for project $project"
     }
   }
-  def createDocumentDirectory(docNumber: String, department: String): String ={
+  def createDocumentDirectory(id: Int): String ={
     val cloud = new NextcloudConnector(App.Cloud.Host, true, 443, App.Cloud.UserName, App.Cloud.Password)
-    val project = if (docNumber.contains("-")) docNumber.split("-").head else ""
-    getDocumentDirectories.find(_.project == project) match {
-      case Some(docDirectories) =>
-        getProjectNames.find(_.rkd == project) match {
-          case Some(cloudPath) =>
-            val sp = "/"
-            var path = cloudPath.cloud + sp + "Documents"
-            if (!cloud.folderExists(path)){
-              cloud.createFolder(path)
+    getIssueDetails(id) match {
+      case Some(issue) =>
+        getProjectNames.find(_.pdsp == issue.project) match {
+          case Some(projectName) =>
+            getDocumentDirectories.find(x => x.project == issue.project && x.department == issue.department) match {
+              case Some(docDirectories) =>
+                val sp = "/"
+                var path = projectName.cloud + sp + "Documents"
+                val paths = List(issue.department, issue.doc_number)
+                var pathFull = path
+                paths.foreach(p => {
+                  pathFull = pathFull + sp + p
+                })
+                if (cloud.folderExists(pathFull)){
+                  App.Cloud.Protocol + "://" + App.Cloud.Host + "/apps/files/?dir=/" + pathFull
+                }
+                else{
+                  paths.foreach(p => {
+                    path = path + sp + p
+                    if (!cloud.folderExists(path)){
+                      cloud.createFolder(path)
+                    }
+                  })
+                  docDirectories.directories.foreach(p => {
+                    path = pathFull + sp + p
+                    if (!cloud.folderExists(path)){
+                      cloud.createFolder(path)
+                    }
+                  })
+                  App.Cloud.Protocol + "://" + App.Cloud.Host + "/apps/files/?dir=/" + pathFull
+                }
+              case _ => "ERROR: There is no defined directories for this document"
             }
-            path = path + sp + department
-            if (!cloud.folderExists(path)){
-              cloud.createFolder(path)
-            }
-            path = path + sp + docNumber
-            if (!cloud.folderExists(path)){
-              cloud.createFolder(path)
-            }
-            docDirectories.directories.map(x => path + sp + x).foreach(d => {
-              if (!cloud.folderExists(d)){
-                cloud.createFolder(d)
-              }
-            })
-            path
-          case _ => s"ERROR: There is no defined cloud path for project $project"
+          case _ => s"ERROR: There is no defined cloud path for project ${issue.project}"
         }
-
-      case _ => "ERROR: There is no defined directories for this document"
+      case _ => s"ERROR: There is no issue found with id $id"
     }
   }
+  def getFileFromCloud(path: String): File ={
+    val cloud = new NextcloudConnector(App.Cloud.Host, true, 443, App.Cloud.UserName, App.Cloud.Password)
+    val fileName = new File(path).getName
+    val res = File.createTempFile(fileName, path.split(".").last)
+    if (cloud.fileExists(path)){
+      val in = cloud.downloadFile(path)
+      val out = new FileOutputStream(res)
+      out.write(in.readAllBytes())
+      out.close()
+      in.close()
+    }
+    res
+  }
+
   def cloneDocumentFilesToCloud(docNumber: String, department: String): String ={
     val cloud = new NextcloudConnector(App.Cloud.Host, true, 443, App.Cloud.UserName, App.Cloud.Password)
     val project = if (docNumber.contains("-")) docNumber.split("-").head else ""

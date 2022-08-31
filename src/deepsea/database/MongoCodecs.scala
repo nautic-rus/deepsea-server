@@ -1,7 +1,7 @@
 package deepsea.database
 
 import deepsea.files.FileManager.{DocumentDirectories, TreeDirectory, TreeFile, TreeFileHistory}
-import deepsea.issues.IssueManager.MessageReaction
+import deepsea.issues.IssueManager.{DailyTask, MessageReaction}
 import deepsea.materials.MaterialManager.{Material, MaterialHistory, MaterialNode, MaterialNodeHistory, MaterialTranslation, ProjectName, WCNumberName, WeightControl}
 import deepsea.mobile.MobileManager.{Drawing, DrawingInfo, OrizInfo}
 import deepsea.time.TimeControlManager.UserWatch
@@ -11,6 +11,8 @@ import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistr
 import org.bson.codecs.configuration.CodecRegistry
 import org.mongodb.scala.MongoClient.DEFAULT_CODEC_REGISTRY
 import org.mongodb.scala.bson.codecs.Macros._
+
+import java.util.Date
 
 trait MongoCodecs {
 
@@ -66,6 +68,8 @@ trait MongoCodecs {
   implicit val DocumentDirectoriesDecoder: Decoder[DocumentDirectories] = deriveDecoder[DocumentDirectories]
   implicit val DocumentDirectoriesEncoder: Encoder[DocumentDirectories] = deriveEncoder[DocumentDirectories]
 
+  implicit val DailyTaskDecoder: Decoder[DailyTask] = deriveDecoder[DailyTask]
+  implicit val DailyTaskEncoder: Encoder[DailyTask] = deriveEncoder[DailyTask]
 
 
   def codecRegistry: CodecRegistry = fromRegistries(fromProviders(
@@ -84,5 +88,6 @@ trait MongoCodecs {
     classOf[MaterialTranslation],
     classOf[ProjectName],
     classOf[DocumentDirectories],
+    classOf[DailyTask],
   ), DEFAULT_CODEC_REGISTRY)
 }

@@ -12,6 +12,7 @@ object FileAttachment{
         author = (x \ "author").asOpt[String].getOrElse(""),
         revision = (x \ "revision").asOpt[String].getOrElse(""),
         group = (x \ "group").asOpt[String].getOrElse(""),
+        cloud = (x \ "cloud").asOpt[Int].getOrElse(0),
       ))
       case _ => JsSuccess(null)
     }
@@ -27,13 +28,14 @@ object FileAttachment{
         "group" -> x.group,
         "issue_id" -> x.issue_id,
         "removed_date" -> x.removed_date,
-        "removed_by" -> x.removed_by
+        "removed_by" -> x.removed_by,
+        "cloud" -> x.cloud,
       )
       case _ => JsNull
     }
   }
 }
-class FileAttachment(val name: String, val url: String, val upload_date: Long, val author: String, val revision: String = "", val group: String = "") {
+class FileAttachment(val name: String, val url: String, val upload_date: Long, val author: String, val revision: String = "", val group: String = "", val cloud: Int = 0) {
   var issue_id: Int = 0
   var removed_date: Long = 0
   var removed_by: String = ""

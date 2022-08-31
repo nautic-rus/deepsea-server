@@ -1,15 +1,19 @@
 package deepsea.materials
 
 import com.mongodb.BasicDBObject
+import deepsea.App
 import deepsea.database.DatabaseManager
+import deepsea.files.classes.FileAttachment
+import deepsea.issues.IssueManagerHelper
 import deepsea.materials.MaterialManager.{Material, MaterialNode, ProjectName}
+import org.aarboard.nextcloud.api.NextcloudConnector
 import org.mongodb.scala.model.Filters
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
 import scala.concurrent.duration.{Duration, SECONDS}
 
-trait MaterialManagerHelper {
+trait MaterialManagerHelper extends IssueManagerHelper {
   def getNodes: List[MaterialNode] ={
     DatabaseManager.GetMongoConnection() match {
       case Some(mongo) =>
