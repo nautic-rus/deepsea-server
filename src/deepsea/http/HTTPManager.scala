@@ -26,7 +26,7 @@ import deepsea.mobile.MobileManager.{GetDrawingInfo, GetDrawings}
 import deepsea.rocket.RocketChatManager.SendNotification
 import deepsea.time.LicenseManager.GetForanLicenses
 import deepsea.time.TimeAndWeatherManager.GetTimeAndWeather
-import deepsea.time.TimeControlManager.{AddUserWatch, GetUserTimeControl, GetUserWatches}
+import deepsea.time.TimeControlManager.{AddSpyWatch, AddUserWatch, GetSpyWatches, GetTime, GetUserTimeControl, GetUserWatches}
 import org.apache.log4j.{LogManager, Logger}
 import play.api.libs.json.{JsValue, Json}
 
@@ -359,8 +359,17 @@ class HTTPManager extends Actor{
       (post & path("grabInfo") & entity(as[String])){ (data) =>
         askFor(ActorManager.timeControl, AddUserWatch(data))
       },
+      (post & path("spyWatch") & entity(as[String])){ (data) =>
+        askFor(ActorManager.timeControl, AddSpyWatch(data))
+      },
+      (get & path("spyWatches")){
+        askFor(ActorManager.timeControl, GetSpyWatches())
+      },
       (get & path("userWatches")){
         askFor(ActorManager.timeControl, GetUserWatches())
+      },
+      (get & path("time")){
+        askFor(ActorManager.timeControl, GetTime())
       },
 
       (get & path("dailyTasks")){
@@ -381,7 +390,7 @@ class HTTPManager extends Actor{
       },
       (get & path("cloud") & parameter("path")){ (path) =>
         askFor(ActorManager.files, GetFileFromCloud(path))
-      },
+      }
     )
   }
 

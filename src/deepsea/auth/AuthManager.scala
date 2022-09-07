@@ -15,10 +15,28 @@ object AuthManager{
   case class GetUser(login: String)
   case class ShareRights(user: String, with_user: String)
   case class User(
-                   id: Int, login: String, password: String, name: String, surname: String, profession: String, department: String, birthday: Date, email: String,
-                   phone: String, tcid: Int, avatar: String, avatar_full: String, rocket_login: String, var gender: String, var visibility: String,
-                   var visible_projects: List[String], var visible_pages: List[String], var shared_access: List[String], var token: String = "", var groups: ListBuffer[String] = ListBuffer.empty[String],
-                   var permissions: ListBuffer[String] = ListBuffer.empty[String])
+                   id: Int,
+                   login: String,
+                   password: String,
+                   name: String,
+                   surname: String,
+                   profession: String,
+                   department: String,
+                   birthday: Date,
+                   email: String,
+                   phone: String,
+                   tcid: Int,
+                   avatar: String,
+                   avatar_full: String,
+                   rocket_login: String,
+                   var gender: String,
+                   var visibility: String,
+                   var visible_projects: List[String],
+                   var visible_pages: List[String],
+                   var shared_access: List[String],
+                   var groups: List[String] = List.empty[String],
+                   var permissions: ListBuffer[String] = ListBuffer.empty[String],
+                   var token: String = "")
   implicit val writesUser: OWrites[User] = Json.writes[User]
 }
 class AuthManager extends Actor{
@@ -133,18 +151,19 @@ class AuthManager extends Actor{
             rs.getString("visibility"),
             rs.getString("visible_projects").split(",").toList,
             rs.getString("visible_pages").split(",").toList,
-            rs.getString("shared_access").split(",").toList
+            rs.getString("shared_access").split(",").toList,
+            rs.getString("group").split(",").toList
           ))
         }
         s.close()
         if (res.nonEmpty){
           s = c.createStatement()
-          rs = s.executeQuery(s"select type_name from issue_types where id in (select group_id from user_membership where user_id = ${res.get.id})")
-          while (rs.next()){
-            res.get.groups += rs.getString("type_name")
-          }
-          s.close()
-          s = c.createStatement()
+//          rs = s.executeQuery(s"select type_name from issue_types where id in (select group_id from user_membership where user_id = ${res.get.id})")
+//          while (rs.next()){
+//            res.get.groups += rs.getString("type_name")
+//          }
+//          s.close()
+//          s = c.createStatement()
           rs = s.executeQuery(s"select rights from user_rights where user_id = ${res.get.id}")
           while (rs.next()){
             res.get.permissions += rs.getString("rights")
@@ -183,7 +202,8 @@ class AuthManager extends Actor{
             rs.getString("visibility"),
             rs.getString("visible_projects").split(",").toList,
             rs.getString("visible_pages").split(",").toList,
-            rs.getString("shared_access").split(",").toList
+            rs.getString("shared_access").split(",").toList,
+            rs.getString("group").split(",").toList
           )
         }
         rs.close()

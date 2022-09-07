@@ -4,7 +4,7 @@ import deepsea.files.FileManager.{DocumentDirectories, TreeDirectory, TreeFile, 
 import deepsea.issues.IssueManager.{DailyTask, MessageReaction}
 import deepsea.materials.MaterialManager.{Material, MaterialHistory, MaterialNode, MaterialNodeHistory, MaterialTranslation, ProjectName, WCNumberName, WeightControl}
 import deepsea.mobile.MobileManager.{Drawing, DrawingInfo, OrizInfo}
-import deepsea.time.TimeControlManager.UserWatch
+import deepsea.time.TimeControlManager.{SpyWatch, UserWatch}
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.{Decoder, Encoder}
 import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}
@@ -71,6 +71,9 @@ trait MongoCodecs {
   implicit val DailyTaskDecoder: Decoder[DailyTask] = deriveDecoder[DailyTask]
   implicit val DailyTaskEncoder: Encoder[DailyTask] = deriveEncoder[DailyTask]
 
+  implicit val SpyWatchDecoder: Decoder[SpyWatch] = deriveDecoder[SpyWatch]
+  implicit val SpyWatchEncoder: Encoder[SpyWatch] = deriveEncoder[SpyWatch]
+
 
   def codecRegistry: CodecRegistry = fromRegistries(fromProviders(
     classOf[Material],
@@ -89,5 +92,6 @@ trait MongoCodecs {
     classOf[ProjectName],
     classOf[DocumentDirectories],
     classOf[DailyTask],
+    classOf[SpyWatch],
   ), DEFAULT_CODEC_REGISTRY)
 }

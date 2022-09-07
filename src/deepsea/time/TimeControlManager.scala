@@ -7,7 +7,7 @@ import deepsea.database.DatabaseManager.{GetConnection, GetFireBaseConnection}
 import deepsea.database.{DatabaseManager, MongoCodecs}
 import deepsea.files.FileManager.{TreeDirectory, treeFileDirectoriesCollection}
 import deepsea.materials.MaterialManager.{MaterialNode, MaterialNodeHistory}
-import deepsea.time.TimeControlManager.{AddUserWatch, GetUserTimeControl, GetUserWatches, TimeControlInterval, UserWatch}
+import deepsea.time.TimeControlManager.{AddSpyWatch, AddUserWatch, GetSpyWatches, GetTime, GetUserTimeControl, GetUserWatches, SpyWatch, TimeControlInterval, UserWatch}
 import org.mongodb.scala.MongoCollection
 import play.api.libs.json.{Json, OWrites, __}
 import io.circe.parser.decode
@@ -23,9 +23,12 @@ import scala.concurrent.duration.{Duration, SECONDS}
 object TimeControlManager {
   case class GetUserTimeControl(user: String)
   case class AddUserWatch(json: String)
+  case class AddSpyWatch(json: String)
   case class GetUserWatches()
-
+  case class GetSpyWatches()
+  case class GetTime()
   case class UserWatch(user: String, var activity: Long, image: String)
+  case class SpyWatch(user: String, var activity: Long, images: List[String], active: String, activeIndex: Int)
 
   case class TimeControlInterval(userId: String, startTime: Long, endTime: Long, startDate: Long, endDate: Long, addDoor: Int = -1, closeDoor: Int = -1)
   implicit val writesTimeControlInterval: OWrites[TimeControlInterval] = Json.writes[TimeControlInterval]
@@ -37,9 +40,40 @@ class TimeControlManager extends Actor with MongoCodecs{
     case AddUserWatch(json) =>
       addUserWatch(json)
       sender() ! "success".asJson.noSpaces
+    case AddSpyWatch(json) =>
+      addSpyWatch(json)
+      sender() ! "success".asJson.noSpaces
+    case GetSpyWatches() =>
+      sender() ! getSpyWatches.asJson.noSpaces
     case GetUserWatches() =>
       sender() ! getUserWatches.asJson.noSpaces
+    case GetTime() =>
+      sender() ! getTime.asJson.noSpaces
     case _ => None
+  }
+  def addSpyWatch(json: String): Unit ={
+    decode[SpyWatch](json) match {
+      case Right(value) =>
+        DatabaseManager.GetMongoConnection() match {
+          case Some(mongo) =>
+            val spyWatches: MongoCollection[SpyWatch] = mongo.getCollection("spyWatches")
+            Await.result(spyWatches.replaceOne(and(equal("user", value.user)), value, org.mongodb.scala.model.ReplaceOptions().upsert(true)).toFuture(), Duration(30, SECONDS))
+          case _ =>
+        }
+      case Left(value) =>
+    }
+  }
+  def getSpyWatches: List[SpyWatch] ={
+    DatabaseManager.GetMongoConnection() match {
+      case Some(mongo) =>
+        val spyWatches: MongoCollection[SpyWatch] = mongo.getCollection("spyWatches")
+        Await.result(spyWatches.find().toFuture(), Duration(30, SECONDS)) match {
+          case values: Seq[SpyWatch] =>
+            values.toList
+          case _ => List.empty[SpyWatch]
+        }
+      case _ => List.empty[SpyWatch]
+    }
   }
   def addUserWatch(json: String): Unit ={
     decode[UserWatch](json) match {
@@ -114,4 +148,5 @@ class TimeControlManager extends Actor with MongoCodecs{
     }
     res
   }
+  def getTime: Long = new Date().getTime
 }
