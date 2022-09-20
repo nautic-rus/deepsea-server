@@ -184,8 +184,6 @@ class FileManager extends Actor with MongoCodecs with MaterialManagerHelper with
       case Left(value) =>
     }
   }
-
-
   def createMaterialDirectory(project: String, code: String): String = {
     val cloud = new NextcloudConnector(App.Cloud.Host, true, 443, App.Cloud.UserName, App.Cloud.Password)
     val nodes = getNodes
@@ -226,91 +224,4 @@ class FileManager extends Actor with MongoCodecs with MaterialManagerHelper with
       case _ => s"ERROR: There is no defined cloud path for project $project"
     }
   }
-  def createDocumentDirectory(id: Int): String ={
-    val cloud = new NextcloudConnector(App.Cloud.Host, true, 443, App.Cloud.UserName, App.Cloud.Password)
-    getIssueDetails(id) match {
-      case Some(issue) =>
-        getProjectNames.find(_.pdsp == issue.project) match {
-          case Some(projectName) =>
-            getDocumentDirectories.find(x => x.project == issue.project && x.department == issue.department) match {
-              case Some(docDirectories) =>
-                val sp = "/"
-                var path = projectName.cloud + sp + "Documents"
-                val paths = List(issue.department, issue.doc_number)
-                var pathFull = path
-                paths.foreach(p => {
-                  pathFull = pathFull + sp + p
-                })
-                if (cloud.folderExists(pathFull)){
-                  App.Cloud.Protocol + "://" + App.Cloud.Host + "/apps/files/?dir=/" + pathFull
-                }
-                else{
-                  paths.foreach(p => {
-                    path = path + sp + p
-                    if (!cloud.folderExists(path)){
-                      cloud.createFolder(path)
-                    }
-                  })
-                  docDirectories.directories.foreach(p => {
-                    path = pathFull + sp + p
-                    if (!cloud.folderExists(path)){
-                      cloud.createFolder(path)
-                    }
-                  })
-                  App.Cloud.Protocol + "://" + App.Cloud.Host + "/apps/files/?dir=/" + pathFull
-                }
-              case _ => "ERROR: There is no defined directories for this document"
-            }
-          case _ => s"ERROR: There is no defined cloud path for project ${issue.project}"
-        }
-      case _ => s"ERROR: There is no issue found with id $id"
-    }
-  }
-  def getFileFromCloud(path: String): File ={
-    val cloud = new NextcloudConnector(App.Cloud.Host, true, 443, App.Cloud.UserName, App.Cloud.Password)
-    val fileName = new File(path).getName
-    val res = File.createTempFile(fileName, path.split(".").last)
-    if (cloud.fileExists(path)){
-      val in = cloud.downloadFile(path)
-      val out = new FileOutputStream(res)
-      out.write(in.readAllBytes())
-      out.close()
-      in.close()
-    }
-    res
-  }
-
-  def cloneDocumentFilesToCloud(docNumber: String, department: String): String ={
-    val cloud = new NextcloudConnector(App.Cloud.Host, true, 443, App.Cloud.UserName, App.Cloud.Password)
-    val project = if (docNumber.contains("-")) docNumber.split("-").head else ""
-    getDocumentDirectories.find(_.project == project) match {
-      case Some(docDirectories) =>
-        getProjectNames.find(_.rkd == project) match {
-          case Some(cloudPath) =>
-            val sp = "/"
-            var path = cloudPath.cloud + sp + "Documents"
-            if (!cloud.folderExists(path)){
-              cloud.createFolder(path)
-            }
-            path = path + sp + department
-            if (!cloud.folderExists(path)){
-              cloud.createFolder(path)
-            }
-            path = path + sp + docNumber
-            if (!cloud.folderExists(path)){
-              cloud.createFolder(path)
-            }
-            docDirectories.directories.map(x => path + sp + x).foreach(d => {
-              if (!cloud.folderExists(d)){
-                cloud.createFolder(d)
-              }
-            })
-            path
-          case _ => s"ERROR: There is no defined cloud path for project $project"
-        }
-
-      case _ => "ERROR: There is no defined directories for this document"
-    }
-  }
-
 }

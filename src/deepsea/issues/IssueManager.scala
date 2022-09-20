@@ -639,6 +639,11 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper {
           prev_value = oldIssue.ready
           new_value = issue.ready
         }
+        else if (oldIssue.contract_due_date != issue.contract_due_date){
+          name_value = "contract_due_date"
+          prev_value = oldIssue.contract_due_date
+          new_value = issue.contract_due_date
+        }
       case _ => None
     }
     if (name_value != ""){
@@ -786,6 +791,10 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper {
             for_revision = rs.getString("for_revision") match {
               case value: String => value
               case _ => "-"
+            }
+            contract_due_date = rs.getLong("contract_due_date") match {
+              case value: Long => value
+              case _ => 0
             }
           }
         }
