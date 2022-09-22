@@ -6,9 +6,10 @@ import akka.util.Timeout
 import deepsea.App
 import deepsea.actors.ActorManager
 import deepsea.auth.AuthManager.{GetUser, User}
-import deepsea.database.{DatabaseManager, MongoCodecs}
+import deepsea.database.{DBManager, DatabaseManager, MongoCodecs}
 import deepsea.database.DatabaseManager.GetConnection
 import deepsea.files.FileManager.{TreeFile, treeFilesCollection}
+import deepsea.files.FileManagerHelper
 import deepsea.files.classes.FileAttachment
 import deepsea.issues.IssueManager._
 import deepsea.issues.classes.{ChildIssue, Issue, IssueAction, IssueCheck, IssueHistory, IssueMessage, IssuePeriod, IssueType, IssueView, SfiCode}
@@ -97,9 +98,32 @@ object IssueManager{
 
   case class DailyTask(date: Long, userLogin: String, userName: String, dateCreated: Long, project: String, docNumber: String, details: String, time: Double, action: String, id: String)
 }
-class IssueManager extends Actor with MongoCodecs with IssueManagerHelper {
+class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with FileManagerHelper {
   implicit val timeout: Timeout = Timeout(30, TimeUnit.SECONDS)
 
+  override def preStart(): Unit = {
+//    Await.result(ActorManager.auth ? GetUser("op"), timeout.duration) match {
+//      case user: User =>
+//        val issues = getIssuesForUser(user)
+//        val revisionFiles = getRevisionFiles.filter(_.removed_date == 0)
+//        val issuesFiltered = issues.filter(x => x.project == "NR004" && x.issue_type == "RKD" && x.department == "Hull")
+//        issuesFiltered.foreach(issue => {
+//          val files = revisionFiles.filter(_.issue_id == issue.id)
+//          if (files.nonEmpty){
+//            getIssueDetails(issue.id) match {
+//              case Some(details) =>
+//                cloneDocumentFilesToCloud(details.doc_number, details.department, files.toList)
+//              case _ => None
+//            }
+//          }
+//          val jkk = issue
+//        })
+//        val jk = 0
+//
+//
+//      case _ => sender() ! Json.toJson(ListBuffer.empty[Issue])
+//    }
+  }
   override def receive: Receive = {
     case GetIssueProjects() => sender() ! Json.toJson(getIssueProjects)
     case GetIssueTypes() => sender() ! Json.toJson(getIssueTypes)
@@ -648,7 +672,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper {
     }
     if (name_value != ""){
       updateHistory(new IssueHistory(id, user, name_value, prev_value.toString, new_value.toString, date, updateMessage))
-      val numeric_names = List("started_date", "due_date", "start_date", "first_local_approval_date", "first_send_date", "delivered_date")
+      val numeric_names = List("started_date", "due_date", "start_date", "first_local_approval_date", "first_send_date", "delivered_date", "contract_due_date")
       var query = s"update issue set $name_value = '$new_value', active_action = '${issue.action}', last_update = $date where id = $id"
       if (numeric_names.contains(name_value)){
         query = s"update issue set $name_value = $new_value, active_action = '${issue.action}', last_update = $date where id = $id"
@@ -661,149 +685,6 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper {
         case _ => None
       }
     }
-  }
-
-  def getIssuesForUser(user: User): ListBuffer[Issue] ={
-    val issues = ListBuffer.empty[Issue]
-    GetConnection() match {
-      case Some(c) =>
-        val s = c.createStatement()
-        var query = s"select *, (select closing_status from issue_types where type_name = i.issue_type) from issue i where removed = 0 and (assigned_to = '${user.login}' or started_by = '${user.login}' or responsible = '${user.login}'"
-        if (user.permissions.contains("view_department_tasks")){
-          var groups = user.groups.map(x => "'" + x + "'").mkString("(", ",", ")")
-          if (user.groups.isEmpty){
-            groups = "('')"
-          }
-          query += s" or i.issue_type in ${groups}"
-        }
-        if (user.permissions.contains("view_all_tasks")){
-          query += s" or true"
-        }
-        query += ")"
-        val rs = s.executeQuery(query)
-        while (rs.next()){
-          issues += new Issue(
-            rs.getInt("id") match {
-              case value: Int => value
-              case _ => 0
-            },
-            rs.getString("status") match {
-              case value: String => value
-              case _ => ""
-            },
-            rs.getString("project") match {
-              case value: String => value
-              case _ => ""
-            },
-            rs.getString("department") match {
-              case value: String => value
-              case _ => ""
-            },
-            rs.getString("started_by") match {
-              case value: String => value
-              case _ => ""
-            },
-            rs.getLong("started_date") match {
-              case value: Long => value
-              case _ => 0
-            },
-            rs.getString("issue_type") match {
-              case value: String => value
-              case _ => ""
-            },
-            rs.getString("issue_name") match {
-              case value: String => value
-              case _ => ""
-            },
-            rs.getString("details") match {
-              case value: String => value
-              case _ => ""
-            },
-            rs.getString("assigned_to") match {
-              case value: String => value
-              case _ => ""
-            },
-            rs.getLong("due_date") match {
-              case value: Long => value
-              case _ => 0
-            },
-          ){
-            action =  rs.getString("active_action") match {
-              case value: String => value
-              case _ => ""
-            }
-            priority =  rs.getString("priority") match {
-              case value: String => value
-              case _ => ""
-            }
-            last_update = rs.getLong("last_update") match {
-              case value: Long => value
-              case _ => 0
-            }
-            doc_number =  rs.getString("doc_number") match {
-              case value: String => value
-              case _ => ""
-            }
-            responsible =  rs.getString("responsible") match {
-              case value: String => value
-              case _ => ""
-            }
-            overtime =  rs.getString("overtime") match {
-              case value: String => value
-              case _ => ""
-            }
-            start_date = rs.getLong("start_date") match {
-              case value: Long => value
-              case _ => 0
-            }
-            period = rs.getString("period") match {
-              case value: String => value
-              case _ => ""
-            }
-            parent_id = rs.getInt("parent_id") match {
-              case value: Int => value
-              case _ => 0
-            }
-            closing_status = rs.getString("closing_status") match {
-              case value: String => value
-              case _ => ""
-            }
-            delivered_date = rs.getLong("delivered_date") match {
-              case value: Long => value
-              case _ => 0
-            }
-            first_send_date = rs.getLong("first_send_date") match {
-              case value: Long => value
-              case _ => 0
-            }
-            revision = rs.getString("revision") match {
-              case value: String => value
-              case _ => ""
-            }
-            issue_comment = rs.getString("issue_comment") match {
-              case value: String => value
-              case _ => ""
-            }
-            ready = rs.getString("ready") match {
-              case value: String => value
-              case _ => ""
-            }
-            for_revision = rs.getString("for_revision") match {
-              case value: String => value
-              case _ => "-"
-            }
-            contract_due_date = rs.getLong("contract_due_date") match {
-              case value: Long => value
-              case _ => 0
-            }
-          }
-        }
-        rs.close()
-        s.close()
-        c.close()
-      case _ =>
-    }
-    issues
   }
 
   def deleteFile(url: String): Unit ={
@@ -855,10 +736,10 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper {
   }
   def getRevisionFiles: ListBuffer[FileAttachment] ={
     val res = ListBuffer.empty[FileAttachment]
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val rs = s.executeQuery(s"select * from revision_files")
+        val rs = s.executeQuery(s"select * from revision_files where removed = 0")
         while (rs.next()){
           res += new FileAttachment(
             rs.getString("file_name"),

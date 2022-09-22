@@ -20,6 +20,7 @@ object DatabaseManager extends MongoCodecs {
   case class GetMongoConnectionFromPool()
   case class GetOracleConnectionFromPool()
   case class GetFireBaseConnectionFromPool()
+  case class OracleConnection(project: String, ds: HikariDataSource)
 
   def GetConnection(): Option[Connection] ={
     try{

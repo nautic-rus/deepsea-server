@@ -1,6 +1,7 @@
 package deepsea.issues
 
-import deepsea.database.{DatabaseManager, MongoCodecs}
+import deepsea.auth.AuthManager.User
+import deepsea.database.{DBManager, DatabaseManager, MongoCodecs}
 import deepsea.database.DatabaseManager.GetConnection
 import deepsea.files.classes.FileAttachment
 import deepsea.issues.IssueManager.DailyTask
@@ -16,9 +17,153 @@ import scala.concurrent.Await
 import scala.concurrent.duration.{Duration, SECONDS}
 
 trait IssueManagerHelper extends MongoCodecs{
+
+  def getIssuesForUser(user: User): ListBuffer[Issue] ={
+    val issues = ListBuffer.empty[Issue]
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        var query = s"select *, (select closing_status from issue_types where type_name = i.issue_type) from issue i where removed = 0 and (assigned_to = '${user.login}' or started_by = '${user.login}' or responsible = '${user.login}'"
+        if (user.permissions.contains("view_department_tasks")){
+          var groups = user.groups.map(x => "'" + x + "'").mkString("(", ",", ")")
+          if (user.groups.isEmpty){
+            groups = "('')"
+          }
+          query += s" or i.issue_type in ${groups}"
+        }
+        if (user.permissions.contains("view_all_tasks")){
+          query += s" or true"
+        }
+        query += ")"
+        val rs = s.executeQuery(query)
+        while (rs.next()){
+          issues += new Issue(
+            rs.getInt("id") match {
+              case value: Int => value
+              case _ => 0
+            },
+            rs.getString("status") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getString("project") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getString("department") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getString("started_by") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getLong("started_date") match {
+              case value: Long => value
+              case _ => 0
+            },
+            rs.getString("issue_type") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getString("issue_name") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getString("details") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getString("assigned_to") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getLong("due_date") match {
+              case value: Long => value
+              case _ => 0
+            },
+          ){
+            action =  rs.getString("active_action") match {
+              case value: String => value
+              case _ => ""
+            }
+            priority =  rs.getString("priority") match {
+              case value: String => value
+              case _ => ""
+            }
+            last_update = rs.getLong("last_update") match {
+              case value: Long => value
+              case _ => 0
+            }
+            doc_number =  rs.getString("doc_number") match {
+              case value: String => value
+              case _ => ""
+            }
+            responsible =  rs.getString("responsible") match {
+              case value: String => value
+              case _ => ""
+            }
+            overtime =  rs.getString("overtime") match {
+              case value: String => value
+              case _ => ""
+            }
+            start_date = rs.getLong("start_date") match {
+              case value: Long => value
+              case _ => 0
+            }
+            period = rs.getString("period") match {
+              case value: String => value
+              case _ => ""
+            }
+            parent_id = rs.getInt("parent_id") match {
+              case value: Int => value
+              case _ => 0
+            }
+            closing_status = rs.getString("closing_status") match {
+              case value: String => value
+              case _ => ""
+            }
+            delivered_date = rs.getLong("delivered_date") match {
+              case value: Long => value
+              case _ => 0
+            }
+            first_send_date = rs.getLong("first_send_date") match {
+              case value: Long => value
+              case _ => 0
+            }
+            revision = rs.getString("revision") match {
+              case value: String => value
+              case _ => ""
+            }
+            issue_comment = rs.getString("issue_comment") match {
+              case value: String => value
+              case _ => ""
+            }
+            ready = rs.getString("ready") match {
+              case value: String => value
+              case _ => ""
+            }
+            for_revision = rs.getString("for_revision") match {
+              case value: String => value
+              case _ => "-"
+            }
+            contract_due_date = rs.getLong("contract_due_date") match {
+              case value: Long => value
+              case _ => 0
+            }
+          }
+        }
+        rs.close()
+        s.close()
+        c.close()
+      case _ =>
+    }
+    issues
+  }
+
   def getIssueDetails(id: Int): Option[Issue] ={
     var issue: Option[Issue] = Option.empty[Issue]
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val query = s"select * , (select closing_status from issue_types where type_name = i.issue_type) from issue i where $id=id and removed = 0"
@@ -162,7 +307,7 @@ trait IssueManagerHelper extends MongoCodecs{
   }
   def getIssueLabor(issue_id: Int): Double ={
     var res: Double = 0
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select sum(labor_value) as issue_labor from issue_spent_time where issue_id = $issue_id")
@@ -178,7 +323,7 @@ trait IssueManagerHelper extends MongoCodecs{
   }
   def getIssueChecks(issue_id: Int): ListBuffer[IssueCheck] ={
     val res = ListBuffer.empty[IssueCheck]
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from issue_check where issue_id = $issue_id")
@@ -204,7 +349,7 @@ trait IssueManagerHelper extends MongoCodecs{
   }
   def getRemovedRevisionFiles(id: Int): ListBuffer[FileAttachment] ={
     val res = ListBuffer.empty[FileAttachment]
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from revision_files where issue_id = $id and removed = 1")
@@ -230,7 +375,7 @@ trait IssueManagerHelper extends MongoCodecs{
   }
   def getRevisionFiles(id: Int): ListBuffer[FileAttachment] ={
     val res = ListBuffer.empty[FileAttachment]
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from revision_files where issue_id = $id and removed = 0")
@@ -253,7 +398,7 @@ trait IssueManagerHelper extends MongoCodecs{
   }
   def getChildIssues(id: Int): ListBuffer[ChildIssue] ={
     val issues = ListBuffer.empty[Issue]
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         var query = s"select * from issue where removed = 0 and parent_id = $id"
@@ -385,7 +530,7 @@ trait IssueManagerHelper extends MongoCodecs{
   }
   def getIssueActions(action: String, issue_type: String): ListBuffer[IssueAction] ={
     val res = ListBuffer.empty[IssueAction]
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from issue_action where current_action = '$action' and issue_type = '$issue_type'")
@@ -405,7 +550,7 @@ trait IssueManagerHelper extends MongoCodecs{
   }
   def getIssueHistory(id: Int): ListBuffer[IssueHistory] ={
     val res = ListBuffer.empty[IssueHistory]
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from issue_history where id = $id")
@@ -422,7 +567,7 @@ trait IssueManagerHelper extends MongoCodecs{
   }
   def getIssueMessages(id: Int): ListBuffer[IssueMessage] ={
     val res = ListBuffer.empty[IssueMessage]
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from issue_messages where issue_id = $id and removed = 0")
@@ -446,7 +591,7 @@ trait IssueManagerHelper extends MongoCodecs{
   }
   def getIssueFileAttachments(id: Int): ListBuffer[FileAttachment] ={
     val res = ListBuffer.empty[FileAttachment]
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from file_attachments where issue_id = '$id'")

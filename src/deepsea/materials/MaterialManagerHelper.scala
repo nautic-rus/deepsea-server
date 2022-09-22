@@ -2,7 +2,7 @@ package deepsea.materials
 
 import com.mongodb.BasicDBObject
 import deepsea.App
-import deepsea.database.DatabaseManager
+import deepsea.database.{DBManager, DatabaseManager}
 import deepsea.files.classes.FileAttachment
 import deepsea.issues.IssueManagerHelper
 import deepsea.materials.MaterialManager.{Material, MaterialNode, ProjectName}
@@ -45,7 +45,7 @@ trait MaterialManagerHelper extends IssueManagerHelper {
     }
   }
   def getProjectNames: List[ProjectName] ={
-    DatabaseManager.GetMongoConnection() match {
+    DBManager.GetMongoConnection() match {
       case Some(mongo) =>
         Await.result(mongo.getCollection("project-names").find[ProjectName]().toFuture(), Duration(30, SECONDS)) match {
           case projectNames => projectNames.toList

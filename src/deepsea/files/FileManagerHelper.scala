@@ -1,14 +1,18 @@
 package deepsea.files
 
 import deepsea.App
-import deepsea.database.DatabaseManager
+import deepsea.database.{DBManager, DatabaseManager}
 import deepsea.files.FileManager.DocumentDirectories
 import deepsea.files.classes.FileAttachment
 import deepsea.issues.IssueManagerHelper
 import deepsea.materials.MaterialManagerHelper
 import org.aarboard.nextcloud.api.NextcloudConnector
+import org.apache.http.client.utils.URIUtils
 
-import java.io.{File, FileOutputStream}
+import java.io.{BufferedInputStream, File, FileOutputStream, FileWriter}
+import java.net.{URL, URLEncoder}
+import java.nio.charset.Charset
+import java.nio.file.{Files, StandardCopyOption}
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
 import scala.concurrent.duration.{Duration, SECONDS, pairIntToDuration}
@@ -17,7 +21,7 @@ trait FileManagerHelper extends IssueManagerHelper with MaterialManagerHelper{
   val sp = "/"
 
   def getDocumentDirectories: List[DocumentDirectories] ={
-    DatabaseManager.GetMongoConnection() match {
+    DBManager.GetMongoConnection() match {
       case Some(mongo) =>
         Await.result(mongo.getCollection("document-directories").find[DocumentDirectories]().toFuture(), Duration(30, SECONDS)) match {
           case projectNames => projectNames.toList
@@ -86,9 +90,22 @@ trait FileManagerHelper extends IssueManagerHelper with MaterialManagerHelper{
             generateDocumentDirectories(cloud, paths, docDirectories.directories)
             val fullPath = paths.mkString(sp)
             attachments.foreach(fileUrl => {
-              val path = List(App.Cloud.Directory ++ fileUrl.url.split(sp).takeRight(2)).mkString(sp)
-              val file = new File(path)
-              cloud.uploadFile(file, List(fullPath, fileUrl.group, file.getName).mkString(sp))
+
+              try{
+                val name = fileUrl.url.split(sp).last
+                val enc = fileUrl.url.replace(fileUrl.url.split(sp).takeRight(1).head, "") + URLEncoder.encode(fileUrl.url.split(sp).takeRight(1).head, "UTF-8")
+                val file = File.createTempFile("upload-", "")
+                val url = new URL(enc)
+                val stream = url.openStream()
+                Files.copy(stream, file.toPath, StandardCopyOption.REPLACE_EXISTING)
+                cloud.uploadFile(file, List(fullPath, fileUrl.group, name).mkString(sp))
+              }
+              catch {
+                case (e: Exception) =>
+                  val jk = e
+                  val jkk = jk
+              }
+
             })
             "success"
           case _ => s"ERROR: There is no defined cloud path for project $project"
