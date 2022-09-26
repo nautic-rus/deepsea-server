@@ -101,18 +101,18 @@ object IssueManager{
 class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with FileManagerHelper {
   implicit val timeout: Timeout = Timeout(30, TimeUnit.SECONDS)
 
-  override def preStart(): Unit = {
+//  override def preStart(): Unit = {
 //    Await.result(ActorManager.auth ? GetUser("op"), timeout.duration) match {
 //      case user: User =>
 //        val issues = getIssuesForUser(user)
 //        val revisionFiles = getRevisionFiles.filter(_.removed_date == 0)
-//        val issuesFiltered = issues.filter(x => x.project == "NR004" && x.issue_type == "RKD" && x.department == "Hull")
+//        val issuesFiltered = issues.filter(x => x.project == "NR004" && x.issue_type == "RKD")
 //        issuesFiltered.foreach(issue => {
 //          val files = revisionFiles.filter(_.issue_id == issue.id)
 //          if (files.nonEmpty){
 //            getIssueDetails(issue.id) match {
 //              case Some(details) =>
-//                cloneDocumentFilesToCloud(details.doc_number, details.department, files.toList)
+//                copyFilesToDirectory(details.doc_number, details.department, files.toList, "C:\\documents")
 //              case _ => None
 //            }
 //          }
@@ -123,7 +123,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
 //
 //      case _ => sender() ! Json.toJson(ListBuffer.empty[Issue])
 //    }
-  }
+//  }
   override def receive: Receive = {
     case GetIssueProjects() => sender() ! Json.toJson(getIssueProjects)
     case GetIssueTypes() => sender() ! Json.toJson(getIssueTypes)

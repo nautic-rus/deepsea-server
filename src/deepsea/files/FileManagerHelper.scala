@@ -15,10 +15,10 @@ import java.nio.charset.Charset
 import java.nio.file.{Files, StandardCopyOption}
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
-import scala.concurrent.duration.{Duration, SECONDS, pairIntToDuration}
+import scala.concurrent.duration.{Duration, SECONDS, pairIntToDuration, pairLongToDuration}
 
 trait FileManagerHelper extends IssueManagerHelper with MaterialManagerHelper{
-  val sp = "/"
+  val sp: String = File.pathSeparator
 
   def getDocumentDirectories: List[DocumentDirectories] ={
     DBManager.GetMongoConnection() match {
@@ -39,8 +39,12 @@ trait FileManagerHelper extends IssueManagerHelper with MaterialManagerHelper{
           case Some(projectName) =>
             getDocumentDirectories.find(x => x.project == issue.project && x.department == issue.department) match {
               case Some(docDirectories) =>
-                val sp = "/"
                 val pathFull = List(projectName.cloud, "Documents", issue.department, issue.doc_number).mkString(sp)
+
+                if (!cloud.folderExists(pathFull)){
+                  cloud.listFolderContent(pathFull)
+                }
+
                 docDirectories.directories.foreach(p => {
                   val path = pathFull + sp + p
                   if (!cloud.folderExists(path)){
@@ -68,16 +72,54 @@ trait FileManagerHelper extends IssueManagerHelper with MaterialManagerHelper{
   }
   def getFileFromCloud(path: String): File ={
     val cloud = new NextcloudConnector(App.Cloud.Host, true, 443, App.Cloud.UserName, App.Cloud.Password)
-    val fileName = new File(path).getName
-    val res = File.createTempFile(fileName, path.split(".").last)
+    val name = path.split(sp).last
+    val dir = Files.createTempDirectory("download")
+    val res = new File(List(dir, name).mkString(sp))
     if (cloud.fileExists(path)){
-      val in = cloud.downloadFile(path)
-      val out = new FileOutputStream(res)
-      out.write(in.readAllBytes())
-      out.close()
-      in.close()
+      Files.copy(cloud.downloadFile(path), res.toPath, StandardCopyOption.REPLACE_EXISTING)
     }
     res
+  }
+  def copyFilesToDirectory(docNumber: String, department: String, attachments: List[FileAttachment], directory: String): String ={
+    val project = if (docNumber.contains("-")) docNumber.split("-").head else ""
+    getDocumentDirectories.find(_.project == project) match {
+      case Some(docDirectories) =>
+        val paths = List(directory, "Documents", department, docNumber)
+        1.to(paths.length).foreach(p => {
+          val path = paths.take(p).mkString(sp)
+          if (!new File(path).exists()){
+            new File(path).mkdir()
+          }
+        })
+        val path = paths.mkString(sp)
+        docDirectories.directories.map(x => path + sp + x).foreach(d => {
+          if (!new File(d).exists()){
+            new File(d).mkdir()
+          }
+        })
+        val fullPath = paths.mkString(sp)
+        attachments.foreach(fileUrl => {
+          try{
+            var name = fileUrl.url.split(sp).last
+            val enc = fileUrl.url.replace(fileUrl.url.split(sp).takeRight(1).head, "") + URLEncoder.encode(fileUrl.url.split(sp).takeRight(1).head, "UTF-8")
+            var file = new File(List(fullPath, fileUrl.group, name).mkString(sp))
+            while (file.exists()){
+              name = name.replace("\\.", "%\\.")
+              file = new File(List(fullPath, fileUrl.group, name).mkString(sp))
+            }
+            val url = new URL(enc)
+            val stream = url.openStream()
+            Files.copy(stream, file.toPath, StandardCopyOption.REPLACE_EXISTING)
+          }
+          catch {
+            case (e: Exception) =>
+              val jk = e
+              val jkk = jk
+          }
+        })
+        "success"
+      case _ => "ERROR: There is no defined directories for this document"
+    }
   }
   def cloneDocumentFilesToCloud(docNumber: String, department: String, attachments: List[FileAttachment]): String ={
     val cloud = new NextcloudConnector(App.Cloud.Host, true, 443, App.Cloud.UserName, App.Cloud.Password)
