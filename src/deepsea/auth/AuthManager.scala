@@ -97,7 +97,7 @@ class AuthManager extends Actor{
     GetConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val rs = s.executeQuery(s"select s.user from sessions s where token = '$token' and removed = 0")
+        val rs = s.executeQuery(s"select s.user from sessions s where token = '$token'")
         var res = Option.empty[String]
         while (rs.next()){
           res = Option(rs.getString("user"))
