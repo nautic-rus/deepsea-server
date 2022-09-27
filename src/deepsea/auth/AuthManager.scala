@@ -97,7 +97,7 @@ class AuthManager extends Actor{
     GetConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val rs = s.executeQuery(s"select s.user from sessions s where token = '$token'")
+        val rs = s.executeQuery(s"select s.user from sessions s where token = '$token' and removed = 0")
         var res = Option.empty[String]
         while (rs.next()){
           res = Option(rs.getString("user"))
@@ -113,7 +113,7 @@ class AuthManager extends Actor{
     GetConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val rs = s.executeQuery(s"select login from users where login = '$login' and password = '$password'")
+        val rs = s.executeQuery(s"select login from users where login = '$login' and password = '$password' and removed = 0")
         var res = Option.empty[String]
         while (rs.next()){
           res = Option(rs.getString("login"))
@@ -129,7 +129,7 @@ class AuthManager extends Actor{
     GetConnection() match {
       case Some(c) =>
         var s = c.createStatement()
-        var rs = s.executeQuery(s"select * from users where login = '$login'")
+        var rs = s.executeQuery(s"select * from users where login = '$login' and removed = 0")
         var res = Option.empty[User]
         while (rs.next()){
           res = Option(User(
@@ -181,7 +181,7 @@ class AuthManager extends Actor{
     GetConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val rs = s.executeQuery(s"select * from users")
+        val rs = s.executeQuery(s"select * from users where removed = 0")
         while (rs.next()){
           res += User(
             rs.getInt("id"),
