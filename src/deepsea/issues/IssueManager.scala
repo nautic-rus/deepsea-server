@@ -684,6 +684,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
           c.close()
         case _ => None
       }
+      updateIssue(issue, user, updateMessage)
     }
   }
 
