@@ -31,6 +31,7 @@ object Issue{
         "start_date" -> x.start_date,
         "period" -> x.period,
         "child_issues" -> x.child_issues,
+        "combined_issues" -> x.combined_issues,
         "file_cloud" -> x.file_cloud,
         "parent_id" -> x.parent_id,
         "history" -> x.history,
@@ -107,6 +108,7 @@ class Issue(var id: Int, var status: String, var project: String, var department
   var period: String = ""
   var messages: ListBuffer[IssueMessage] = ListBuffer.empty[IssueMessage]
   var child_issues: ListBuffer[ChildIssue] = ListBuffer.empty[ChildIssue]
+  var combined_issues: ListBuffer[ChildIssue] = ListBuffer.empty[ChildIssue]
   var file_cloud: ListBuffer[FileAttachment] = ListBuffer.empty[FileAttachment]
   var parent_id: Int = 0
   var history: ListBuffer[IssueHistory] = ListBuffer.empty[IssueHistory]

@@ -82,6 +82,7 @@ object IssueManager{
   case class GetDailyTasks()
   case class AddDailyTask(jsValue: String)
   case class DeleteDailyTask(id: String)
+  case class CombineIssues(firstIssue: String, secondIssue: String, user: String)
 
   case class IssueDef(id: String, issueTypes: List[String], issueProjects: List[String])
   implicit val writesIssueDef: OWrites[IssueDef] = Json.writes[IssueDef]
@@ -269,6 +270,9 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
       sender() ! "success".asJson.noSpaces
     case DeleteDailyTask(id) =>
       deleteDailyTask(id)
+      sender() ! "success".asJson.noSpaces
+    case CombineIssues(firstIssue, secondIssue, user) =>
+      combineIssues(firstIssue.toIntOption.getOrElse(0), secondIssue.toIntOption.getOrElse(0), user)
       sender() ! "success".asJson.noSpaces
     case _ => None
   }
@@ -760,7 +764,19 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     }
     res
   }
-
+  def combineIssues(issue_first: Int, issue_second: Int, user: String): ListBuffer[FileAttachment] ={
+    val res = ListBuffer.empty[FileAttachment]
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val date = new Date().getTime
+        s.execute(s"insert into issue_combined values ($issue_first, $issue_second, '$user', $date)")
+        s.close()
+        c.close()
+      case _ =>
+    }
+    res
+  }
   def getNestingRevisionFiles: ListBuffer[FileAttachment] ={
     val res = ListBuffer.empty[FileAttachment]
     GetConnection() match {

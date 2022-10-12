@@ -12,6 +12,7 @@ import org.mongodb.scala.MongoCollection
 import org.mongodb.scala.model.Filters
 import org.mongodb.scala.model.Filters.{and, equal}
 
+import java.util.Date
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
 import scala.concurrent.duration.{Duration, SECONDS}
@@ -256,6 +257,7 @@ trait IssueManagerHelper extends MongoCodecs{
             }
             history = getIssueHistory(id)
             child_issues = getChildIssues(id)
+            child_issues = getCombinedIssues(id)
             closing_status = rs.getString("closing_status") match {
               case value: String => value
               case _ => ""
@@ -395,6 +397,25 @@ trait IssueManagerHelper extends MongoCodecs{
       case _ =>
     }
     res
+  }
+  def getCombinedIssues(issue_id: Int): ListBuffer[ChildIssue] ={
+    val combined = ListBuffer.empty[Int]
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val rs = s.executeQuery(s"select * from issue_combined where issue_first = $issue_id or issue_second = $issue_id")
+        while (rs.next()){
+          List(Option(rs.getInt("issue_first")).getOrElse(0), Option(rs.getInt("issue_second")).getOrElse(0)).foreach(issue => {
+            if (!(combined ++ List(issue_id)).contains(issue)){
+              combined += issue
+            }
+          })
+        }
+        s.close()
+        c.close()
+      case _ =>
+    }
+    combined.map(getIssueDetails).filter(_.nonEmpty).map(_.get.toChildIssue)
   }
   def getChildIssues(id: Int): ListBuffer[ChildIssue] ={
     val issues = ListBuffer.empty[Issue]

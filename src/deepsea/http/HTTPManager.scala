@@ -87,6 +87,9 @@ class HTTPManager extends Actor{
       (get & path("removeIssue") & parameter("id") & parameter("user")){ (id, user) =>
         askFor(ActorManager.issue, RemoveIssue(id, user))
       },
+      (get & path("combineIssues") & parameter("firstIssue") & parameter("secondIssue") & parameter("user")){ (firstIssue, secondIssue, user) =>
+        askFor(ActorManager.issue, Com(id, user))
+      },
       (get & path("issueDetails") & parameter("id")){ (id) =>
         askFor(ActorManager.issue, GetIssueDetails(id))
       },
