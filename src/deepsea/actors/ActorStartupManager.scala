@@ -31,7 +31,7 @@ class ActorStartupManager extends Actor{
     case HTTPManagerStarted() =>
       ActorManager.auth = system.actorOf(RoundRobinPool(10).props(Props[AuthManager]))
       ActorManager.issue = system.actorOf(RoundRobinPool(10).props(Props[IssueManager]))
-      ActorManager.files = system.actorOf(RoundRobinPool(10).props(Props[FileManager]))
+      ActorManager.files = system.actorOf(RoundRobinPool(50).props(Props[FileManager]))
       ActorManager.mail = system.actorOf(RoundRobinPool(1).props(Props[MailManager]))
       ActorManager.materials = system.actorOf(RoundRobinPool(1).props(Props[MaterialManager]))
       ActorManager.rocket = system.actorOf(RoundRobinPool(1).props(Props[RocketChatManager]))
