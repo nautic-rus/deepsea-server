@@ -537,7 +537,7 @@ trait IssueManagerHelper extends MongoCodecs{
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val query = s"select * from issue where removed = 0 and id in (select id from issue_combined where issue_first = $id or issue_second = $id) and id != $id"
+        val query = s"select * from issue where removed = 0 and (id in (select issue_first from issue_combined where issue_first = $id or issue_second = $id) or id in (select issue_second from issue_combined where issue_first = $id or issue_second = $id)) and id != $id"
         val rs = s.executeQuery(query)
         while (rs.next()){
           issues += new Issue(
