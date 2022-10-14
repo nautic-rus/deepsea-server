@@ -764,8 +764,8 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     }
     res
   }
-  def combineIssues(issue_first: Int, issue_second: Int, user: String): ListBuffer[FileAttachment] ={
-    val res = ListBuffer.empty[FileAttachment]
+
+  def combineIssues(issue_first: Int, issue_second: Int, user: String): Unit = {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
@@ -775,7 +775,6 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
         c.close()
       case _ =>
     }
-    res
   }
   def getNestingRevisionFiles: ListBuffer[FileAttachment] ={
     val res = ListBuffer.empty[FileAttachment]

@@ -257,7 +257,7 @@ trait IssueManagerHelper extends MongoCodecs{
             }
             history = getIssueHistory(id)
             child_issues = getChildIssues(id)
-            child_issues = getCombinedIssues(id)
+            child_issues = getCombinedIssues(id).map(getIssueDetails).filter(_.nonEmpty).map(_.get.toChildIssue)
             closing_status = rs.getString("closing_status") match {
               case value: String => value
               case _ => ""
@@ -398,7 +398,7 @@ trait IssueManagerHelper extends MongoCodecs{
     }
     res
   }
-  def getCombinedIssues(issue_id: Int): ListBuffer[ChildIssue] ={
+  def getCombinedIssues(issue_id: Int): ListBuffer[Int] ={
     val combined = ListBuffer.empty[Int]
     DBManager.GetPGConnection() match {
       case Some(c) =>
@@ -415,7 +415,7 @@ trait IssueManagerHelper extends MongoCodecs{
         c.close()
       case _ =>
     }
-    combined.map(getIssueDetails).filter(_.nonEmpty).map(_.get.toChildIssue)
+    combined
   }
   def getChildIssues(id: Int): ListBuffer[ChildIssue] ={
     val issues = ListBuffer.empty[Issue]
