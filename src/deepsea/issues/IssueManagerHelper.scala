@@ -257,7 +257,7 @@ trait IssueManagerHelper extends MongoCodecs{
             }
             history = getIssueHistory(id)
             child_issues = getChildIssues(id)
-            child_issues = getCombinedIssues(id).map(getIssueDetails).filter(_.nonEmpty).map(_.get.toChildIssue)
+            combined_issues = getCombinedIssues(id)
             closing_status = rs.getString("closing_status") match {
               case value: String => value
               case _ => ""
@@ -398,7 +398,7 @@ trait IssueManagerHelper extends MongoCodecs{
     }
     res
   }
-  def getCombinedIssues(issue_id: Int): ListBuffer[Int] ={
+  def getCombinedIssuesAux(issue_id: Int): ListBuffer[Int] ={
     val combined = ListBuffer.empty[Int]
     DBManager.GetPGConnection() match {
       case Some(c) =>
@@ -532,6 +532,122 @@ trait IssueManagerHelper extends MongoCodecs{
     }
     issues.map(x => x.toChildIssue)
   }
+  def getCombinedIssues(id: Int): ListBuffer[ChildIssue] ={
+    val issues = ListBuffer.empty[Issue]
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val query = s"select * from issue where removed = 0 and id in (select id from issue_combined where issue_first = $id or issue_second = $id) and id != $id"
+        val rs = s.executeQuery(query)
+        while (rs.next()){
+          issues += new Issue(
+            rs.getInt("id") match {
+              case value: Int => value
+              case _ => 0
+            },
+            rs.getString("status") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getString("project") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getString("department") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getString("started_by") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getLong("started_date") match {
+              case value: Long => value
+              case _ => 0
+            },
+            rs.getString("issue_type") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getString("issue_name") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getString("details") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getString("assigned_to") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getLong("due_date") match {
+              case value: Long => value
+              case _ => 0
+            },
+          ){
+            action =  rs.getString("active_action") match {
+              case value: String => value
+              case _ => ""
+            }
+            priority =  rs.getString("priority") match {
+              case value: String => value
+              case _ => ""
+            }
+            last_update = rs.getLong("last_update") match {
+              case value: Long => value
+              case _ => 0
+            }
+            doc_number =  rs.getString("doc_number") match {
+              case value: String => value
+              case _ => ""
+            }
+            responsible =  rs.getString("responsible") match {
+              case value: String => value
+              case _ => ""
+            }
+            overtime =  rs.getString("overtime") match {
+              case value: String => value
+              case _ => ""
+            }
+            start_date = rs.getLong("start_date") match {
+              case value: Long => value
+              case _ => 0
+            }
+            period = rs.getString("period") match {
+              case value: String => value
+              case _ => ""
+            }
+            parent_id = rs.getInt("parent_id") match {
+              case value: Int => value
+              case _ => 0
+            }
+            delivered_date = rs.getLong("delivered_date") match {
+              case value: Long => value
+              case _ => 0
+            }
+            first_send_date = rs.getLong("first_send_date") match {
+              case value: Long => value
+              case _ => 0
+            }
+            revision = rs.getString("revision") match {
+              case value: String => value
+              case _ => ""
+            }
+            issue_comment = rs.getString("issue_comment") match {
+              case value: String => value
+              case _ => ""
+            }
+          }
+        }
+        rs.close()
+        s.close()
+        c.close()
+      case _ =>
+    }
+    issues.map(x => x.toChildIssue)
+  }
+
   def getIssuePeriods: ListBuffer[IssuePeriod] ={
     val res = ListBuffer.empty[IssuePeriod]
     GetConnection() match {
