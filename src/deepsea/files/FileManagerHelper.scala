@@ -225,7 +225,7 @@ trait FileManagerHelper extends IssueManagerHelper with MaterialManagerHelper{
               directories.find(x => x.contains(code)) match {
                 case Some(value) => value
                 case _ =>
-                  (1.to(paths.length)).foreach(p => {
+                  (2.to(paths.length)).foreach(p => {
                     val path = paths.take(p).mkString(spCloud)
                     if (!directories.contains(path + spCloud)){
                       cloud.createFolder(path)
