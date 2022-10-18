@@ -184,40 +184,4 @@ class FileManager extends Actor with MongoCodecs with MaterialManagerHelper with
       case Left(value) =>
     }
   }
-  def createMaterialDirectory(project: String, code: String): String = {
-    val cloud = new NextcloudConnector(App.Cloud.Host, true, 443, App.Cloud.UserName, App.Cloud.Password)
-    val nodes = getNodes
-    val projectNames = getProjectNames
-    projectNames.find(_.rkd == project) match {
-      case Some(cloudPath) =>
-        val paths = ListBuffer(cloudPath.cloud, "Materials")
-        1.to(4).foreach(x => {
-          val nodePath = code.substring(0, 3 * x)
-          nodes.find(_.data == nodePath) match {
-            case Some(value) => paths += value.label
-            case _ => None
-          }
-        })
-        getMaterial(code) match {
-          case Some(material) =>
-            paths += material.name.replaceAll(spCloud, ",") + " (" + code + ")"
-            val pathFull = paths.mkString(spCloud)
-
-            if (cloud.folderExists(pathFull)){
-              App.Cloud.Protocol + "://" + App.Cloud.Host + "/apps/files/?dir=/" + pathFull
-            }
-            else{
-              (1.to(paths.length)).foreach(p => {
-                val path = paths.take(p).mkString(spCloud)
-                if (!cloud.folderExists(path)){
-                  cloud.createFolder(path)
-                }
-              })
-              App.Cloud.Protocol + "://" + App.Cloud.Host + "/apps/files/?dir=/" + pathFull
-            }
-          case _ => s"ERROR: There is no material with code $code"
-        }
-      case _ => s"ERROR: There is no defined cloud path for project $project"
-    }
-  }
 }

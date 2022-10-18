@@ -197,4 +197,46 @@ trait FileManagerHelper extends IssueManagerHelper with MaterialManagerHelper{
   def replaceSymbols(input: String): String = {
     input.replaceAll(sp, "-")
   }
+  def createMaterialDirectory(project: String, code: String): String = {
+    val cloud = new NextcloudConnector(App.Cloud.Host, true, 443, App.Cloud.UserName, App.Cloud.Password)
+    val nodes = getNodes
+    val projectNames = getProjectNames
+    projectNames.find(_.rkd == project) match {
+      case Some(cloudPath) =>
+        val paths = ListBuffer(cloudPath.cloud, "Materials")
+        val directories = cloud.listFolderContent(paths.mkString(spCloud), 10, false, true).toArray.map(_.toString).toList
+        val jk = directories
+        1.to(4).foreach(x => {
+          val nodePath = code.substring(0, 3 * x)
+          nodes.find(_.data == nodePath) match {
+            case Some(value) => paths += value.label
+            case _ => None
+          }
+        })
+        getMaterial(code) match {
+          case Some(material) =>
+            paths += material.name.replaceAll(spCloud, ",") + " (" + code + ")"
+            val pathFull = paths.mkString(spCloud)
+
+            if (directories.contains(pathFull + spCloud)){
+              App.Cloud.Protocol + "://" + App.Cloud.Host + "/apps/files/?dir=/" + pathFull
+            }
+            else {
+              directories.find(x => x.contains(code)) match {
+                case Some(value) => value
+                case _ =>
+                  (2.to(paths.length)).foreach(p => {
+                    val path = paths.take(p).mkString(spCloud)
+                    if (!directories.contains(path + spCloud)){
+                      cloud.createFolder(path)
+                    }
+                  })
+                  App.Cloud.Protocol + "://" + App.Cloud.Host + "/apps/files/?dir=/" + pathFull
+              }
+            }
+          case _ => s"ERROR: There is no material with code $code"
+        }
+      case _ => s"ERROR: There is no defined cloud path for project $project"
+    }
+  }
 }
