@@ -18,7 +18,8 @@ import scala.concurrent.Await
 import scala.concurrent.duration.{Duration, SECONDS, pairIntToDuration, pairLongToDuration}
 
 trait FileManagerHelper extends IssueManagerHelper with MaterialManagerHelper{
-  val sp: String = File.pathSeparator
+  val sp: String = File.separatorChar.toString
+  val spCloud: String = "/"
 
   def getDocumentDirectories: List[DocumentDirectories] ={
     DBManager.GetMongoConnection() match {
@@ -193,5 +194,7 @@ trait FileManagerHelper extends IssueManagerHelper with MaterialManagerHelper{
       case _ => s"ERROR: There is no issue found with id $id"
     }
   }
-
+  def replaceSymbols(input: String): String = {
+    input.replaceAll(sp, "-")
+  }
 }

@@ -190,7 +190,7 @@ class FileManager extends Actor with MongoCodecs with MaterialManagerHelper with
     val projectNames = getProjectNames
     projectNames.find(_.rkd == project) match {
       case Some(cloudPath) =>
-        val paths = ListBuffer.empty[String]
+        val paths = ListBuffer(cloudPath.cloud, "Materials")
         1.to(4).foreach(x => {
           val nodePath = code.substring(0, 3 * x)
           nodes.find(_.data == nodePath) match {
@@ -200,19 +200,15 @@ class FileManager extends Actor with MongoCodecs with MaterialManagerHelper with
         })
         getMaterial(code) match {
           case Some(material) =>
-            paths += material.name + " (" + code + ")"
-            val sp = "/"
-            var path = cloudPath.cloud + sp + "Materials"
-            var pathFull = path
-            paths.foreach(p => {
-              pathFull = pathFull + sp + p
-            })
+            paths += material.name.replaceAll(spCloud, ",") + " (" + code + ")"
+            val pathFull = paths.mkString(spCloud)
+
             if (cloud.folderExists(pathFull)){
               App.Cloud.Protocol + "://" + App.Cloud.Host + "/apps/files/?dir=/" + pathFull
             }
             else{
-              paths.foreach(p => {
-                path = path + sp + p
+              (1.to(paths.length)).foreach(p => {
+                val path = paths.take(p).mkString(spCloud)
                 if (!cloud.folderExists(path)){
                   cloud.createFolder(path)
                 }
