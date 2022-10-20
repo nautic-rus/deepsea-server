@@ -1,11 +1,15 @@
 package deepsea.issues
 
 import deepsea.auth.AuthManager.User
+import deepsea.database.DBManager.RsIterator
 import deepsea.database.{DBManager, DatabaseManager, MongoCodecs}
 import deepsea.database.DatabaseManager.GetConnection
+import deepsea.files.FileManager.{CloudFile, DocumentDirectories}
+import deepsea.files.FileManagerHelper
 import deepsea.files.classes.FileAttachment
 import deepsea.issues.IssueManager.DailyTask
 import deepsea.issues.classes.{ChildIssue, Issue, IssueAction, IssueCheck, IssueHistory, IssueMessage, IssuePeriod}
+import deepsea.materials.MaterialManager.ProjectName
 import deepsea.time.TimeControlManager.UserWatch
 import io.circe.parser.decode
 import org.mongodb.scala.MongoCollection
@@ -17,7 +21,7 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
 import scala.concurrent.duration.{Duration, SECONDS}
 
-trait IssueManagerHelper extends MongoCodecs{
+trait IssueManagerHelper extends MongoCodecs {
 
   def getIssuesForUser(user: User): ListBuffer[Issue] ={
     val issues = ListBuffer.empty[Issue]
@@ -295,6 +299,7 @@ trait IssueManagerHelper extends MongoCodecs{
               case _ => 0
             }
             revision_files = getRevisionFiles(id)
+            cloud_files = getCloudFiles(id)
             archive_revision_files = getRemovedRevisionFiles(id)
             labor = getIssueLabor(id)
             checks = getIssueChecks(id)
@@ -802,4 +807,77 @@ trait IssueManagerHelper extends MongoCodecs{
       case _ => List.empty[DailyTask]
     }
   }
+  def getCloudFiles(id: Int): List[FileAttachment]={
+    val spCloud: String = "/"
+    val res = ListBuffer.empty[FileAttachment]
+    getIssueDetails(id) match {
+      case Some(issue) =>
+        getProjectNames.find(_.pdsp == issue.project) match {
+          case Some(projectName) =>
+            getDocumentDirectories.find(x => x.project == projectName.rkd && x.department == issue.department) match {
+              case Some(docDirectories) =>
+                val pathFull = List(projectName.cloud, "Documents", issue.department, issue.doc_number).mkString(spCloud).replaceAll("210101_NR004", "TEST")
+
+                val cloudFiles = DBManager.GetNextCloudConnection() match {
+                  case Some(cloudConnection) =>
+                    val stmt = cloudConnection.createStatement()
+                    val query = s"select * from oc_activity where file like '%$pathFull%'"
+                    RsIterator(stmt.executeQuery(query)).map(rs => {
+                      CloudFile(
+                        rs.getLong("timestamp"),
+                        rs.getString("type"),
+                        rs.getString("user"),
+                        rs.getString("file"),
+                        rs.getString("link"),
+                        rs.getInt("object_id")
+                      )
+                    }).toList
+                  case _ => List.empty[CloudFile]
+                }
+
+                val cloudFilesActive = cloudFiles.filter(x => x.typeAction == "file_created" && !cloudFiles.exists(y => y.typeAction == "file_deleted" && y.id == x.id))
+
+                docDirectories.directories.foreach(p => {
+                  val path = pathFull + spCloud + p
+                  cloudFilesActive.filter(x => x.file.contains(path) && x.file.split("/").last.contains(".")).foreach(cFile => {
+                    res += new FileAttachment(
+                      cFile.file.split("/").last,
+                      cFile.url,
+                      cFile.timeStamp,
+                      cFile.user,
+                      "",
+                      p,
+                      1
+                    )
+                  })
+                })
+              case _ =>
+            }
+          case _ =>
+        }
+      case _ =>
+    }
+    res.toList
+  }
+  def getDocumentDirectories: List[DocumentDirectories] ={
+    DBManager.GetMongoConnection() match {
+      case Some(mongo) =>
+        Await.result(mongo.getCollection("document-directories").find[DocumentDirectories]().toFuture(), Duration(30, SECONDS)) match {
+          case projectNames => projectNames.toList
+          case _ => List.empty[DocumentDirectories]
+        }
+      case _ => List.empty[DocumentDirectories]
+    }
+  }
+  def getProjectNames: List[ProjectName] ={
+    DBManager.GetMongoConnection() match {
+      case Some(mongo) =>
+        Await.result(mongo.getCollection("project-names").find[ProjectName]().toFuture(), Duration(30, SECONDS)) match {
+          case projectNames => projectNames.toList
+          case _ => List.empty[ProjectName]
+        }
+      case _ => List.empty[ProjectName]
+    }
+  }
+
 }

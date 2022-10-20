@@ -5,6 +5,7 @@ import akka.http.scaladsl.{Http, HttpExt}
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMethods, HttpRequest}
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.util.ByteString
+import deepsea.database.DBManager
 import deepsea.time.TimeAndWeatherManager.{GetTimeAndWeather, SetTimeAndWeather, Weather, writeWeather}
 import play.api.libs.json.{JsArray, Json, OWrites}
 
@@ -38,7 +39,19 @@ class TimeAndWeatherManager extends Actor{
     case GetTimeAndWeather() =>
       weather.time = new Date().getTime
       sender() ! Json.toJson(weather)
-    case SetTimeAndWeather() => setTimeAndWeather()
+    case SetTimeAndWeather() =>
+      setTimeAndWeather()
+//      DBManager.GetNextCloudConnection() match {
+//        case Some(connection) =>
+//          val stmt = connection.createStatement()
+//          val query = "select * from oc_activity where file like '%0101_revB.pdf%'"
+//          val rs = stmt.executeQuery(query)
+//          while (rs.next()){
+//            val user = rs.getString("user")
+//            println(new Date().toString + " " + user)
+//          }
+//        case _ => None
+//      }
     case _ => None
   }
   def setTimeAndWeather(): Unit ={

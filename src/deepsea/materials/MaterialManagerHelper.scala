@@ -44,14 +44,4 @@ trait MaterialManagerHelper extends IssueManagerHelper {
       case _ => Option.empty[Material]
     }
   }
-  def getProjectNames: List[ProjectName] ={
-    DBManager.GetMongoConnection() match {
-      case Some(mongo) =>
-        Await.result(mongo.getCollection("project-names").find[ProjectName]().toFuture(), Duration(30, SECONDS)) match {
-          case projectNames => projectNames.toList
-          case _ => List.empty[ProjectName]
-        }
-      case _ => List.empty[ProjectName]
-    }
-  }
 }

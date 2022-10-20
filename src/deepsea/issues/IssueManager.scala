@@ -102,7 +102,18 @@ object IssueManager{
 class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with FileManagerHelper {
   implicit val timeout: Timeout = Timeout(30, TimeUnit.SECONDS)
 
-//  override def preStart(): Unit = {
+  override def preStart(): Unit = {
+    DBManager.GetNextCloudConnection() match {
+      case Some(connection) =>
+        val stmt = connection.createStatement()
+        val query = "select * from oc_activity where file like '%0101_revB.pdf%'"
+        val rs = stmt.executeQuery(query)
+        while (rs.next()){
+          val jk = rs.getString("user")
+          val jkk = jk
+        }
+      case _ => None
+    }
 //    Await.result(ActorManager.auth ? GetUser("op"), timeout.duration) match {
 //      case user: User =>
 //        val issues = getIssuesForUser(user)
@@ -124,7 +135,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
 //
 //      case _ => sender() ! Json.toJson(ListBuffer.empty[Issue])
 //    }
-//  }
+  }
   override def receive: Receive = {
     case GetIssueProjects() => sender() ! Json.toJson(getIssueProjects)
     case GetIssueTypes() => sender() ! Json.toJson(getIssueTypes)

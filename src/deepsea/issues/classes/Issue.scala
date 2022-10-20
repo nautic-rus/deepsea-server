@@ -44,6 +44,7 @@ object Issue{
         "delivered_date" -> x.delivered_date,
         "revision" -> x.revision,
         "revision_files" -> x.revision_files,
+        "cloud_files" -> x.cloud_files,
         "archive_revision_files" -> x.archive_revision_files,
         "labor" -> x.labor,
         "checks" -> x.checks,
@@ -118,6 +119,7 @@ class Issue(var id: Int, var status: String, var project: String, var department
   var delivered_date: Long = 0
   var revision: String = ""
   var revision_files: ListBuffer[FileAttachment] = ListBuffer.empty[FileAttachment]
+  var cloud_files: List[FileAttachment] = List.empty[FileAttachment]
   var archive_revision_files: ListBuffer[FileAttachment] = ListBuffer.empty[FileAttachment]
   var first_local_approval_date: Long = 0
   var labor: Double = 0

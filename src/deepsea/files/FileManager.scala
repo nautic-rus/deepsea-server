@@ -31,6 +31,8 @@ object FileManager{
   case class CreateMaterialCloudDirectory(project: String, code: String)
   case class CreateDocumentCloudDirectory(id: String)
   case class GetFileFromCloud(path: String)
+  case class GetDocumentFiles(id: String)
+  case class CloudFile(timeStamp: Long, typeAction: String, user: String, file: String, url: String, id: Int)
 
   case class TreeFile(url: String, path: String, size: Long, name: String, created_by: String, date: Long)
   case class TreeFileHistory(user: String, date: Long, file: TreeFile)
@@ -79,7 +81,8 @@ class FileManager extends Actor with MongoCodecs with MaterialManagerHelper with
       sender() ! createDocumentDirectory(id.toIntOption.getOrElse(0)).asJson.noSpaces
     case GetFileFromCloud(path) =>
       sender() ! getFileFromCloud(path)
-
+    case GetDocumentFiles(id) =>
+      sender() ! Json.toJson(getCloudFiles(id.toIntOption.getOrElse(0)))
     case _ => None
   }
 

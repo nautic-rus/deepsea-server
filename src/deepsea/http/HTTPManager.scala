@@ -7,7 +7,7 @@ import akka.actor.{Actor, ActorRef}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.Multipart.BodyPart
 import akka.http.scaladsl.model.{HttpEntity, Multipart}
-import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.Directives.{path, _}
 import akka.http.scaladsl.server.{Route, StandardRoute}
 import akka.pattern.ask
 import akka.stream.scaladsl.{FileIO, Sink}
@@ -18,7 +18,7 @@ import deepsea.actors.ActorManager
 import deepsea.actors.ActorStartupManager.HTTPManagerStarted
 import deepsea.auth.AuthManager.{GetUsers, Login, ShareRights}
 import deepsea.fest.FestManager.{DeleteFestKaraoke, DeleteFestSauna, DeleteFestStories, GetBestPlayers, GetFestKaraoke, GetFestSauna, GetFestStories, GetMarks, GetTeamsWon, SetBestPlayer, SetFestKaraoke, SetFestSauna, SetFestStories, SetMarks, SetTeamsWon}
-import deepsea.files.FileManager.{CreateDocumentCloudDirectory, CreateFile, CreateMaterialCloudDirectory, GetFileFromCloud, GetPdSpList}
+import deepsea.files.FileManager.{CreateDocumentCloudDirectory, CreateFile, CreateMaterialCloudDirectory, GetDocumentFiles, GetFileFromCloud, GetPdSpList}
 import deepsea.files.classes.FileAttachment
 import deepsea.issues.IssueManager._
 import deepsea.materials.MaterialManager.{GetMaterialNodes, GetMaterials, GetWCDrawings, GetWCZones, GetWeightControl, SetWeightControl, UpdateMaterial, UpdateMaterialNode}
@@ -393,6 +393,9 @@ class HTTPManager extends Actor{
       },
       (get & path("cloud") & parameter("path")){ (path) =>
         askFor(ActorManager.files, GetFileFromCloud(path))
+      },
+      (get & path("cloudDocFiles") & parameter("id")){ (id) =>
+        askFor(ActorManager.files, GetDocumentFiles(id))
       }
     )
   }
