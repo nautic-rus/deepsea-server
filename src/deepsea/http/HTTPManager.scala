@@ -18,7 +18,7 @@ import deepsea.actors.ActorManager
 import deepsea.actors.ActorStartupManager.HTTPManagerStarted
 import deepsea.auth.AuthManager.{GetUsers, Login, ShareRights}
 import deepsea.fest.FestManager.{DeleteFestKaraoke, DeleteFestSauna, DeleteFestStories, GetBestPlayers, GetFestKaraoke, GetFestSauna, GetFestStories, GetMarks, GetTeamsWon, SetBestPlayer, SetFestKaraoke, SetFestSauna, SetFestStories, SetMarks, SetTeamsWon}
-import deepsea.files.FileManager.{CreateDocumentCloudDirectory, CreateFile, CreateMaterialCloudDirectory, GetDocumentFiles, GetFileFromCloud, GetPdSpList}
+import deepsea.files.FileManager.{CreateDocumentCloudDirectory, CreateFile, CreateMaterialCloudDirectory, GetCloudFiles, GetDocumentFiles, GetFileFromCloud, GetPdSpList}
 import deepsea.files.classes.FileAttachment
 import deepsea.issues.IssueManager._
 import deepsea.materials.MaterialManager.{GetMaterialNodes, GetMaterials, GetWCDrawings, GetWCZones, GetWeightControl, SetWeightControl, UpdateMaterial, UpdateMaterialNode}
@@ -396,6 +396,9 @@ class HTTPManager extends Actor{
       },
       (get & path("cloudDocFiles") & parameter("id")){ (id) =>
         askFor(ActorManager.files, GetDocumentFiles(id))
+      },
+      (get & path("cloudFiles") & parameter("filter")){ (filter) =>
+        askFor(ActorManager.files, GetCloudFiles(filter))
       }
     )
   }

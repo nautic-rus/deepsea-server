@@ -929,5 +929,36 @@ trait IssueManagerHelper extends MongoCodecs {
       case _ => List.empty[ProjectName]
     }
   }
-
+  def getCloudFiles(filter: String): List[FileAttachment]= {
+    val res = ListBuffer.empty[FileAttachment]
+    val cloudFiles = DBManager.GetNextCloudConnection() match {
+      case Some(cloudConnection) =>
+        val stmt = cloudConnection.createStatement()
+        val query = s"select * from oc_activity where file like '%$filter%'"
+        RsIterator(stmt.executeQuery(query)).map(rs => {
+          CloudFile(
+            rs.getLong("timestamp"),
+            rs.getString("type"),
+            rs.getString("user"),
+            rs.getString("file"),
+            rs.getString("link"),
+            rs.getInt("object_id")
+          )
+        }).toList
+      case _ => List.empty[CloudFile]
+    }
+    val cloudFilesActive = cloudFiles.filter(x => x.typeAction == "file_created" && !cloudFiles.exists(y => y.typeAction == "file_deleted" && y.id == x.id))
+    cloudFilesActive.foreach(cFile => {
+      res += new FileAttachment(
+        cFile.file.split("/").last,
+        App.HTTPServer.RestUrl + "/" + "cloud?path=" + cFile.file,
+        cFile.timeStamp,
+        cFile.user,
+        "",
+        "",
+        1
+      )
+    })
+    res.toList
+  }
 }
