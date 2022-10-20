@@ -821,7 +821,8 @@ trait IssueManagerHelper extends MongoCodecs {
               case Some(cloudConnection) =>
                 val stmt = cloudConnection.createStatement()
                 val query = s"select * from oc_activity where file like '%$pathFull%'"
-                RsIterator(stmt.executeQuery(query)).map(rs => {
+                val resultSet = RsIterator(stmt.executeQuery(query))
+                val res = resultSet.map(rs => {
                   CloudFile(
                     rs.getLong("timestamp"),
                     rs.getString("type"),
@@ -831,6 +832,10 @@ trait IssueManagerHelper extends MongoCodecs {
                     rs.getInt("object_id")
                   )
                 }).toList
+                resultSet.rs.close()
+                stmt.close()
+                cloudConnection.close()
+                res
               case _ => List.empty[CloudFile]
             }
 
@@ -872,7 +877,8 @@ trait IssueManagerHelper extends MongoCodecs {
                   case Some(cloudConnection) =>
                     val stmt = cloudConnection.createStatement()
                     val query = s"select * from oc_activity where file like '%$pathFull%'"
-                    RsIterator(stmt.executeQuery(query)).map(rs => {
+                    val resultSet = RsIterator(stmt.executeQuery(query))
+                    val res = resultSet.map(rs => {
                       CloudFile(
                         rs.getLong("timestamp"),
                         rs.getString("type"),
@@ -882,6 +888,10 @@ trait IssueManagerHelper extends MongoCodecs {
                         rs.getInt("object_id")
                       )
                     }).toList
+                    resultSet.rs.close()
+                    stmt.close()
+                    cloudConnection.close()
+                    res
                   case _ => List.empty[CloudFile]
                 }
 
@@ -935,7 +945,8 @@ trait IssueManagerHelper extends MongoCodecs {
       case Some(cloudConnection) =>
         val stmt = cloudConnection.createStatement()
         val query = s"select * from oc_activity where file like '%$filter%'"
-        RsIterator(stmt.executeQuery(query)).map(rs => {
+        val resultSet = RsIterator(stmt.executeQuery(query))
+        val res = resultSet.map(rs => {
           CloudFile(
             rs.getLong("timestamp"),
             rs.getString("type"),
@@ -945,6 +956,10 @@ trait IssueManagerHelper extends MongoCodecs {
             rs.getInt("object_id")
           )
         }).toList
+        resultSet.rs.close()
+        stmt.close()
+        cloudConnection.close()
+        res
       case _ => List.empty[CloudFile]
     }
     val cloudFilesActive = cloudFiles.filter(x => x.typeAction == "file_created" && !cloudFiles.exists(y => y.typeAction == "file_deleted" && y.id == x.id))
