@@ -130,5 +130,10 @@
             <artifactId>circe-generic-extras_2.13</artifactId>
             <version>0.14.1</version>
         </dependency>
+        <dependency>
+            <groupId>com.jcraft</groupId>
+            <artifactId>jsch</artifactId>
+            <version>0.1.55</version>
+        </dependency>
     </dependencies>
 </project>

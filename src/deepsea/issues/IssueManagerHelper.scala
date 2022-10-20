@@ -1,5 +1,6 @@
 package deepsea.issues
 
+import deepsea.App
 import deepsea.auth.AuthManager.User
 import deepsea.database.DBManager.RsIterator
 import deepsea.database.{DBManager, DatabaseManager, MongoCodecs}
@@ -299,7 +300,7 @@ trait IssueManagerHelper extends MongoCodecs {
               case _ => 0
             }
             revision_files = getRevisionFiles(id)
-            cloud_files = getCloudFiles(id)
+            cloud_files = getCloudFiles(project, doc_number, department)
             archive_revision_files = getRemovedRevisionFiles(id)
             labor = getIssueLabor(id)
             checks = getIssueChecks(id)
@@ -807,6 +808,55 @@ trait IssueManagerHelper extends MongoCodecs {
       case _ => List.empty[DailyTask]
     }
   }
+  def getCloudFiles(project: String, docNumber: String, department: String): List[FileAttachment]={
+    val spCloud: String = "/"
+    val res = ListBuffer.empty[FileAttachment]
+    getProjectNames.find(_.pdsp == project) match {
+      case Some(projectName) =>
+        getDocumentDirectories.find(x => x.project == projectName.rkd && x.department == department) match {
+          case Some(docDirectories) =>
+            val pathFull = List(projectName.cloud, "Documents", department, docNumber).mkString(spCloud).replaceAll("210101_NR004", "TEST")
+
+            val cloudFiles = DBManager.GetNextCloudConnection() match {
+              case Some(cloudConnection) =>
+                val stmt = cloudConnection.createStatement()
+                val query = s"select * from oc_activity where file like '%$pathFull%'"
+                RsIterator(stmt.executeQuery(query)).map(rs => {
+                  CloudFile(
+                    rs.getLong("timestamp"),
+                    rs.getString("type"),
+                    rs.getString("user"),
+                    rs.getString("file"),
+                    rs.getString("link"),
+                    rs.getInt("object_id")
+                  )
+                }).toList
+              case _ => List.empty[CloudFile]
+            }
+
+            val cloudFilesActive = cloudFiles.filter(x => x.typeAction == "file_created" && !cloudFiles.exists(y => y.typeAction == "file_deleted" && y.id == x.id))
+
+            docDirectories.directories.foreach(p => {
+              val path = pathFull + spCloud + p
+              cloudFilesActive.filter(x => x.file.contains(path) && x.file.split("/").last.contains(".")).foreach(cFile => {
+                res += new FileAttachment(
+                  cFile.file.split("/").last,
+//                  App.HTTPServer.RestUrl + "/" + "cloud?path=" + cFile.file,
+                  "http://192.168.1.122:1112" + "/" + "cloud?path=" + cFile.file,
+                  cFile.timeStamp,
+                  cFile.user,
+                  "",
+                  p,
+                  1
+                )
+              })
+            })
+          case _ =>
+        }
+      case _ =>
+    }
+    res.toList
+  }
   def getCloudFiles(id: Int): List[FileAttachment]={
     val spCloud: String = "/"
     val res = ListBuffer.empty[FileAttachment]
@@ -842,7 +892,7 @@ trait IssueManagerHelper extends MongoCodecs {
                   cloudFilesActive.filter(x => x.file.contains(path) && x.file.split("/").last.contains(".")).foreach(cFile => {
                     res += new FileAttachment(
                       cFile.file.split("/").last,
-                      cFile.url,
+                      App.HTTPServer.RestUrl + "/" + "cloud?path=" + cFile.file,
                       cFile.timeStamp,
                       cFile.user,
                       "",
@@ -855,7 +905,7 @@ trait IssueManagerHelper extends MongoCodecs {
             }
           case _ =>
         }
-      case _ =>
+      case _ => None
     }
     res.toList
   }

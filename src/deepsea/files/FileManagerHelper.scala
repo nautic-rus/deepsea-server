@@ -1,5 +1,6 @@
 package deepsea.files
 
+import akka.http.scaladsl.model.Uri.Path
 import deepsea.App
 import deepsea.database.DBManager.RsIterator
 import deepsea.database.{DBManager, DatabaseManager}
@@ -66,13 +67,11 @@ trait FileManagerHelper extends IssueManagerHelper with MaterialManagerHelper{
   }
   def getFileFromCloud(path: String): File ={
     val cloud = new NextcloudConnector(App.Cloud.Host, true, 443, App.Cloud.UserName, App.Cloud.Password)
-    val name = path.split(sp).last
     val dir = Files.createTempDirectory("download")
-    val res = new File(List(dir, name).mkString(sp))
     if (cloud.fileExists(path)){
-      Files.copy(cloud.downloadFile(path), res.toPath, StandardCopyOption.REPLACE_EXISTING)
+      cloud.downloadFile(path, dir.toString)
     }
-    res
+    new File(Files.list(dir).toArray.toList.head.toString)
   }
   def copyFilesToDirectory(docNumber: String, department: String, attachments: List[FileAttachment], directory: String): String ={
     val project = if (docNumber.contains("-")) docNumber.split("-").head else ""
@@ -169,10 +168,10 @@ trait FileManagerHelper extends IssueManagerHelper with MaterialManagerHelper{
       case Some(issue) =>
         getProjectNames.find(_.pdsp == issue.project) match {
           case Some(projectName) =>
-            getDocumentDirectories.find(x => x.project == issue.project && x.department == issue.department) match {
+            getDocumentDirectories.find(x => x.project == projectName.rkd && x.department == issue.department) match {
               case Some(docDirectories) =>
                 val paths = List(projectName.cloud, "Documents", issue.department, issue.doc_number)
-                val pathFull = paths.mkString(sp)
+                val pathFull = paths.mkString(spCloud).replaceAll("210101_NR004", "TEST")
                 if (cloud.folderExists(pathFull)){
                   App.Cloud.Protocol + "://" + App.Cloud.Host + "/apps/files/?dir=/" + pathFull
                 }

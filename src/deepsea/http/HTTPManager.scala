@@ -400,15 +400,15 @@ class HTTPManager extends Actor{
     )
   }
 
-  def askFor(actor: ActorRef, command: Any, long: Boolean = false): StandardRoute ={
-    try{
+  def askFor(actor: ActorRef, command: Any, long: Boolean = false): Route = {
+    try {
       Await.result(actor ? command, timeout.duration) match {
         case response: JsValue => complete(HttpEntity(response.toString()))
         case response: Array[Byte] => complete(HttpEntity(response))
         case response: String => complete(HttpEntity(response))
         case response: io.circe.Json => complete(HttpEntity(response.noSpaces))
         case response: HttpEntity.Strict => complete(response)
-//        case response: File => getFromFile(response)
+        case response: File => getFromFile(response)
         case _ => complete(HttpEntity(Json.toJson("Error: Wrong response from actor.").toString()))
       }
     }
