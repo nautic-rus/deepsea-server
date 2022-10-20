@@ -797,7 +797,7 @@ trait IssueManagerHelper extends MongoCodecs {
     }
   }
   def getDailyTasks: List[DailyTask] ={
-    DatabaseManager.GetMongoConnection() match {
+    DBManager.GetMongoConnection() match {
       case Some(mongo) =>
         val dailyTasks: MongoCollection[DailyTask] = mongo.getCollection("dailyTasks")
         Await.result(dailyTasks.find().toFuture(), Duration(30, SECONDS)) match {
