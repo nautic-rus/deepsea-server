@@ -815,7 +815,7 @@ trait IssueManagerHelper extends MongoCodecs {
       case Some(projectName) =>
         getDocumentDirectories.find(x => x.project == projectName.rkd && x.department == department) match {
           case Some(docDirectories) =>
-            val pathFull = List(projectName.cloud, "Documents", department, docNumber).mkString(spCloud).replaceAll("210101_NR004", "TEST")
+            val pathFull = List(projectName.cloud, "Documents", department, docNumber).mkString(spCloud)
 
             val cloudFiles = DBManager.GetNextCloudConnection() match {
               case Some(cloudConnection) =>
@@ -866,7 +866,7 @@ trait IssueManagerHelper extends MongoCodecs {
           case Some(projectName) =>
             getDocumentDirectories.find(x => x.project == projectName.rkd && x.department == issue.department) match {
               case Some(docDirectories) =>
-                val pathFull = List(projectName.cloud, "Documents", issue.department, issue.doc_number).mkString(spCloud).replaceAll("210101_NR004", "TEST")
+                val pathFull = List(projectName.cloud, "Documents", issue.department, issue.doc_number).mkString(spCloud)
 
                 val cloudFiles = DBManager.GetNextCloudConnection() match {
                   case Some(cloudConnection) =>

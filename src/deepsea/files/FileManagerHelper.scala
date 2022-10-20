@@ -34,7 +34,7 @@ trait FileManagerHelper extends IssueManagerHelper with MaterialManagerHelper{
           case Some(projectName) =>
             getDocumentDirectories.find(x => x.project == projectName.rkd && x.department == issue.department) match {
               case Some(docDirectories) =>
-                val pathFull = List(projectName.cloud, "Documents", issue.department, issue.doc_number).mkString(spCloud).replaceAll("210101_NR004", "TEST")
+                val pathFull = List(projectName.cloud, "Documents", issue.department, issue.doc_number).mkString(spCloud)
 
                 if (!cloud.folderExists(pathFull)){
                   cloud.listFolderContent(pathFull)
@@ -171,7 +171,7 @@ trait FileManagerHelper extends IssueManagerHelper with MaterialManagerHelper{
             getDocumentDirectories.find(x => x.project == projectName.rkd && x.department == issue.department) match {
               case Some(docDirectories) =>
                 val paths = List(projectName.cloud, "Documents", issue.department, issue.doc_number)
-                val pathFull = paths.mkString(spCloud).replaceAll("210101_NR004", "TEST")
+                val pathFull = paths.mkString(spCloud)
                 if (cloud.folderExists(pathFull)){
                   App.Cloud.Protocol + "://" + App.Cloud.Host + "/apps/files/?dir=/" + pathFull
                 }
