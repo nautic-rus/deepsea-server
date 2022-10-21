@@ -32,7 +32,7 @@ object FileManager{
   case class CreateDocumentCloudDirectory(id: String)
   case class GetFileFromCloud(path: String)
   case class GetDocumentFiles(id: String)
-  case class CloudFile(timeStamp: Long, typeAction: String, user: String, file: String, url: String, id: Int)
+  case class CloudFile(timeStamp: Long, typeAction: String, subject: String, user: String, file: String, url: String, id: Int)
   case class GetCloudFiles(filter: String)
 
   case class TreeFile(url: String, path: String, size: Long, name: String, created_by: String, date: Long)

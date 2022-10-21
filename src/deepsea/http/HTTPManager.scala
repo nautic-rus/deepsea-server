@@ -174,6 +174,9 @@ class HTTPManager extends Actor{
       (get & path("wcZones")){
         askFor(ActorManager.materials, GetWCZones())
       },
+      (get & path("projectNames")){
+        askFor(ActorManager.issue, GetProjectNames())
+      },
       (get & path("mobileDrawings")){
         askFor(ActorManager.mobile, GetDrawings())
       },

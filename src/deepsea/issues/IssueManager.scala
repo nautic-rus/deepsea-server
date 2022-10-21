@@ -83,6 +83,7 @@ object IssueManager{
   case class AddDailyTask(jsValue: String)
   case class DeleteDailyTask(id: String)
   case class CombineIssues(firstIssue: String, secondIssue: String, user: String)
+  case class GetProjectNames()
 
   case class IssueDef(id: String, issueTypes: List[String], issueProjects: List[String])
   implicit val writesIssueDef: OWrites[IssueDef] = Json.writes[IssueDef]
@@ -285,6 +286,8 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     case CombineIssues(firstIssue, secondIssue, user) =>
       combineIssues(firstIssue.toIntOption.getOrElse(0), secondIssue.toIntOption.getOrElse(0), user)
       sender() ! "success".asJson.noSpaces
+    case GetProjectNames() =>
+      sender() ! getProjectNames.asJson.noSpaces
     case _ => None
   }
   def setDayCalendar(user: String, day: String, status: String): ListBuffer[IssueView] ={

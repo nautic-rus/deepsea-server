@@ -826,6 +826,7 @@ trait IssueManagerHelper extends MongoCodecs {
                   CloudFile(
                     rs.getLong("timestamp"),
                     rs.getString("type"),
+                    rs.getString("subject"),
                     rs.getString("user"),
                     rs.getString("file"),
                     rs.getString("link"),
@@ -882,6 +883,7 @@ trait IssueManagerHelper extends MongoCodecs {
                       CloudFile(
                         rs.getLong("timestamp"),
                         rs.getString("type"),
+                        rs.getString("subject"),
                         rs.getString("user"),
                         rs.getString("file"),
                         rs.getString("link"),
@@ -950,6 +952,7 @@ trait IssueManagerHelper extends MongoCodecs {
           CloudFile(
             rs.getLong("timestamp"),
             rs.getString("type"),
+            rs.getString("subject"),
             rs.getString("user"),
             rs.getString("file"),
             rs.getString("link"),
@@ -962,7 +965,7 @@ trait IssueManagerHelper extends MongoCodecs {
         res
       case _ => List.empty[CloudFile]
     }
-    val cloudFilesActive = cloudFiles.filter(x => x.typeAction == "file_created" && !cloudFiles.exists(y => y.typeAction == "file_deleted" && y.id == x.id))
+    val cloudFilesActive = cloudFiles.filter(x => x.typeAction == "file_created" && x.subject == "created_self" && !cloudFiles.exists(y => y.typeAction == "file_deleted" && y.id == x.id)).distinct
     cloudFilesActive.foreach(cFile => {
       res += new FileAttachment(
         cFile.file.split("/").last,
