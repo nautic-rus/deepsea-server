@@ -60,6 +60,7 @@ object MaterialManager{
                        provider: String = "",
                        note: String = "",
                        comment: String = "",
+                       manufacturer: String = "",
                        coefficient: Double = 1,
                        id: String = UUID.randomUUID().toString,
                        translations: List[MaterialTranslation] = List.empty[MaterialTranslation],
