@@ -300,7 +300,7 @@ trait IssueManagerHelper extends MongoCodecs {
               case _ => 0
             }
             revision_files = getRevisionFiles(id)
-            //cloud_files = getCloudFiles(project, doc_number, department)
+            cloud_files = getCloudFiles(project, doc_number, department)
             cloud_files = List.empty[FileAttachment]
             archive_revision_files = getRemovedRevisionFiles(id)
             labor = getIssueLabor(id)
@@ -841,7 +841,7 @@ trait IssueManagerHelper extends MongoCodecs {
               case _ => List.empty[CloudFile]
             }
 
-            val cloudFilesActive = cloudFiles.filter(x => x.typeAction == "file_created" && !cloudFiles.exists(y => y.typeAction == "file_deleted" && y.id == x.id))
+            val cloudFilesActive = cloudFiles.filter(x => x.typeAction == "file_created" && x.subject == "created_self" && !cloudFiles.exists(y => y.typeAction == "file_deleted" && y.id == x.id)).distinct
 
             docDirectories.directories.foreach(p => {
               val path = pathFull + spCloud + p
