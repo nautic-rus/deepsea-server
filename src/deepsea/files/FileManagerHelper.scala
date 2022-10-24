@@ -79,26 +79,26 @@ trait FileManagerHelper extends IssueManagerHelper with MaterialManagerHelper{
       case Some(docDirectories) =>
         val paths = List(directory, "Documents", department, docNumber)
         1.to(paths.length).foreach(p => {
-          val path = paths.take(p).mkString(sp)
+          val path = paths.take(p).mkString(spCloud)
           if (!new File(path).exists()){
             new File(path).mkdir()
           }
         })
-        val path = paths.mkString(sp)
-        docDirectories.directories.map(x => path + sp + x).foreach(d => {
+        val path = paths.mkString(spCloud)
+        docDirectories.directories.map(x => path + spCloud + x).foreach(d => {
           if (!new File(d).exists()){
             new File(d).mkdir()
           }
         })
-        val fullPath = paths.mkString(sp)
+        val fullPath = paths.mkString(spCloud)
         attachments.foreach(fileUrl => {
           try{
-            var name = fileUrl.url.split(sp).last
-            val enc = fileUrl.url.replace(fileUrl.url.split(sp).takeRight(1).head, "") + URLEncoder.encode(fileUrl.url.split(sp).takeRight(1).head, "UTF-8")
-            var file = new File(List(fullPath, fileUrl.group, name).mkString(sp))
+            var name = fileUrl.url.split(spCloud).last
+            val enc = fileUrl.url.replace(fileUrl.url.split(spCloud).takeRight(1).head, "") + URLEncoder.encode(fileUrl.url.split(spCloud).takeRight(1).head, "UTF-8")
+            var file = new File(List(fullPath, fileUrl.group, name).mkString(spCloud))
             while (file.exists()){
               name = name.replace("\\.", "%\\.")
-              file = new File(List(fullPath, fileUrl.group, name).mkString(sp))
+              file = new File(List(fullPath, fileUrl.group, name).mkString(spCloud))
             }
             val url = new URL(enc)
             val stream = url.openStream()

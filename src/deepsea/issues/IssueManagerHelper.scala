@@ -300,7 +300,8 @@ trait IssueManagerHelper extends MongoCodecs {
               case _ => 0
             }
             revision_files = getRevisionFiles(id)
-            cloud_files = getCloudFiles(project, doc_number, department)
+            //cloud_files = getCloudFiles(project, doc_number, department)
+            cloud_files = List.empty[FileAttachment]
             archive_revision_files = getRemovedRevisionFiles(id)
             labor = getIssueLabor(id)
             checks = getIssueChecks(id)
