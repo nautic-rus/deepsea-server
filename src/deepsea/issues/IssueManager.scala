@@ -119,7 +119,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
 //      case user: User =>
 //        val issues = getIssuesForUser(user)
 //        val revisionFiles = getRevisionFiles.filter(_.removed_date == 0)
-//        val issuesFiltered = issues.filter(x => List("NR004").contains(x.project) && x.issue_type == "RKD")
+//        val issuesFiltered = issues.filter(x => List("NR002").contains(x.project) && x.issue_type == "RKD")
 //        issuesFiltered.foreach(issue => {
 //          val files = revisionFiles.filter(_.issue_id == issue.id)
 //          if (files.nonEmpty){
