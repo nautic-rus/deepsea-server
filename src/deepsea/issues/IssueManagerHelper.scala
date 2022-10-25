@@ -947,7 +947,7 @@ trait IssueManagerHelper extends MongoCodecs {
     val cloudFiles = DBManager.GetNextCloudConnection() match {
       case Some(cloudConnection) =>
         val stmt = cloudConnection.createStatement()
-        val query = s"select * from oc_activity where file like '%$filter%'"
+        val query = s"select * from oc_activity where file like '%$filter%' and subject = 'created_self' and file not in (select file from oc_activity where type = 'file_deleted')"
         val resultSet = RsIterator(stmt.executeQuery(query))
         val res = resultSet.map(rs => {
           CloudFile(
@@ -966,7 +966,7 @@ trait IssueManagerHelper extends MongoCodecs {
         res
       case _ => List.empty[CloudFile]
     }
-    val cloudFilesActive = cloudFiles.filter(x => x.typeAction == "file_created" && x.subject == "created_self" && !cloudFiles.exists(y => y.typeAction == "file_deleted" && y.id == x.id)).distinct
+    val cloudFilesActive = cloudFiles.distinct
     cloudFilesActive.foreach(cFile => {
       res += new FileAttachment(
         cFile.file.split("/").last,
