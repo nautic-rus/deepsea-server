@@ -150,13 +150,13 @@ trait FileManagerHelper extends IssueManagerHelper with MaterialManagerHelper{
   }
   def generateDocumentDirectories(cloud: NextcloudConnector, paths: List[String], docDirectories: List[String]): Unit ={
     1.to(paths.length).foreach(p => {
-      val path = paths.take(p).mkString(sp)
+      val path = paths.take(p).mkString(spCloud)
       if (!cloud.folderExists(path)){
         cloud.createFolder(path)
       }
     })
-    val path = paths.mkString(sp)
-    docDirectories.map(x => path + sp + x).foreach(d => {
+    val path = paths.mkString(spCloud)
+    docDirectories.map(x => path + spCloud + x).foreach(d => {
       if (!cloud.folderExists(d)){
         cloud.createFolder(d)
       }
@@ -170,7 +170,7 @@ trait FileManagerHelper extends IssueManagerHelper with MaterialManagerHelper{
           case Some(projectName) =>
             getDocumentDirectories.find(x => x.project == projectName.rkd && x.department == issue.department) match {
               case Some(docDirectories) =>
-                val paths = List(projectName.cloud, "Documents", issue.department, issue.doc_number)
+                val paths = List(projectName.cloudRkd, "Documents", issue.department, issue.doc_number)
                 val pathFull = paths.mkString(spCloud)
                 if (cloud.folderExists(pathFull)){
                   App.Cloud.Protocol + "://" + App.Cloud.Host + "/apps/files/?dir=/" + pathFull

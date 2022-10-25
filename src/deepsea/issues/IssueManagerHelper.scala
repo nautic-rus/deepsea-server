@@ -301,7 +301,7 @@ trait IssueManagerHelper extends MongoCodecs {
             }
             revision_files = getRevisionFiles(id)
             cloud_files = getCloudFiles(project, doc_number, department)
-            cloud_files = List.empty[FileAttachment]
+            //cloud_files = List.empty[FileAttachment]
             archive_revision_files = getRemovedRevisionFiles(id)
             labor = getIssueLabor(id)
             checks = getIssueChecks(id)
@@ -816,7 +816,7 @@ trait IssueManagerHelper extends MongoCodecs {
       case Some(projectName) =>
         getDocumentDirectories.find(x => x.project == projectName.rkd && x.department == department) match {
           case Some(docDirectories) =>
-            val pathFull = List(projectName.cloud, "Documents", department, docNumber).mkString(spCloud)
+            val pathFull = List(projectName.cloudRkd, "Documents", department, docNumber).mkString(spCloud)
 
             val cloudFiles = DBManager.GetNextCloudConnection() match {
               case Some(cloudConnection) =>
@@ -841,7 +841,7 @@ trait IssueManagerHelper extends MongoCodecs {
               case _ => List.empty[CloudFile]
             }
 
-            val cloudFilesActive = cloudFiles.filter(x => x.typeAction == "file_created" && x.subject == "created_self" && !cloudFiles.exists(y => y.typeAction == "file_deleted" && y.id == x.id)).distinct
+            val cloudFilesActive = cloudFiles.filter(x => x.typeAction == "file_created" && x.subject == "created_self" && !cloudFiles.exists(y => y.typeAction == "file_deleted" && y.id == x.id)).distinctBy(_.file)
 
             docDirectories.directories.foreach(p => {
               val path = pathFull + spCloud + p
