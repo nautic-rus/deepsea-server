@@ -816,12 +816,12 @@ trait IssueManagerHelper extends MongoCodecs {
       case Some(projectName) =>
         getDocumentDirectories.find(x => x.project == projectName.rkd && x.department == department) match {
           case Some(docDirectories) =>
-            val pathFull = List(projectName.cloudRkd, "Documents", department, docNumber).mkString(spCloud)
+            val filter = List(projectName.cloudRkd, "Documents", department, docNumber).mkString(spCloud)
 
             val cloudFiles = DBManager.GetNextCloudConnection() match {
               case Some(cloudConnection) =>
                 val stmt = cloudConnection.createStatement()
-                val query = s"select * from oc_activity where file like '%$pathFull%'"
+                val query = s"select * from oc_activity where file like '%$filter%' and subject = 'created_self' and object_id not in (select fileid from oc_filecache where path like '%/trash/%')"
                 val resultSet = RsIterator(stmt.executeQuery(query))
                 val res = resultSet.map(rs => {
                   CloudFile(
@@ -841,11 +841,9 @@ trait IssueManagerHelper extends MongoCodecs {
               case _ => List.empty[CloudFile]
             }
 
-            val cloudFilesActive = cloudFiles.filter(x => x.typeAction == "file_created" && x.subject == "created_self" && !cloudFiles.exists(y => y.typeAction == "file_deleted" && y.id == x.id)).distinctBy(_.file)
-
             docDirectories.directories.foreach(p => {
-              val path = pathFull + spCloud + p
-              cloudFilesActive.filter(x => x.file.contains(path) && x.file.split("/").last.contains(".")).foreach(cFile => {
+              val path = filter + spCloud + p
+              cloudFiles.filter(x => x.file.contains(path) && x.file.split("/").last.contains(".")).foreach(cFile => {
                 res += new FileAttachment(
                   cFile.file.split("/").last,
                   App.HTTPServer.RestUrl + "/" + "cloud?path=" + cFile.file,
