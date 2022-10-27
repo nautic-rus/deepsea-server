@@ -846,7 +846,7 @@ trait IssueManagerHelper extends MongoCodecs {
               cloudFiles.filter(x => x.file.contains(path) && x.file.split("/").last.contains(".")).foreach(cFile => {
                 res += new FileAttachment(
                   cFile.file.split("/").last,
-                  App.HTTPServer.RestUrl + "/" + "cloud?path=" + cFile.file,
+                  App.HTTPServer.RestUrl + "/" + "cloud/" + cFile.file.split("/").last + "?path=" + cFile.file,
 //                  "http://192.168.1.122:1112" + "/" + "cloud?path=" + cFile.file,
                   cFile.timeStamp,
                   cFile.user,
@@ -903,7 +903,7 @@ trait IssueManagerHelper extends MongoCodecs {
                   cloudFilesActive.filter(x => x.file.contains(path) && x.file.split("/").last.contains(".")).foreach(cFile => {
                     res += new FileAttachment(
                       cFile.file.split("/").last,
-                      App.HTTPServer.RestUrl + "/" + "cloud?path=" + cFile.file,
+                      App.HTTPServer.RestUrl + "/" + "cloud/" + cFile.file.split("/").last + "?path=" + cFile.file,
                       cFile.timeStamp,
                       cFile.user,
                       "",
@@ -969,7 +969,7 @@ trait IssueManagerHelper extends MongoCodecs {
     cloudFilesActive.foreach(cFile => {
       res += new FileAttachment(
         cFile.file.split("/").last,
-        App.HTTPServer.RestUrl + "/" + "cloud?path=" + cFile.file,
+        App.HTTPServer.RestUrl + "/" + "cloud/" + cFile.file.split("/").last + "?path=" + cFile.file,
         cFile.timeStamp,
         cFile.user,
         "",

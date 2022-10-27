@@ -402,7 +402,10 @@ class HTTPManager extends Actor{
       },
       (get & path("cloudFiles") & parameter("filter")){ (filter) =>
         askFor(ActorManager.files, GetCloudFiles(filter))
-      }
+      },
+      (get & path("cloud" / Segment) & parameter("path")){ (name, path) =>
+        askFor(ActorManager.files, GetFileFromCloud(path))
+      },
     )
   }
 
