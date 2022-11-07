@@ -21,7 +21,7 @@ import deepsea.fest.FestManager.{DeleteFestKaraoke, DeleteFestSauna, DeleteFestS
 import deepsea.files.FileManager.{CreateDocumentCloudDirectory, CreateFile, CreateMaterialCloudDirectory, GetCloudFiles, GetDocumentFiles, GetFileFromCloud, GetPdSpList}
 import deepsea.files.classes.FileAttachment
 import deepsea.issues.IssueManager._
-import deepsea.materials.MaterialManager.{GetMaterialNodes, GetMaterials, GetWCDrawings, GetWCZones, GetWeightControl, SetWeightControl, UpdateMaterial, UpdateMaterialNode}
+import deepsea.materials.MaterialManager.{GetMaterialNodes, GetMaterials, GetWCDrawings, GetWCZones, GetWeightControl, RemoveWeightControl, SetWeightControl, UpdateMaterial, UpdateMaterialNode}
 import deepsea.mobile.MobileManager.{GetDrawingInfo, GetDrawings}
 import deepsea.rocket.RocketChatManager.SendNotification
 import deepsea.time.LicenseManager.GetForanLicenses
@@ -167,6 +167,9 @@ class HTTPManager extends Actor{
       },
       (post & path("setWeightControl") & entity(as[String])){ (controlValue) =>
         askFor(ActorManager.materials, SetWeightControl(controlValue))
+      },
+      (post & path("removeWeightControl") & entity(as[String]) & parameter("user")){ (controlValue) =>
+        askFor(ActorManager.materials, RemoveWeightControl(controlValue))
       },
       (get & path("wcDrawings")){
         askFor(ActorManager.materials, GetWCDrawings())

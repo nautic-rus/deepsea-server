@@ -5,7 +5,7 @@ import com.mongodb.BasicDBObject
 import com.mongodb.client.model.Filters
 import deepsea.database.{DatabaseManager, MongoCodecs}
 import deepsea.database.DatabaseManager.GetMongoConnection
-import deepsea.materials.MaterialManager.{GetMaterialNodes, GetMaterials, GetWCDrawings, GetWCZones, GetWeightControl, Material, MaterialHistory, MaterialNode, MaterialNodeHistory, SetWeightControl, UpdateMaterial, UpdateMaterialNode, WCNumberName, WeightControl}
+import deepsea.materials.MaterialManager.{GetMaterialNodes, GetMaterials, GetWCDrawings, GetWCZones, GetWeightControl, Material, MaterialHistory, MaterialNode, MaterialNodeHistory, RemoveWeightControl, SetWeightControl, UpdateMaterial, UpdateMaterialNode, WCNumberName, WeightControl}
 import io.circe.{jawn, parser}
 import org.bson.Document
 import play.api.libs.json.{JsValue, Json}
@@ -15,7 +15,7 @@ import org.bson.codecs.configuration.CodecRegistry
 import org.mongodb.scala.MongoClient.DEFAULT_CODEC_REGISTRY
 import org.mongodb.scala.{MongoCollection, MongoDatabase}
 import org.mongodb.scala.bson.codecs.Macros._
-import org.mongodb.scala.model.Filters.equal
+import org.mongodb.scala.model.Filters.{and, equal}
 
 import scala.concurrent.Await
 import scala.concurrent.duration.{Duration, FiniteDuration, SECONDS}
@@ -47,6 +47,7 @@ object MaterialManager{
   case class GetWCDrawings()
   case class GetWCZones()
   case class SetWeightControl(controlValue: String)
+  case class RemoveWeightControl(controlValue: String, user: String)
   case class MaterialHistory(material: Material, user: String, date: Long = new Date().getTime)
   case class Material(
                        name: String = "",
@@ -84,7 +85,7 @@ object MaterialManager{
   case class MaterialNode(label: String, data: String, user: String, date: Long)
   case class MaterialNodeHistory(node: MaterialNode, user: String, date: Long = new Date().getTime)
 
-  case class WeightControl(docNumber: String, docName: String, zoneNumber: String, moveElement: String, zoneName: String, mount: Int, side: Int, weight: Double, x: Double, y: Double, z: Double, user: String, date: Long, project: String, removedDate: Long, removedUser: String)
+  case class WeightControl(docNumber: String, docName: String, zoneNumber: String, moveElement: String, zoneName: String, mount: Int, side: Int, weight: Double, x: Double, y: Double, z: Double, user: String, date: Long, project: String, var removedDate: Long, var removedUser: String)
   case class WCNumberName(number: String, name: String, project: String)
 }
 class MaterialManager extends Actor with MongoCodecs{
@@ -178,6 +179,20 @@ class MaterialManager extends Actor with MongoCodecs{
             case Some(mongo) =>
               val controls: MongoCollection[WeightControl] = mongo.getCollection("weightControl")
               Await.result(controls.insertOne(weightControl).toFuture(), Duration(30, SECONDS))
+            case _ =>
+          }
+        case Left(value) =>
+      }
+      sender() ! Json.toJson("success")
+    case RemoveWeightControl(controlValue, user) =>
+      decode[WeightControl](controlValue) match {
+        case Right(weightControl) =>
+          DatabaseManager.GetMongoConnection() match {
+            case Some(mongo) =>
+              val controls: MongoCollection[WeightControl] = mongo.getCollection("weightControl")
+              weightControl.removedUser = user
+              weightControl.removedDate = new Date().getTime
+              Await.result(controls.replaceOne(and(equal("date", weightControl.date), equal("user", weightControl.user)), weightControl).toFuture(), Duration(30, SECONDS))
             case _ =>
           }
         case Left(value) =>
