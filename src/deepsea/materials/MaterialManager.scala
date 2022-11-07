@@ -167,7 +167,7 @@ class MaterialManager extends Actor with MongoCodecs{
       DatabaseManager.GetMongoConnection() match {
         case Some(mongo) =>
           Await.result(mongo.getCollection("weightControl").find[WeightControl]().toFuture(), Duration(30, SECONDS)) match {
-            case dbValues => sender() ! dbValues.toList.asJson.noSpaces
+            case dbValues => sender() ! dbValues.toList.filter(_.removedDate == 0).asJson.noSpaces
             case _ => List.empty[WeightControl]
           }
         case _ => List.empty[WeightControl]

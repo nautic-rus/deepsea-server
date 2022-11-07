@@ -168,8 +168,8 @@ class HTTPManager extends Actor{
       (post & path("setWeightControl") & entity(as[String])){ (controlValue) =>
         askFor(ActorManager.materials, SetWeightControl(controlValue))
       },
-      (post & path("removeWeightControl") & entity(as[String]) & parameter("user")){ (controlValue) =>
-        askFor(ActorManager.materials, RemoveWeightControl(controlValue))
+      (post & path("removeWeightControl") & entity(as[String]) & parameter("user")){ (controlValue, user) =>
+        askFor(ActorManager.materials, RemoveWeightControl(controlValue, user))
       },
       (get & path("wcDrawings")){
         askFor(ActorManager.materials, GetWCDrawings())
