@@ -84,7 +84,7 @@ object MaterialManager{
   case class MaterialNode(label: String, data: String, user: String, date: Long)
   case class MaterialNodeHistory(node: MaterialNode, user: String, date: Long = new Date().getTime)
 
-  case class WeightControl(docNumber: String, docName: String, zoneNumber: String, moveElement: String, zoneName: String, mount: Int, side: Int, weight: Double, x: Double, y: Double, z: Double, user: String, date: Long, project: String)
+  case class WeightControl(docNumber: String, docName: String, zoneNumber: String, moveElement: String, zoneName: String, mount: Int, side: Int, weight: Double, x: Double, y: Double, z: Double, user: String, date: Long, project: String, removedDate: Long, removedUser: String)
   case class WCNumberName(number: String, name: String, project: String)
 }
 class MaterialManager extends Actor with MongoCodecs{
