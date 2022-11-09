@@ -56,7 +56,7 @@ object MaterialManager{
                        code: String = "",
                        units: String = "",
                        singleWeight: Double = 0,
-                       projects: List[String] = List.empty[String],
+                       project: String = "",
                        document: String = "",
                        provider: String = "",
                        note: String = "",
@@ -96,6 +96,26 @@ class MaterialManager extends Actor with MongoCodecs{
   val collectionHistory = "materials-n-h"
 
   override def preStart(): Unit = {
+//    DatabaseManager.GetMongoConnection() match {
+//      case Some(mongo) =>
+//        Await.result(mongo.getCollection(collection).find[Material](new BasicDBObject("project", "210101")).toFuture(), Duration(30, SECONDS)) match {
+//          case dbMaterials =>
+//            val errors = ListBuffer.empty[String]
+//            dbMaterials.toList.groupBy(_.code).toList.foreach(g => {
+//              if (g._2.length > 1){
+//                errors += g._1
+//              }
+//            })
+//            val materials: MongoCollection[Material] = mongo.getCollection(collection)
+//            dbMaterials.foreach(mat => {
+//              val material = mat.copy(id = UUID.randomUUID().toString, project = "200101")
+//              Await.result(materials.insertOne(material).toFuture(), Duration(30, SECONDS))
+//            })
+//            sender() ! dbMaterials.toList.asJson.noSpaces
+//          case _ => List.empty[Material]
+//        }
+//      case _ => List.empty[Material]
+//    }
     self ! GetMaterials("200101")
   }
   override def receive: Receive = {
@@ -129,7 +149,7 @@ class MaterialManager extends Actor with MongoCodecs{
     case GetMaterials(project) =>
       DatabaseManager.GetMongoConnection() match {
         case Some(mongo) =>
-          Await.result(mongo.getCollection(collection).find[Material](new BasicDBObject("projects", project)).toFuture(), Duration(30, SECONDS)) match {
+          Await.result(mongo.getCollection(collection).find[Material](new BasicDBObject("project", project)).toFuture(), Duration(30, SECONDS)) match {
             case dbMaterials =>
               val errors = ListBuffer.empty[String]
               dbMaterials.toList.groupBy(_.code).toList.foreach(g => {
