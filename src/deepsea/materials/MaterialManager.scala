@@ -41,8 +41,8 @@ import java.util.{Date, UUID}
 object MaterialManager{
   case class GetMaterials(project: String)
   case class UpdateMaterial(material: String, user: String, remove: String = "0")
-  case class GetMaterialNodes()
-  case class UpdateMaterialNode(data: String, label: String, user: String, remove: String = "0")
+  case class GetMaterialNodes(project: String)
+  case class UpdateMaterialNode(project: String, data: String, label: String, user: String, remove: String = "0")
   case class GetWeightControl()
   case class GetWCDrawings()
   case class GetWCZones()
@@ -82,7 +82,7 @@ object MaterialManager{
   }
   case class ProjectName(id: String, rkd: String, pdsp: String, foran: String, cloud: String, cloudRkd: String)
   case class MaterialTranslation(lang: String, name: String, description: String)
-  case class MaterialNode(label: String, data: String, user: String, date: Long)
+  case class MaterialNode(project: String, label: String, data: String, user: String, date: Long)
   case class MaterialNodeHistory(node: MaterialNode, user: String, date: Long = new Date().getTime)
 
   case class WeightControl(docNumber: String, docName: String, zoneNumber: String, moveElement: String, zoneName: String, mount: Int, side: Int, weight: Double, x: Double, y: Double, z: Double, user: String, date: Long, project: String, var removedDate: Long, var removedUser: String)
@@ -119,25 +119,25 @@ class MaterialManager extends Actor with MongoCodecs{
     self ! GetMaterials("200101")
   }
   override def receive: Receive = {
-    case GetMaterialNodes() =>
+    case GetMaterialNodes(project) =>
       DatabaseManager.GetMongoConnection() match {
         case Some(mongo) =>
-          Await.result(mongo.getCollection(collectionNodes).find[MaterialNode].toFuture(), Duration(30, SECONDS)) match {
+          Await.result(mongo.getCollection(collectionNodes).find[MaterialNode](equal("project", project)).toFuture(), Duration(30, SECONDS)) match {
             case nodes => sender() ! nodes.toList.asJson.noSpaces
             case _ => List.empty[MaterialNode]
           }
         case _ => List.empty[MaterialNode]
       }
-    case UpdateMaterialNode(data, label, user, remove) =>
-      val node = MaterialNode(label, data, user, new Date().getTime)
+    case UpdateMaterialNode(project, data, label, user, remove) =>
+      val node = MaterialNode(project, label, data, user, new Date().getTime)
       DatabaseManager.GetMongoConnection() match {
         case Some(mongo) =>
           val nodes: MongoCollection[MaterialNode] = mongo.getCollection(collectionNodes)
           val nodesHistory: MongoCollection[MaterialNodeHistory] = mongo.getCollection(collectionNodesHistory)
-          Await.result(nodes.find(new BasicDBObject("data", node.data)).first().toFuture(), Duration(30, SECONDS)) match {
+          Await.result(nodes.find(and(equal("data", node.data), equal("project", node.project))).first().toFuture(), Duration(30, SECONDS)) match {
             case oldValue: MaterialNode =>
               Await.result(nodesHistory.insertOne(MaterialNodeHistory(oldValue, user)).toFuture(), Duration(30, SECONDS))
-              Await.result(nodes.deleteOne(new BasicDBObject("data", node.data)).toFuture(), Duration(30, SECONDS))
+              Await.result(nodes.deleteOne(and(equal("data", node.data), equal("project", node.project))).toFuture(), Duration(30, SECONDS))
             case _ =>
           }
           if (remove == "0"){
