@@ -98,6 +98,22 @@ class MaterialManager extends Actor with MongoCodecs{
   override def preStart(): Unit = {
 //    DatabaseManager.GetMongoConnection() match {
 //      case Some(mongo) =>
+//        Await.result(mongo.getCollection(collectionNodes).find[MaterialNode](equal("project", "210101")).toFuture(), Duration(30, SECONDS)) match {
+//          case nodes =>
+//            val nodeCollection: MongoCollection[MaterialNode] = mongo.getCollection(collectionNodes)
+//
+//            nodes.foreach(n => {
+//              val node = n.copy(project = "200101")
+//              Await.result(nodeCollection.insertOne(node).toFuture(), Duration(30, SECONDS))
+//            })
+//
+//            sender() ! nodes.toList.asJson.noSpaces
+//          case _ => List.empty[MaterialNode]
+//        }
+//      case _ => List.empty[MaterialNode]
+//    }
+//    DatabaseManager.GetMongoConnection() match {
+//      case Some(mongo) =>
 //        Await.result(mongo.getCollection(collection).find[Material](new BasicDBObject("project", "210101")).toFuture(), Duration(30, SECONDS)) match {
 //          case dbMaterials =>
 //            val errors = ListBuffer.empty[String]
