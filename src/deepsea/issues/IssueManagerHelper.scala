@@ -821,7 +821,7 @@ trait IssueManagerHelper extends MongoCodecs {
             val cloudFiles = DBManager.GetNextCloudConnection() match {
               case Some(cloudConnection) =>
                 val stmt = cloudConnection.createStatement()
-                val query = s"select * from oc_activity where file like '%$filter%' and subject = 'created_self' and object_id not in (select fileid from oc_filecache where path like '%/trash/%' or path like '%/arh/%')"
+                val query = s"select * from oc_activity where file like '%$filter%' and subject = 'created_self' and object_id not in (select fileid from oc_filecache where path like '%/trash/%' or path like '%/arh/%') and object_id not in (select object_id from oc_activity where subject = 'deleted_self')"
                 val resultSet = RsIterator(stmt.executeQuery(query))
                 val res = resultSet.map(rs => {
                   CloudFile(
