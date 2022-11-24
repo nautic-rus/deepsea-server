@@ -104,6 +104,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
   implicit val timeout: Timeout = Timeout(30, TimeUnit.SECONDS)
 
   override def preStart(): Unit = {
+    self ! GetIssues("op")
     DBManager.GetNextCloudConnection() match {
       case Some(connection) =>
         val stmt = connection.createStatement()
@@ -500,8 +501,8 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     GetConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val query = s"insert into issue (id, status, project, department, started_by, started_date, issue_type, issue_name, assigned_to, details, priority, last_update, doc_number, responsible, period, parent_id, active_action, for_revision) " +
-          s"values (default, '${issue.status}', '${issue.project}', '${issue.department}', '${issue.started_by}', $date, '${issue.issue_type}', '${issue.name}', '${issue.assigned_to}', '${issue.details}', '${issue.priority}', $date, '${issue.doc_number}', '${issue.responsible}', '${issue.period}', '${issue.parent_id}', '${issue.action}', '${issue.for_revision}')" +
+        val query = s"insert into issue (id, status, project, department, started_by, started_date, issue_type, issue_name, assigned_to, details, priority, last_update, doc_number, responsible, period, parent_id, active_action) " +
+          s"values (default, '${issue.status}', '${issue.project}', '${issue.department}', '${issue.started_by}', $date, '${issue.issue_type}', '${issue.name}', '${issue.assigned_to}', '${issue.details}', '${issue.priority}', $date, '${issue.doc_number}', '${issue.responsible}', '${issue.period}', '${issue.parent_id}', '${issue.action}')" +
           s" returning id"
         val rs = s.executeQuery(query)
         while (rs.next()){

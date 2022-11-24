@@ -149,10 +149,6 @@ trait IssueManagerHelper extends MongoCodecs {
               case value: String => value
               case _ => ""
             }
-            for_revision = rs.getString("for_revision") match {
-              case value: String => value
-              case _ => "-"
-            }
             contract_due_date = rs.getLong("contract_due_date") match {
               case value: Long => value
               case _ => 0
@@ -290,10 +286,6 @@ trait IssueManagerHelper extends MongoCodecs {
             ready = rs.getString("ready") match {
               case value: String => value
               case _ => ""
-            }
-            for_revision = rs.getString("for_revision") match {
-              case value: String => value
-              case _ => "-"
             }
             contract_due_date = rs.getLong("contract_due_date") match {
               case value: Long => value

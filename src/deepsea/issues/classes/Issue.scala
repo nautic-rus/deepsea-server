@@ -49,7 +49,6 @@ object Issue{
         "labor" -> x.labor,
         "checks" -> x.checks,
         "ready" -> x.ready,
-        "for_revision" -> x.for_revision,
         "contract_due_date" -> x.contract_due_date
       )
       case _ => JsNull
@@ -87,7 +86,6 @@ object Issue{
         delivered_date = (x \ "delivered_date").asOpt[Long].getOrElse(0)
         revision = (x \ "revision").asOpt[String].getOrElse("")
         ready = (x \ "ready").asOpt[String].getOrElse("000")
-        for_revision = (x \ "for_revision").asOpt[String].getOrElse("-")
         contract_due_date = (x \ "contract_due_date").asOpt[Long].getOrElse(0)
       })
       case _ => JsSuccess (null)
