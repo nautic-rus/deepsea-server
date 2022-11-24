@@ -271,10 +271,6 @@ trait IssueManagerHelper extends MongoCodecs {
               case value: Long => value
               case _ => 0
             }
-            first_local_approval_date = rs.getLong("first_local_approval_date") match {
-              case value: Long => value
-              case _ => 0
-            }
             revision = rs.getString("revision") match {
               case value: String => value
               case _ => ""

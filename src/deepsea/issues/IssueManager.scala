@@ -105,6 +105,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
 
   override def preStart(): Unit = {
     self ! GetIssues("op")
+    self ! GetIssueDetails(1272.toString)
     DBManager.GetNextCloudConnection() match {
       case Some(connection) =>
         val stmt = connection.createStatement()
@@ -667,11 +668,6 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
           prev_value = oldIssue.first_send_date
           new_value = issue.first_send_date
         }
-        else if (oldIssue.first_local_approval_date != issue.first_local_approval_date){
-          name_value = "first_local_approval_date"
-          prev_value = oldIssue.first_local_approval_date
-          new_value = issue.first_local_approval_date
-        }
         else if (oldIssue.revision != issue.revision){
           name_value = "revision"
           prev_value = oldIssue.revision
@@ -691,7 +687,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     }
     if (name_value != ""){
       updateHistory(new IssueHistory(id, user, name_value, prev_value.toString, new_value.toString, date, updateMessage))
-      val numeric_names = List("started_date", "due_date", "start_date", "first_local_approval_date", "first_send_date", "delivered_date", "contract_due_date")
+      val numeric_names = List("started_date", "due_date", "start_date", "first_send_date", "delivered_date", "contract_due_date")
       var query = s"update issue set $name_value = '$new_value', active_action = '${issue.action}', last_update = $date where id = $id"
       if (numeric_names.contains(name_value)){
         query = s"update issue set $name_value = $new_value, active_action = '${issue.action}', last_update = $date where id = $id"

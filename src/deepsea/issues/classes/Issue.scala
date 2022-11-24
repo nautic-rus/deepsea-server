@@ -40,7 +40,6 @@ object Issue{
 
         "issue_comment" -> x.issue_comment,
         "first_send_date" -> x.first_send_date,
-        "first_local_approval_date" -> x.first_local_approval_date,
         "delivered_date" -> x.delivered_date,
         "revision" -> x.revision,
         "revision_files" -> x.revision_files,
@@ -82,7 +81,6 @@ object Issue{
 
         issue_comment = (x \ "issue_comment").asOpt[String].getOrElse("")
         first_send_date = (x \ "first_send_date").asOpt[Long].getOrElse(0)
-        first_local_approval_date = (x \ "first_local_approval_date").asOpt[Long].getOrElse(0)
         delivered_date = (x \ "delivered_date").asOpt[Long].getOrElse(0)
         revision = (x \ "revision").asOpt[String].getOrElse("")
         ready = (x \ "ready").asOpt[String].getOrElse("000")
@@ -119,7 +117,6 @@ class Issue(var id: Int, var status: String, var project: String, var department
   var revision_files: ListBuffer[FileAttachment] = ListBuffer.empty[FileAttachment]
   var cloud_files: List[FileAttachment] = List.empty[FileAttachment]
   var archive_revision_files: ListBuffer[FileAttachment] = ListBuffer.empty[FileAttachment]
-  var first_local_approval_date: Long = 0
   var labor: Double = 0
   var checks: ListBuffer[IssueCheck] = ListBuffer.empty[IssueCheck]
   var ready: String = "000"
