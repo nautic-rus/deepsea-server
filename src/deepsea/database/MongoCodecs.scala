@@ -4,6 +4,7 @@ import deepsea.files.FileManager.{DocumentDirectories, TreeDirectory, TreeFile, 
 import deepsea.issues.IssueManager.{DailyTask, MessageReaction}
 import deepsea.materials.MaterialManager.{Material, MaterialHistory, MaterialNode, MaterialNodeHistory, MaterialTranslation, ProjectName, WCNumberName, WeightControl}
 import deepsea.mobile.MobileManager.{Drawing, DrawingInfo, OrizInfo}
+import deepsea.osm.OsmManager.{LatLng, OSMUser, ParkingLocationSheet}
 import deepsea.time.TimeControlManager.{SpyWatch, UserWatch}
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.{Decoder, Encoder}
@@ -74,6 +75,14 @@ trait MongoCodecs {
   implicit val SpyWatchDecoder: Decoder[SpyWatch] = deriveDecoder[SpyWatch]
   implicit val SpyWatchEncoder: Encoder[SpyWatch] = deriveEncoder[SpyWatch]
 
+  implicit val ParkingLocationSheetDecoder: Decoder[ParkingLocationSheet] = deriveDecoder[ParkingLocationSheet]
+  implicit val ParkingLocationSheetEncoder: Encoder[ParkingLocationSheet] = deriveEncoder[ParkingLocationSheet]
+
+  implicit val OSMUserDecoder: Decoder[OSMUser] = deriveDecoder[OSMUser]
+  implicit val OSMUserEncoder: Encoder[OSMUser] = deriveEncoder[OSMUser]
+
+  implicit val LatLngDecoder: Decoder[LatLng] = deriveDecoder[LatLng]
+  implicit val LatLngEncoder: Encoder[LatLng] = deriveEncoder[LatLng]
 
   def codecRegistry: CodecRegistry = fromRegistries(fromProviders(
     classOf[Material],
@@ -93,5 +102,6 @@ trait MongoCodecs {
     classOf[DocumentDirectories],
     classOf[DailyTask],
     classOf[SpyWatch],
+    classOf[ParkingLocationSheet],
   ), DEFAULT_CODEC_REGISTRY)
 }

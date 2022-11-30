@@ -8,7 +8,7 @@ import deepsea.actors.ActorManager
 import deepsea.auth.AuthManager.{GetUser, User}
 import deepsea.database.{DBManager, DatabaseManager, MongoCodecs}
 import deepsea.database.DatabaseManager.GetConnection
-import deepsea.files.FileManager.{TreeFile, treeFilesCollection}
+import deepsea.files.FileManager.{GetCloudFiles, GetDocumentFiles, TreeFile, treeFilesCollection}
 import deepsea.files.FileManagerHelper
 import deepsea.files.classes.FileAttachment
 import deepsea.issues.IssueManager._
@@ -98,12 +98,14 @@ object IssueManager{
   case class IssueSpentTime(id: Int, date: Long, value: Double, comment: String, user: String)
   implicit val writesIssueSpentTime: OWrites[IssueSpentTime] = Json.writes[IssueSpentTime]
 
+  case class GroupFolder(id: Int, name: String)
   case class DailyTask(date: Long, userLogin: String, userName: String, dateCreated: Long, project: String, docNumber: String, details: String, time: Double, action: String, id: String)
 }
 class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with FileManagerHelper {
   implicit val timeout: Timeout = Timeout(30, TimeUnit.SECONDS)
 
   override def preStart(): Unit = {
+    ActorManager.files ! GetDocumentFiles(602.toString)
     self ! GetIssues("op")
     self ! GetIssueDetails(1272.toString)
     DBManager.GetNextCloudConnection() match {

@@ -13,6 +13,7 @@ import deepsea.issues.IssueManager
 import deepsea.mail.MailManager
 import deepsea.materials.MaterialManager
 import deepsea.mobile.MobileManager
+import deepsea.osm.OsmManager
 import deepsea.rocket.RocketChatManager
 import deepsea.time.{BackupManager, LicenseManager, TimeAndWeatherManager, TimeControlManager}
 
@@ -41,5 +42,6 @@ class ActorStartupManager extends Actor{
       ActorManager.fest = system.actorOf(RoundRobinPool(3).props(Props[FestManager]))
       ActorManager.mobile = system.actorOf(RoundRobinPool(1).props(Props[MobileManager]))
       ActorManager.backups = system.actorOf(RoundRobinPool(1).props(Props[BackupManager]))
+      ActorManager.osmManager = system.actorOf(RoundRobinPool(1).props(Props[OsmManager]))
   }
 }
