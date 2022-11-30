@@ -798,10 +798,9 @@ trait IssueManagerHelper extends MongoCodecs {
       case _ => List.empty[DailyTask]
     }
   }
-  def getCloudFiles(project: String, docNumber: String, department: String): List[FileAttachment]={
+  def getCloudFiles_(project: String, docNumber: String, department: String): List[FileAttachment]={
     val spCloud: String = "/"
     val res = ListBuffer.empty[FileAttachment]
-    return res.toList
     getProjectNames.find(_.pdsp == project) match {
       case Some(projectName) =>
         getDocumentDirectories.find(x => x.project == projectName.rkd && x.department == department) match {
@@ -828,7 +827,7 @@ trait IssueManagerHelper extends MongoCodecs {
     }
     res.toList
   }
-  def getCloudFiles(id: Int): List[FileAttachment]={
+  def getCloudFiles_(id: Int): List[FileAttachment]={
     val spCloud: String = "/"
     val res = ListBuffer.empty[FileAttachment]
     getIssueDetails(id) match {
@@ -883,7 +882,7 @@ trait IssueManagerHelper extends MongoCodecs {
       case _ => List.empty[ProjectName]
     }
   }
-  def getCloudFiles(filter: String): List[FileAttachment]= {
+  def getCloudFiles_(filter: String): List[FileAttachment]= {
     val res = ListBuffer.empty[FileAttachment]
     val groupFolders = ListBuffer.empty[GroupFolder]
     DBManager.GetNextCloudConnection() match {
@@ -930,7 +929,8 @@ trait IssueManagerHelper extends MongoCodecs {
     }
     res.toList
   }
-  def getCloudFilesAux(filter: String): List[FileAttachment]= {
+
+  def getCloudFiles(filter: String): List[FileAttachment]= {
     val res = ListBuffer.empty[FileAttachment]
     val cloudFiles = DBManager.GetNextCloudConnection() match {
       case Some(cloudConnection) =>
@@ -969,7 +969,7 @@ trait IssueManagerHelper extends MongoCodecs {
     })
     res.toList
   }
-  def getCloudFilesAux(id: Int): List[FileAttachment]={
+  def getCloudFiles(id: Int): List[FileAttachment]={
     val spCloud: String = "/"
     val res = ListBuffer.empty[FileAttachment]
     getIssueDetails(id) match {
@@ -1027,7 +1027,7 @@ trait IssueManagerHelper extends MongoCodecs {
     }
     res.toList
   }
-  def getCloudFilesAux(project: String, docNumber: String, department: String): List[FileAttachment]={
+  def getCloudFiles(project: String, docNumber: String, department: String): List[FileAttachment]={
     val spCloud: String = "/"
     val res = ListBuffer.empty[FileAttachment]
     getProjectNames.find(_.pdsp == project) match {
