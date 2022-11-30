@@ -801,6 +801,7 @@ trait IssueManagerHelper extends MongoCodecs {
   def getCloudFiles(project: String, docNumber: String, department: String): List[FileAttachment]={
     val spCloud: String = "/"
     val res = ListBuffer.empty[FileAttachment]
+    return res.toList
     getProjectNames.find(_.pdsp == project) match {
       case Some(projectName) =>
         getDocumentDirectories.find(x => x.project == projectName.rkd && x.department == department) match {
