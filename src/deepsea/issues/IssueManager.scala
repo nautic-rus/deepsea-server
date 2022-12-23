@@ -169,7 +169,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
         case _ => sender() ! Json.toJson(ListBuffer.empty[Issue])
       }
     case GetQuestions() =>
-      sender() ! Json.toJson(getIssuesForUser(user))
+      sender() ! Json.toJson(getQuestions)
     case UpdateIssue(user, updateMessage, issueJson) =>
       Json.parse(issueJson).asOpt[Issue] match {
         case Some(issue) =>
