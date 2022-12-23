@@ -168,7 +168,7 @@ trait IssueManagerHelper extends MongoCodecs {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        var query = s"select * from issue where removed = 0 and issue_type = 'QNA'"
+        val query = s"select * from issue where removed = 0 and issue_type = 'QNA'"
         val rs = s.executeQuery(query)
         while (rs.next()){
           issues += new Issue(
@@ -252,10 +252,6 @@ trait IssueManagerHelper extends MongoCodecs {
             parent_id = rs.getInt("parent_id") match {
               case value: Int => value
               case _ => 0
-            }
-            closing_status = rs.getString("closing_status") match {
-              case value: String => value
-              case _ => ""
             }
             delivered_date = rs.getLong("delivered_date") match {
               case value: Long => value
