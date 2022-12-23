@@ -40,6 +40,7 @@ import scala.util.Try
 object IssueManager{
 
   case class GetIssues(user: String)
+  case class GetQuestions()
   case class StartIssue(issueJson: String)
   case class UpdateIssue(user: String, updateMessage: String, issueJson: String)
   case class RemoveIssue(id: String, user: String)
@@ -167,6 +168,8 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
           sender() ! Json.toJson(getIssuesForUser(user))
         case _ => sender() ! Json.toJson(ListBuffer.empty[Issue])
       }
+    case GetQuestions() =>
+      sender() ! Json.toJson(getIssuesForUser(user))
     case UpdateIssue(user, updateMessage, issueJson) =>
       Json.parse(issueJson).asOpt[Issue] match {
         case Some(issue) =>
