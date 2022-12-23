@@ -100,6 +100,7 @@ object IssueManager{
 
   case class GroupFolder(id: Int, name: String)
   case class DailyTask(date: Long, userLogin: String, userName: String, dateCreated: Long, project: String, docNumber: String, details: String, time: Double, action: String, id: String)
+  case class IssueProject(id: Int, name: String, pdsp: String, rkd: String, foran: String, factory: String)
 }
 class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with FileManagerHelper {
   implicit val timeout: Timeout = Timeout(30, TimeUnit.SECONDS)
@@ -142,7 +143,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
 //    }
   }
   override def receive: Receive = {
-    case GetIssueProjects() => sender() ! Json.toJson(getIssueProjects)
+    case GetIssueProjects() => sender() ! getIssueProjects.asJson.noSpaces
     case GetIssueTypes() => sender() ! Json.toJson(getIssueTypes)
     case GetIssueDepartments() => sender() ! Json.toJson(getIssueDepartments)
     case GetIssuePriorities() => sender() ! Json.toJson(getIssuePriorities)
@@ -382,14 +383,21 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     }
     res
   }
-  def getIssueProjects: ListBuffer[String] ={
-    val res = ListBuffer.empty[String]
+  def getIssueProjects: ListBuffer[IssueProject] ={
+    val res = ListBuffer.empty[IssueProject]
     GetConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from issue_projects order by id")
         while (rs.next()){
-          res += rs.getString("name")
+          res += IssueProject(
+            Option(rs.getInt("id")).getOrElse(0),
+            Option(rs.getString("name")).getOrElse(""),
+            Option(rs.getString("pdsp")).getOrElse(""),
+            Option(rs.getString("rkd")).getOrElse(""),
+            Option(rs.getString("foran")).getOrElse(""),
+            Option(rs.getString("factory")).getOrElse("")
+          )
         }
         rs.close()
         s.close()

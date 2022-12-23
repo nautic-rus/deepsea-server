@@ -23,7 +23,7 @@ import deepsea.files.classes.FileAttachment
 import deepsea.issues.IssueManager._
 import deepsea.materials.MaterialManager.{GetMaterialNodes, GetMaterials, GetWCDrawings, GetWCZones, GetWeightControl, RemoveWeightControl, SetWeightControl, UpdateMaterial, UpdateMaterialNode}
 import deepsea.mobile.MobileManager.{GetDrawingInfo, GetDrawings}
-import deepsea.osm.OsmManager.AddPLS
+import deepsea.osm.OsmManager.{AddPLS, GetPLS}
 import deepsea.rocket.RocketChatManager.SendNotification
 import deepsea.time.LicenseManager.GetForanLicenses
 import deepsea.time.TimeAndWeatherManager.GetTimeAndWeather
@@ -411,6 +411,9 @@ class HTTPManager extends Actor{
         askFor(ActorManager.files, GetFileFromCloud(path))
       },
 
+      (get & path("polygons")){
+        askFor(ActorManager.osmManager, GetPLS())
+      },
       (post & path("savePoly") & entity(as[String])){ (poly) =>
         askFor(ActorManager.osmManager, AddPLS(poly))
       },

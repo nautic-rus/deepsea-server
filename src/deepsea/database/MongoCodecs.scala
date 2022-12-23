@@ -1,7 +1,7 @@
 package deepsea.database
 
 import deepsea.files.FileManager.{DocumentDirectories, TreeDirectory, TreeFile, TreeFileHistory}
-import deepsea.issues.IssueManager.{DailyTask, MessageReaction}
+import deepsea.issues.IssueManager.{DailyTask, IssueProject, MessageReaction}
 import deepsea.materials.MaterialManager.{Material, MaterialHistory, MaterialNode, MaterialNodeHistory, MaterialTranslation, ProjectName, WCNumberName, WeightControl}
 import deepsea.mobile.MobileManager.{Drawing, DrawingInfo, OrizInfo}
 import deepsea.osm.OsmManager.{LatLng, OSMUser, ParkingLocationSheet}
@@ -84,6 +84,9 @@ trait MongoCodecs {
   implicit val LatLngDecoder: Decoder[LatLng] = deriveDecoder[LatLng]
   implicit val LatLngEncoder: Encoder[LatLng] = deriveEncoder[LatLng]
 
+  implicit val IssueProjectDecoder: Decoder[IssueProject] = deriveDecoder[IssueProject]
+  implicit val IssueProjectEncoder: Encoder[IssueProject] = deriveEncoder[IssueProject]
+
   def codecRegistry: CodecRegistry = fromRegistries(fromProviders(
     classOf[Material],
     classOf[MaterialHistory],
@@ -103,5 +106,6 @@ trait MongoCodecs {
     classOf[DailyTask],
     classOf[SpyWatch],
     classOf[ParkingLocationSheet],
+    classOf[IssueProject],
   ), DEFAULT_CODEC_REGISTRY)
 }

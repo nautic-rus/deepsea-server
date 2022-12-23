@@ -15,7 +15,7 @@ import scala.concurrent.duration.{Duration, SECONDS}
 object OsmManager{
   case class OSMUser(id: String, name: String, surname: String)
   case class LatLng(lat: Double, lng: Double)
-  case class ParkingLocationSheet(user: OSMUser, points: List[LatLng], address: String, date: Long, time: Long)
+  case class ParkingLocationSheet(user: OSMUser, points: List[LatLng], address: String, date: Long, time: Long, comment: String, status: String)
 
   case class AddPLS(json: String)
   case class GetPLS()
@@ -29,7 +29,7 @@ class OsmManager extends Actor with MongoCodecs{
           pls += value
         case Left(value) =>
       }
-      sender() ! "success"
+      sender() ! "success".asJson.noSpaces
     case GetPLS() =>
       sender() ! pls.asJson.noSpaces
     case _ => None
