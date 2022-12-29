@@ -190,6 +190,14 @@ class HTTPManager extends Actor{
       (get & path("mobileDrawingInfo") & parameter("drawing")){ (drawing) =>
         askFor(ActorManager.mobile, GetDrawingInfo(drawing))
       },
+
+
+      (get & path("subscribeForIssue") & parameter("user") & parameter("issue") & parameter("options")){ (user, issue, options) =>
+        askFor(ActorManager.issue, SubscribeForNotifications(user, issue, options))
+      },
+      (get & path("subscribeForIssue") & parameter("user") & parameter("issue") & parameter("options")){ (user, issue, options) =>
+        askFor(ActorManager.issue, SubscribeForNotifications(user, issue, options))
+      },
       //FILE MANAGER COMMANDS
 //      (post & path("createFileUrl") & entity(as[Multipart.FormData])){ formData =>
 //        var fileName = ""

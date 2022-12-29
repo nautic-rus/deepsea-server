@@ -1,16 +1,20 @@
 package deepsea.issues
 
 import deepsea.App
+import deepsea.actors.ActorManager
 import deepsea.auth.AuthManager.User
+import deepsea.auth.AuthManagerHelper
 import deepsea.database.DBManager.RsIterator
 import deepsea.database.{DBManager, DatabaseManager, MongoCodecs}
 import deepsea.database.DatabaseManager.GetConnection
 import deepsea.files.FileManager.{CloudFile, DocumentDirectories}
 import deepsea.files.FileManagerHelper
 import deepsea.files.classes.FileAttachment
-import deepsea.issues.IssueManager.{DailyTask, GroupFolder}
+import deepsea.issues.IssueManager.{DailyTask, GroupFolder, Subscriber}
 import deepsea.issues.classes.{ChildIssue, Issue, IssueAction, IssueCheck, IssueHistory, IssueMessage, IssuePeriod}
+import deepsea.mail.MailManager.Mail
 import deepsea.materials.MaterialManager.ProjectName
+import deepsea.rocket.RocketChatManager.{SendMessage, SendNotification}
 import deepsea.time.TimeControlManager.UserWatch
 import io.circe.parser.{decode, parse}
 import org.mongodb.scala.MongoCollection
@@ -23,7 +27,7 @@ import scala.concurrent.Await
 import scala.concurrent.duration.{Duration, SECONDS}
 import scala.io.Source
 
-trait IssueManagerHelper extends MongoCodecs {
+trait IssueManagerHelper extends MongoCodecs with AuthManagerHelper{
 
   def getIssuesForUser(user: User): ListBuffer[Issue] ={
     val issues = ListBuffer.empty[Issue]
@@ -417,6 +421,7 @@ trait IssueManagerHelper extends MongoCodecs {
             archive_revision_files = getRemovedRevisionFiles(id)
             labor = getIssueLabor(id)
             checks = getIssueChecks(id)
+            subscribers = getIssueSubscribers(id).map(_.user)
           })
         }
         rs.close()
@@ -1203,5 +1208,52 @@ trait IssueManagerHelper extends MongoCodecs {
     }
     res.toList
   }
-
+  def subscribeForIssueNotifications(user: String, issue: Int, options: String): String ={
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val rs = s.executeQuery(s"select count(*) from issue_subscriptions where user_login = '$user' and issue_id = $issue")
+        val exist = rs.next()
+        rs.close()
+        if (exist){
+          s.execute(s"update issue_subscriptions set options = $options where user_login = '$user' and issue_id = $issue")
+        }
+        else{
+          s.execute(s"insert into issue_subscriptions values ('$user', $issue, '$options')")
+        }
+        s.close()
+        c.close()
+      case _ =>
+    }
+    "success"
+  }
+  def getIssueSubscribers(issue: Int): List[Subscriber] ={
+    val res = ListBuffer.empty[Subscriber]
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val rs = s.executeQuery(s"select user_login from issue_subscriptions where issue_id = $issue and options = ''")
+        while(rs.next()){
+          res += Subscriber(rs.getString("user_login"), rs.getString("options"))
+        }
+        rs.close()
+        s.close()
+        c.close()
+      case _ =>
+    }
+    res.toList
+  }
+  def notifySubscribers(issue: Int, email: String, rocket: String): Unit ={
+    getIssueSubscribers(issue).foreach(s => {
+      getUser(s.user) match {
+        case Some(user) =>
+          s.options.split(",").foreach {
+            case "mail" =>  ActorManager.mail ! Mail(List(user.surname, user.name).mkString(" "), user.email, "DeepSea Notification", rocket)
+            case "rocket" => ActorManager.rocket ! SendNotification(s.user, email)
+            case _ => None
+          }
+        case _ => None
+      }
+    })
+  }
 }

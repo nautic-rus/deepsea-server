@@ -1,7 +1,7 @@
 package deepsea.auth
 
 import akka.actor.Actor
-import deepsea.auth.AuthManager.{GetUser, GetUsers, Login, ShareRights, User, writesUser}
+import deepsea.auth.AuthManager.{ChangeEmail, ChangeRocketLogin, GetUser, GetUsers, Login, ShareRights, User, writesUser}
 import deepsea.database.DatabaseManager.GetConnection
 import play.api.libs.json.{Json, OWrites}
 
@@ -9,11 +9,13 @@ import java.sql.Date
 import java.util.UUID
 import scala.collection.mutable.ListBuffer
 
-object AuthManager{
+object AuthManager {
   case class Login(token: Option[String], login: String = "", password: String = "")
   case class GetUsers()
   case class GetUser(login: String)
   case class ShareRights(user: String, with_user: String)
+  case class ChangeEmail(user: String, email: String)
+  case class ChangeRocketLogin(user: String, rocketLogin: String)
   case class User(
                    id: Int,
                    login: String,
@@ -39,7 +41,7 @@ object AuthManager{
                    var token: String = "")
   implicit val writesUser: OWrites[User] = Json.writes[User]
 }
-class AuthManager extends Actor{
+class AuthManager extends Actor with AuthManagerHelper {
   override def receive: Receive = {
     case Login(token, login, password) =>
       token match {
@@ -79,6 +81,12 @@ class AuthManager extends Actor{
     case ShareRights(user, with_user) =>
       shareWith(user, with_user)
       sender() ! Json.toJson("success")
+    case ChangeEmail(user, email) =>
+      sender() ! updateEmail(user, email)
+      sender() ! Json.toJson("success")
+    case ChangeRocketLogin(user, rocketLogin) =>
+      sender() ! updateRocketLogin(user, rocketLogin)
+      sender() ! Json.toJson("success")
     case _ => None
   }
   def addUserToken(user: String): Option[String] ={
@@ -86,7 +94,8 @@ class AuthManager extends Actor{
     GetConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        s.execute(s"insert into sessions values ('$user', '$token')")
+        s.execute(s"" +
+          s"insert into sessions values ('$user', '$token')")
         s.close()
         c.close()
         Option(token)
@@ -123,57 +132,6 @@ class AuthManager extends Actor{
         c.close()
         res
       case _ => Option.empty[String]
-    }
-  }
-  def getUser(login: String): Option[User] ={
-    GetConnection() match {
-      case Some(c) =>
-        var s = c.createStatement()
-        var rs = s.executeQuery(s"select * from users where login = '$login' and removed = 0")
-        var res = Option.empty[User]
-        while (rs.next()){
-          res = Option(User(
-            rs.getInt("id"),
-            rs.getString("login"),
-            rs.getString("password"),
-            rs.getString("name"),
-            rs.getString("surname"),
-            rs.getString("profession"),
-            rs.getString("department"),
-            rs.getDate("birthday"),
-            rs.getString("email"),
-            rs.getString("phone"),
-            rs.getInt("tcid"),
-            rs.getString("avatar"),
-            rs.getString("avatar_full"),
-            rs.getString("rocket_login"),
-            rs.getString("gender"),
-            rs.getString("visibility"),
-            rs.getString("visible_projects").split(",").toList,
-            rs.getString("visible_pages").split(",").toList,
-            rs.getString("shared_access").split(",").toList,
-            rs.getString("group").split(",").toList
-          ))
-        }
-        s.close()
-        if (res.nonEmpty){
-          s = c.createStatement()
-//          rs = s.executeQuery(s"select type_name from issue_types where id in (select group_id from user_membership where user_id = ${res.get.id})")
-//          while (rs.next()){
-//            res.get.groups += rs.getString("type_name")
-//          }
-//          s.close()
-//          s = c.createStatement()
-          rs = s.executeQuery(s"select rights from user_rights where user_id = ${res.get.id}")
-          while (rs.next()){
-            res.get.permissions += rs.getString("rights")
-          }
-          rs.close()
-          s.close()
-        }
-        c.close()
-        res
-      case _ => Option.empty[User]
     }
   }
   def getUsers: ListBuffer[User] ={

@@ -48,7 +48,8 @@ object Issue{
         "labor" -> x.labor,
         "checks" -> x.checks,
         "ready" -> x.ready,
-        "contract_due_date" -> x.contract_due_date
+        "contract_due_date" -> x.contract_due_date,
+        "subscribers" -> x.subscribers
       )
       case _ => JsNull
     }
@@ -122,6 +123,7 @@ class Issue(var id: Int, var status: String, var project: String, var department
   var ready: String = "000"
   var for_revision: String = ""
   var contract_due_date: Long = 0
+  var subscribers: List[String] = List.empty[String]
   def toChildIssue: ChildIssue ={
     new ChildIssue(id, status, started_by, started_date, issue_type, name, assigned_to, responsible, doc_number)
   }

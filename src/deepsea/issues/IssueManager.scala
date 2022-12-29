@@ -85,10 +85,12 @@ object IssueManager{
   case class DeleteDailyTask(id: String)
   case class CombineIssues(firstIssue: String, secondIssue: String, user: String)
   case class GetProjectNames()
+  case class SubscribeForNotifications(user: String, issue: String, options: String)
 
   case class IssueDef(id: String, issueTypes: List[String], issueProjects: List[String])
   implicit val writesIssueDef: OWrites[IssueDef] = Json.writes[IssueDef]
 
+  case class Subscriber(user: String, options: String)
 
   case class IdName(id: Int, name: String)
   implicit val writesUser: OWrites[IdName] = Json.writes[IdName]
@@ -176,6 +178,11 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
           updateIssue(issue, user, updateMessage)
           sender() ! (getIssueDetails(issue.id) match {
             case Some(update) =>
+              val q = '"'
+              notifySubscribers(issue.id,
+                s"Изменилась информация в задаче " + s"<a href=$q${App.HTTPServer.Url}/?taskId=${issue.id}$q>${(issue.doc_number + " " + issue.name).trim}</a>",
+                s"Изменилась информация в задаче " + s"<${App.HTTPServer.Url}/?taskId=${issue.id}|${(issue.doc_number + " " + issue.name).trim}>")
+
               if (updateMessage.contains("status")){
                 List(update.assigned_to, update.responsible, update.started_by).filter(_ != user).distinct.foreach(u => {
                   ActorManager.rocket ! SendNotification(u, s"Изменился статус на '${update.status}' у задачи " + s"<${App.HTTPServer.Url}/?taskId=${issue.id}|${(issue.doc_number + " " + issue.name).trim}>")
@@ -296,6 +303,8 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
       sender() ! "success".asJson.noSpaces
     case GetProjectNames() =>
       sender() ! getProjectNames.asJson.noSpaces
+    case SubscribeForNotifications(user, issue, options) =>
+      sender() ! subscribeForIssueNotifications(user, issue.toIntOption.getOrElse(0), options).asJson.noSpaces
     case _ => None
   }
   def setDayCalendar(user: String, day: String, status: String): ListBuffer[IssueView] ={
@@ -973,5 +982,4 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     }
     res.toList
   }
-
 }
