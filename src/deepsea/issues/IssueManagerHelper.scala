@@ -1237,7 +1237,7 @@ trait IssueManagerHelper extends MongoCodecs with AuthManagerHelper{
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val rs = s.executeQuery(s"select user_login from issue_subscriptions where issue_id = $issue and options != ''")
+        val rs = s.executeQuery(s"select * from issue_subscriptions where issue_id = $issue and options != ''")
         while(rs.next()){
           res += Subscriber(rs.getString("user_login"), rs.getString("options"))
         }
