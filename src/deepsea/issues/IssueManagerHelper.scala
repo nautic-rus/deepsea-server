@@ -1213,7 +1213,6 @@ trait IssueManagerHelper extends MongoCodecs with AuthManagerHelper{
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select count(*) from issue_subscriptions where user_login = '$user' and issue_id = $issue")
-        val exist = rs.next()
         val count = if (rs.next()){
           rs.getInt(0)
         }
