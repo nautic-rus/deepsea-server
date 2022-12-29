@@ -1,7 +1,7 @@
 package deepsea.auth
 
 import akka.actor.Actor
-import deepsea.auth.AuthManager.{ChangeEmail, ChangeRocketLogin, GetUser, GetUsers, Login, ShareRights, User, writesUser}
+import deepsea.auth.AuthManager.{UpdateEmail, UpdateRocketLogin, GetUser, GetUsers, Login, ShareRights, User, writesUser}
 import deepsea.database.DatabaseManager.GetConnection
 import play.api.libs.json.{Json, OWrites}
 
@@ -14,8 +14,8 @@ object AuthManager {
   case class GetUsers()
   case class GetUser(login: String)
   case class ShareRights(user: String, with_user: String)
-  case class ChangeEmail(user: String, email: String)
-  case class ChangeRocketLogin(user: String, rocketLogin: String)
+  case class UpdateEmail(user: String, email: String)
+  case class UpdateRocketLogin(user: String, rocketLogin: String)
   case class User(
                    id: Int,
                    login: String,
@@ -81,10 +81,10 @@ class AuthManager extends Actor with AuthManagerHelper {
     case ShareRights(user, with_user) =>
       shareWith(user, with_user)
       sender() ! Json.toJson("success")
-    case ChangeEmail(user, email) =>
+    case UpdateEmail(user, email) =>
       sender() ! updateEmail(user, email)
       sender() ! Json.toJson("success")
-    case ChangeRocketLogin(user, rocketLogin) =>
+    case UpdateRocketLogin(user, rocketLogin) =>
       sender() ! updateRocketLogin(user, rocketLogin)
       sender() ! Json.toJson("success")
     case _ => None

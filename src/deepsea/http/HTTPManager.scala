@@ -16,7 +16,7 @@ import ch.megard.akka.http.cors.scaladsl.CorsDirectives.cors
 import deepsea.App
 import deepsea.actors.ActorManager
 import deepsea.actors.ActorStartupManager.HTTPManagerStarted
-import deepsea.auth.AuthManager.{GetUsers, Login, ShareRights}
+import deepsea.auth.AuthManager.{GetUsers, Login, ShareRights, UpdateEmail, UpdateRocketLogin}
 import deepsea.fest.FestManager.{DeleteFestKaraoke, DeleteFestSauna, DeleteFestStories, GetBestPlayers, GetFestKaraoke, GetFestSauna, GetFestStories, GetMarks, GetTeamsWon, SetBestPlayer, SetFestKaraoke, SetFestSauna, SetFestStories, SetMarks, SetTeamsWon}
 import deepsea.files.FileManager.{CreateDocumentCloudDirectory, CreateFile, CreateMaterialCloudDirectory, GetCloudFiles, GetDocumentFiles, GetFileFromCloud, GetPdSpList}
 import deepsea.files.classes.FileAttachment
@@ -195,8 +195,11 @@ class HTTPManager extends Actor{
       (get & path("subscribeForIssue") & parameter("user") & parameter("issue") & parameter("options")){ (user, issue, options) =>
         askFor(ActorManager.issue, SubscribeForNotifications(user, issue, options))
       },
-      (get & path("subscribeForIssue") & parameter("user") & parameter("issue") & parameter("options")){ (user, issue, options) =>
-        askFor(ActorManager.issue, SubscribeForNotifications(user, issue, options))
+      (get & path("updateEmail") & parameter("user") & parameter("email")){ (user, email) =>
+        askFor(ActorManager.auth, (user, UpdateEmail(user, email)))
+      },
+      (get & path("updateRocketLogin") & parameter("user") & parameter("rocketLogin")){ (user, rocketLogin) =>
+        askFor(ActorManager.auth, (user, UpdateRocketLogin(user, rocketLogin)))
       },
       //FILE MANAGER COMMANDS
 //      (post & path("createFileUrl") & entity(as[Multipart.FormData])){ formData =>
