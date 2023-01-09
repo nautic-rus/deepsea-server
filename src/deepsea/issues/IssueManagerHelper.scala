@@ -158,6 +158,10 @@ trait IssueManagerHelper extends MongoCodecs with AuthManagerHelper{
               case value: Long => value
               case _ => 0
             }
+            plan_hours = rs.getLong("plan_hours") match {
+              case value: Double => value
+              case _ => 0
+            }
           }
         }
         rs.close()
@@ -413,6 +417,10 @@ trait IssueManagerHelper extends MongoCodecs with AuthManagerHelper{
             }
             contract_due_date = rs.getLong("contract_due_date") match {
               case value: Long => value
+              case _ => 0
+            }
+            plan_hours = rs.getDouble("plan_hours") match {
+              case value: Double => value
               case _ => 0
             }
             revision_files = getRevisionFiles(id)
