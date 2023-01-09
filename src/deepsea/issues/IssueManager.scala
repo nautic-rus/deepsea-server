@@ -13,6 +13,7 @@ import deepsea.files.FileManagerHelper
 import deepsea.files.classes.FileAttachment
 import deepsea.issues.IssueManager._
 import deepsea.issues.classes.{ChildIssue, Issue, IssueAction, IssueCheck, IssueHistory, IssueMessage, IssuePeriod, IssueType, IssueView, SfiCode}
+import deepsea.mail.MailManager.Mail
 import deepsea.rocket.RocketChatManager.SendNotification
 import deepsea.time.TimeControlManager.UserWatch
 import org.mongodb.scala.{Document, MongoCollection}
@@ -155,6 +156,20 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
         case Some(issue) =>
           val result = startIssue(issue)
           issue.file_attachments.foreach(x => setIssueFileAttachments(result, x))
+          if (issue.issue_type == "QNA"){
+            val q = '"'
+            val rocket = s"Был задан новый вопрос " + s"<${App.HTTPServer.Url}/qna-details?id=${issue.id}|${(issue.doc_number + " " + issue.name).trim}>"
+            val email = s"Был задан новый вопрос " + s"<a href=$q${App.HTTPServer.Url}/qna-details?id=${issue.id}$q>${(issue.doc_number + " " + issue.name).trim}</a>"
+            val users = List("isaev")
+            users.foreach(u => {
+              getUser(u) match {
+                case Some(value) =>
+                  ActorManager.rocket ! SendNotification(value.rocket_login, rocket)
+                  ActorManager.mail ! Mail(List(value.name, value.surname).mkString(" "), value.email, "DeepSea Notification", email)
+                case _ => None
+              }
+            })
+          }
           if (issue.assigned_to != ""){
             ActorManager.rocket ! SendNotification(issue.assigned_to, s"Вам была назначена задача " + s"<${App.HTTPServer.Url}/?taskId=${result}| Просмотреть задачу>")
           }
@@ -178,12 +193,25 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
           updateIssue(issue, user, updateMessage)
           sender() ! (getIssueDetails(issue.id) match {
             case Some(update) =>
-              val q = '"'
-              notifySubscribers(issue.id,
-                s"Изменилась информация в задаче " + s"<a href=$q${App.HTTPServer.Url}/?taskId=${issue.id}$q>${(issue.doc_number + " " + issue.name).trim}</a>",
-                s"Изменилась информация в задаче " + s"<${App.HTTPServer.Url}/?taskId=${issue.id}|${(issue.doc_number + " " + issue.name).trim}>")
-
-              if (updateMessage.contains("status")){
+              if (issue.issue_type == "QNA"){
+                val q = '"'
+                val rocket = s"Изменилась информация в задаче " + s"<${App.HTTPServer.Url}/qna-details?id=${issue.id}|${(issue.doc_number + " " + issue.name).trim}>"
+                val email = s"Изменилась информация в задаче " + s"<a href=$q${App.HTTPServer.Url}/qna-details?id=${issue.id}$q>${(issue.doc_number + " " + issue.name).trim}</a>"
+                notifySubscribers(issue.id, email, rocket)
+                getUser(issue.assigned_to) match {
+                  case Some(value) =>
+                    ActorManager.rocket ! SendNotification(value.rocket_login, rocket)
+                    ActorManager.mail ! Mail(List(value.name, value.surname).mkString(" "), value.email, "DeepSea Notification", email)
+                  case _ => None
+                }
+                getUser(issue.started_by) match {
+                  case Some(value) =>
+                    ActorManager.rocket ! SendNotification(value.rocket_login, rocket)
+                    ActorManager.mail ! Mail(List(value.name, value.surname).mkString(" "), value.email, "DeepSea Notification", email)
+                  case _ => None
+                }
+              }
+              else if (updateMessage.contains("status")){
                 List(update.assigned_to, update.responsible, update.started_by).filter(_ != user).distinct.foreach(u => {
                   ActorManager.rocket ! SendNotification(u, s"Изменился статус на '${update.status}' у задачи " + s"<${App.HTTPServer.Url}/?taskId=${issue.id}|${(issue.doc_number + " " + issue.name).trim}>")
                 })
