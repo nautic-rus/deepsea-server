@@ -562,7 +562,7 @@ trait IssueManagerHelper extends MongoCodecs with AuthManagerHelper{
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        var query = s"select * from issue where removed = 0 and parent_id = $id"
+        val query = s"select *, (select closing_status from issue_types where type_name = i.issue_type) from issue i where removed = 0 and parent_id = $id"
         val rs = s.executeQuery(query)
         while (rs.next()){
           issues += new Issue(
@@ -660,6 +660,10 @@ trait IssueManagerHelper extends MongoCodecs with AuthManagerHelper{
               case _ => ""
             }
             issue_comment = rs.getString("issue_comment") match {
+              case value: String => value
+              case _ => ""
+            }
+            closing_status = rs.getString("closing_status") match {
               case value: String => value
               case _ => ""
             }
