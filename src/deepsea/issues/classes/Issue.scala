@@ -50,7 +50,8 @@ object Issue{
         "ready" -> x.ready,
         "contract_due_date" -> x.contract_due_date,
         "subscribers" -> x.subscribers,
-        "plan_hours" -> x.plan_hours
+        "plan_hours" -> x.plan_hours,
+        "plan_hours_locked" -> x.plan_hours_locked
       )
       case _ => JsNull
     }
@@ -88,6 +89,7 @@ object Issue{
         ready = (x \ "ready").asOpt[String].getOrElse("000")
         contract_due_date = (x \ "contract_due_date").asOpt[Long].getOrElse(0)
         plan_hours = (x \ "plan_hours").asOpt[Double].getOrElse(0)
+        plan_hours_locked = (x \ "plan_hours_locked").asOpt[Int].getOrElse(0)
       })
       case _ => JsSuccess (null)
     }
@@ -127,6 +129,7 @@ class Issue(var id: Int, var status: String, var project: String, var department
   var contract_due_date: Long = 0
   var subscribers: List[String] = List.empty[String]
   var plan_hours: Double = 0
+  var plan_hours_locked: Int = 0
   def toChildIssue: ChildIssue ={
     new ChildIssue(id, status, started_by, started_date, issue_type, name, assigned_to, responsible, doc_number)
   }

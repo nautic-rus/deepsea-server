@@ -87,7 +87,8 @@ object IssueManager{
   case class CombineIssues(firstIssue: String, secondIssue: String, user: String)
   case class GetProjectNames()
   case class SubscribeForNotifications(user: String, issue: String, options: String)
-  case class SetPlanHours(issue_id: Int, user: String, hours: Double)
+  case class SetPlanHours(issue_id: String, user: String, hours: String)
+  case class LockPlanHours(issue_id: String, state: String)
 
   case class IssueDef(id: String, issueTypes: List[String], issueProjects: List[String])
   implicit val writesIssueDef: OWrites[IssueDef] = Json.writes[IssueDef]
@@ -336,8 +337,11 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
       sender() ! subscribeForIssueNotifications(user, issue.toIntOption.getOrElse(0), options).asJson.noSpaces
     case SetPlanHours(issue_id, user, hours) =>
       val date = new Date().getTime
-      updateHistory(new IssueHistory(issue_id, user, "plan_hours", "", hours.toString, date, "plan_hours"))
-      updateIssueLabor(issue_id, hours)
+      updateHistory(new IssueHistory(issue_id.toIntOption.getOrElse(0), user, "plan_hours", "", hours, date, "plan_hours"))
+      updateIssueLabor(issue_id.toIntOption.getOrElse(0), hours.toDoubleOption.getOrElse(0))
+      sender() ! "success".asJson.noSpaces
+    case LockPlanHours(issue_id, state) =>
+      updateLockPlanHours(issue_id.toIntOption.getOrElse(0), state.toIntOption.getOrElse(0))
       sender() ! "success".asJson.noSpaces
     case _ => None
   }

@@ -431,6 +431,13 @@ class HTTPManager extends Actor{
       (post & path("savePoly") & entity(as[String])){ (poly) =>
         askFor(ActorManager.osmManager, AddPLS(poly))
       },
+
+      (get & path("setPlanHours") & parameter("issue_id") & parameter("user") & parameter("hours")){ (issue_id, user, hours) =>
+        askFor(ActorManager.issue, SetPlanHours(issue_id, user, hours))
+      },
+      (get & path("lockPlanHours") & parameter("issue_id") & parameter("state")){ (issue_id, state) =>
+        askFor(ActorManager.issue, SetPlanHours(issue_id, state))
+      },
     )
   }
 
