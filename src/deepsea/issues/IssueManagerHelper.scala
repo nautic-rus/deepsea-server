@@ -1269,4 +1269,14 @@ trait IssueManagerHelper extends MongoCodecs with AuthManagerHelper{
       }
     })
   }
+  def updateIssueLabor(issue_id: Int, labor: Double): Unit ={
+    GetConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        s.execute(s"update issue set plan_hours = $labor where id = $issue_id")
+        s.close()
+        c.close()
+      case _ =>
+    }
+  }
 }

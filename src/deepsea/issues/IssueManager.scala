@@ -87,6 +87,7 @@ object IssueManager{
   case class CombineIssues(firstIssue: String, secondIssue: String, user: String)
   case class GetProjectNames()
   case class SubscribeForNotifications(user: String, issue: String, options: String)
+  case class SetPlanHours(issue_id: Int, user: String, hours: Double)
 
   case class IssueDef(id: String, issueTypes: List[String], issueProjects: List[String])
   implicit val writesIssueDef: OWrites[IssueDef] = Json.writes[IssueDef]
@@ -333,6 +334,11 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
       sender() ! getProjectNames.asJson.noSpaces
     case SubscribeForNotifications(user, issue, options) =>
       sender() ! subscribeForIssueNotifications(user, issue.toIntOption.getOrElse(0), options).asJson.noSpaces
+    case SetPlanHours(issue_id, user, hours) =>
+      val date = new Date().getTime
+      updateHistory(new IssueHistory(issue_id, user, "plan_hours", "", hours.toString, date, "plan_hours"))
+      updateIssueLabor(issue_id, hours)
+      sender() ! "success".asJson.noSpaces
     case _ => None
   }
   def setDayCalendar(user: String, day: String, status: String): ListBuffer[IssueView] ={
