@@ -436,7 +436,7 @@ class HTTPManager extends Actor{
         askFor(ActorManager.issue, SetPlanHours(issue_id, user, hours))
       },
       (get & path("lockPlanHours") & parameter("issue_id") & parameter("state")){ (issue_id, state) =>
-        askFor(ActorManager.issue, SetPlanHours(issue_id, state))
+        askFor(ActorManager.issue, LockPlanHours(issue_id, state))
       },
     )
   }

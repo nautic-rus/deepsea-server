@@ -162,6 +162,10 @@ trait IssueManagerHelper extends MongoCodecs with AuthManagerHelper{
               case value: Double => value
               case _ => 0
             }
+            plan_hours_locked = rs.getInt("plan_hours_locked") match {
+              case value: Int => value
+              case _ => 0
+            }
           }
         }
         rs.close()
@@ -421,6 +425,10 @@ trait IssueManagerHelper extends MongoCodecs with AuthManagerHelper{
             }
             plan_hours = rs.getDouble("plan_hours") match {
               case value: Double => value
+              case _ => 0
+            }
+            plan_hours_locked = rs.getInt("plan_hours_locked") match {
+              case value: Int => value
               case _ => 0
             }
             revision_files = getRevisionFiles(id)
