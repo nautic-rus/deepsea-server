@@ -158,7 +158,7 @@ trait IssueManagerHelper extends MongoCodecs with AuthManagerHelper{
               case value: Long => value
               case _ => 0
             }
-            plan_hours = rs.getLong("plan_hours") match {
+            plan_hours = rs.getDouble("plan_hours") match {
               case value: Double => value
               case _ => 0
             }
