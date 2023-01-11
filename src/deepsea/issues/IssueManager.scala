@@ -337,7 +337,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
       sender() ! subscribeForIssueNotifications(user, issue.toIntOption.getOrElse(0), options).asJson.noSpaces
     case SetPlanHours(issue_id, user, hours) =>
       val date = new Date().getTime
-      updateHistory(new IssueHistory(issue_id.toIntOption.getOrElse(0), user, "plan_hours", "", hours, date, "plan_hours"))
+//      updateHistory(new IssueHistory(issue_id.toIntOption.getOrElse(0), user, "plan_hours", "", hours, date, "plan_hours"))
       updateIssueLabor(issue_id.toIntOption.getOrElse(0), hours.toDoubleOption.getOrElse(0))
       sender() ! "success".asJson.noSpaces
     case LockPlanHours(issue_id, state) =>
