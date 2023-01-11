@@ -131,6 +131,6 @@ class Issue(var id: Int, var status: String, var project: String, var department
   var plan_hours: Double = 0
   var plan_hours_locked: Int = 0
   def toChildIssue: ChildIssue ={
-    new ChildIssue(id, status, started_by, started_date, issue_type, name, assigned_to, responsible, doc_number)
+    new ChildIssue(id, status, started_by, started_date, issue_type, name, assigned_to, responsible, doc_number, closing_status)
   }
 }

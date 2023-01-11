@@ -16,6 +16,7 @@ object ChildIssue{
         "last_update" -> x.last_update,
         "doc_number" -> x.doc_number,
         "responsible" -> x.responsible,
+        "closing_status" -> x.closing_status,
       )
       case _ => JsNull
     }
@@ -31,7 +32,8 @@ object ChildIssue{
         name = (x \ "name").asOpt[String].getOrElse(""),
         assigned_to = (x \ "assigned_to").asOpt[String].getOrElse(""),
         responsible = (x \ "responsible").asOpt[String].getOrElse(""),
-        doc_number = (x \ "doc_number").asOpt[String].getOrElse("")
+        doc_number = (x \ "doc_number").asOpt[String].getOrElse(""),
+        closing_status = (x \ "closing_status").asOpt[String].getOrElse("")
       ){
         last_update = (x \ "last_update").asOpt[String].getOrElse("")
       })
@@ -40,6 +42,6 @@ object ChildIssue{
   }
 }
 class ChildIssue(var id: Int, var status: String, var started_by: String,
-            var started_date: Long, var issue_type: String, var name: String, var assigned_to: String, var responsible: String, var doc_number: String) {
+            var started_date: Long, var issue_type: String, var name: String, var assigned_to: String, var responsible: String, var doc_number: String, var closing_status: String) {
   var last_update: String = ""
 }
