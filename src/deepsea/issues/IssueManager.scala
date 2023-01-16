@@ -101,11 +101,11 @@ object IssueManager{
   case class DayCalendar(user: String, day: String, status: String)
   implicit val writesDayCalendar: OWrites[DayCalendar] = Json.writes[DayCalendar]
 
-  case class IssueSpentTime(id: Int, date: Long, value: Double, comment: String, user: String)
-  implicit val writesIssueSpentTime: OWrites[IssueSpentTime] = Json.writes[IssueSpentTime]
+//  case class IssueSpentTime(id: Int, date: Long, value: Double, comment: String, user: String)
+//  implicit val writesIssueSpentTime: OWrites[IssueSpentTime] = Json.writes[IssueSpentTime]
 
   case class GroupFolder(id: Int, name: String)
-  case class DailyTask(date: Long, userLogin: String, userName: String, dateCreated: Long, project: String, docNumber: String, details: String, time: Double, action: String, id: String)
+  case class DailyTask(issueId: Int, date: Long, dateCreated: Long, userLogin: String, project: String, details: String, time: Double, id: Int)
   case class IssueProject(id: Int, name: String, pdsp: String, rkd: String, foran: String, factory: String)
 }
 class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with FileManagerHelper {
@@ -160,8 +160,8 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
           issue.file_attachments.foreach(x => setIssueFileAttachments(result, x))
           if (issue.issue_type == "QNA"){
             val q = '"'
-            val rocket = s"Был задан новый вопрос " + s"<${App.HTTPServer.Url}/qna-details?id=${issue.id}|${(issue.doc_number + " " + issue.name).trim}>"
-            val email = s"Был задан новый вопрос " + s"<a href=$q${App.HTTPServer.Url}/qna-details?id=${issue.id}$q>${(issue.doc_number + " " + issue.name).trim}</a>"
+            val rocket = s"Был задан новый вопрос " + s"<${App.HTTPServer.Url}/qna-details?id=${result}|${(issue.doc_number + " " + issue.name).trim}>"
+            val email = s"Был задан новый вопрос " + s"<a href=$q${App.HTTPServer.Url}/qna-details?id=${result}$q>${(issue.doc_number + " " + issue.name).trim}</a>"
             val users = List("isaev")
             users.foreach(u => {
               getUser(u) match {
@@ -292,13 +292,10 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
       sender() ! Json.toJson("success")
     case GetRevisionFiles() =>
       sender() ! Json.toJson(getRevisionFiles)
-    case SetIssueLabor(user, issue_id, labor_value, labor_comment, date) =>
-      setIssueLabor(user, issue_id.toIntOption.getOrElse(0), labor_value.toDoubleOption.getOrElse(0), labor_comment, date.toLongOption.getOrElse(0))
-      sender() ! Json.toJson("success")
     case GetSfiCodes() =>
       sender() ! Json.toJson(getSfiCodes)
     case GetIssueSpentTime() =>
-      sender() ! Json.toJson(getIssueSpentTime)
+      sender() ! getIssueSpentTime.asJson.noSpaces
     case GetIssueChecks(issue_id) =>
       sender() ! Json.toJson(getIssueChecks(issue_id.toIntOption.getOrElse(0)))
     case SetIssueChecks(issue_id, checks: String) =>
@@ -326,7 +323,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
       addDailyTask(jsValue)
       sender() ! "success".asJson.noSpaces
     case DeleteDailyTask(id) =>
-      deleteDailyTask(id)
+      deleteDailyTask(id.toIntOption.getOrElse(0))
       sender() ! "success".asJson.noSpaces
     case CombineIssues(firstIssue, secondIssue, user) =>
       combineIssues(firstIssue.toIntOption.getOrElse(0), secondIssue.toIntOption.getOrElse(0), user)
@@ -877,15 +874,6 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     }
     res
   }
-  def setIssueLabor(user: String, issue_id: Int, labor_value: Double, labor_comment: String, date: Long): Unit ={
-    GetConnection() match {
-      case Some(c) =>
-        val s = c.createStatement()
-        s.execute(s"insert into issue_spent_time (issue_id, labor_date, labor_value, labor_comment, user_labor) values ($issue_id, $date, $labor_value, '$labor_comment', '$user')")
-        c.close()
-      case _ =>
-    }
-  }
   def getSfiCodes: ListBuffer[SfiCode] ={
     val res = ListBuffer.empty[SfiCode]
     GetConnection() match {
@@ -897,28 +885,6 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
             rs.getString("code"),
             rs.getString("ru"),
             rs.getString("en"),
-          )
-        }
-        rs.close()
-        s.close()
-        c.close()
-      case _ =>
-    }
-    res
-  }
-  def getIssueSpentTime: ListBuffer[IssueSpentTime] ={
-    val res = ListBuffer.empty[IssueSpentTime]
-    GetConnection() match {
-      case Some(c) =>
-        val s = c.createStatement()
-        val rs = s.executeQuery(s"select * from issue_spent_time")
-        while (rs.next()){
-          res += IssueSpentTime(
-            rs.getInt("issue_id"),
-            rs.getLong("labor_date"),
-            rs.getDouble("labor_value"),
-            rs.getString("labor_comment"),
-            rs.getString("user_labor"),
           )
         }
         rs.close()

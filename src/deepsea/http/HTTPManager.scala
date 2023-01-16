@@ -148,9 +148,6 @@ class HTTPManager extends Actor{
       (get & path("timeAndWeather")){
         askFor(ActorManager.timeAndWeather, GetTimeAndWeather())
       },
-      (get & path("issueSpentTime")){
-        askFor(ActorManager.issue, GetIssueSpentTime())
-      },
       (post & path("setIssueChecks") & entity(as[String]) & parameter("issue_id")){ (checks, issue_id) =>
         askFor(ActorManager.issue, SetIssueChecks(issue_id, checks))
       },

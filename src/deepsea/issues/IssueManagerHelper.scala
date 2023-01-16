@@ -917,35 +917,67 @@ trait IssueManagerHelper extends MongoCodecs with AuthManagerHelper{
   def addDailyTask(json: String): Unit ={
     decode[DailyTask](json) match {
       case Right(value) =>
-        DatabaseManager.GetMongoConnection() match {
-          case Some(mongo) =>
-            val dailyTasks: MongoCollection[DailyTask] = mongo.getCollection("dailyTasks")
-            Await.result(dailyTasks.insertOne(value).toFuture(), Duration(30, SECONDS))
-          case _ =>
-        }
-      case Left(value) =>
+        setIssueLabor(value.issueId, value.date, value.time, value.details, value.userLogin, value.dateCreated, value.id, value.project)
+      case _ => None
     }
   }
-  def deleteDailyTask(id: String): Unit ={
-    DatabaseManager.GetMongoConnection() match {
-      case Some(mongo) =>
-        val dailyTasks: MongoCollection[DailyTask] = mongo.getCollection("dailyTasks")
-        Await.result(dailyTasks.deleteOne(equal("id", id)).toFuture(), Duration(30, SECONDS))
+  def deleteDailyTask(id: Int): Unit ={
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        s.execute(s"delete from issue_spent_time where id = $id")
+        c.close()
+      case _ =>
+    }
+  }
+  def setIssueLabor(issue_id: Int, labor_date: Long, labor_value: Double, labor_comment: String, user_labor: String, date_created: Long, id: Int, project: String): Unit ={
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        s.execute(s"insert into issue_spent_time (issue_id, labor_date, labor_value, labor_comment, user_labor, date_created, id, project) values ($issue_id, $labor_date, $labor_value, '$labor_comment', '$user_labor', $date_created, default, '$project')")
       case _ =>
     }
   }
   def getDailyTasks: List[DailyTask] ={
-    DBManager.GetMongoConnection() match {
-      case Some(mongo) =>
-        val dailyTasks: MongoCollection[DailyTask] = mongo.getCollection("dailyTasks")
-        Await.result(dailyTasks.find().toFuture(), Duration(30, SECONDS)) match {
-          case values: Seq[DailyTask] =>
-            values.toList
-          case _ => List.empty[DailyTask]
-        }
-      case _ => List.empty[DailyTask]
-    }
+    getIssueSpentTime.toList
   }
+  def getIssueSpentTime: ListBuffer[DailyTask] ={
+    val res = ListBuffer.empty[DailyTask]
+    GetConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val rs = s.executeQuery(s"select * from issue_spent_time")
+        while (rs.next()){
+          res += DailyTask(
+            rs.getInt("issue_id"),
+            rs.getLong("labor_date"),
+            rs.getLong("date_created"),
+            rs.getString("user_labor"),
+            rs.getString("project"),
+            rs.getString("labor_comment"),
+            rs.getDouble("labor_value"),
+            rs.getInt("id")
+          )
+        }
+        rs.close()
+        s.close()
+        c.close()
+      case _ =>
+    }
+    res
+  }
+//  def getDailyTasks: List[DailyTask] ={
+//    DBManager.GetMongoConnection() match {
+//      case Some(mongo) =>
+//        val dailyTasks: MongoCollection[DailyTask] = mongo.getCollection("dailyTasks")
+//        Await.result(dailyTasks.find().toFuture(), Duration(30, SECONDS)) match {
+//          case values: Seq[DailyTask] =>
+//            values.toList
+//          case _ => List.empty[DailyTask]
+//        }
+//      case _ => List.empty[DailyTask]
+//    }
+//  }
   def getCloudFiles(project: String, docNumber: String, department: String): List[FileAttachment]={
     val spCloud: String = "/"
     val res = ListBuffer.empty[FileAttachment]
