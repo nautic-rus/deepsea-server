@@ -926,6 +926,7 @@ trait IssueManagerHelper extends MongoCodecs with AuthManagerHelper{
       case Some(c) =>
         val s = c.createStatement()
         s.execute(s"delete from issue_spent_time where id = $id")
+        s.close()
         c.close()
       case _ =>
     }
@@ -935,6 +936,8 @@ trait IssueManagerHelper extends MongoCodecs with AuthManagerHelper{
       case Some(c) =>
         val s = c.createStatement()
         s.execute(s"insert into issue_spent_time (issue_id, labor_date, labor_value, labor_comment, user_labor, date_created, id, project) values ($issue_id, $labor_date, $labor_value, '$labor_comment', '$user_labor', $date_created, default, '$project')")
+        s.close()
+        c.close()
       case _ =>
     }
   }
