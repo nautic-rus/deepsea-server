@@ -946,7 +946,7 @@ trait IssueManagerHelper extends MongoCodecs with AuthManagerHelper{
   }
   def getIssueSpentTime: ListBuffer[DailyTask] ={
     val res = ListBuffer.empty[DailyTask]
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from issue_spent_time")
