@@ -6,7 +6,7 @@ import deepsea.database.DatabaseManager.GetConnection
 
 trait AuthManagerHelper {
   def getUser(login: String): Option[User] ={
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         var s = c.createStatement()
         var rs = s.executeQuery(s"select * from users where login = '$login' and removed = 0")
