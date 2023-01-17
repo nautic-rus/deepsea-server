@@ -573,7 +573,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     }
   }
   def updateHistory(issue: IssueHistory): Unit ={
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         s.execute(s"insert into issue_history values ('${issue.id}', '${issue.author}', '${issue.name_value}', '${issue.prev_value}', '${issue.new_value}', ${issue.update_date}, '${issue.update_message}')")
@@ -582,7 +582,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     }
   }
   def removeIssue(id: Int, user: String): Unit ={
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         s.execute(s"update issue set removed = 1 where id = $id")
@@ -595,7 +595,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     val date = new Date().getTime
     updateHistory(new IssueHistory(id, author, "change_responsible", "", user, date, "change_responsible"))
     val query = s"update issue set responsible = '$user', action = '$action' where id = $id"
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         s.executeQuery(query)
@@ -608,7 +608,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     val date = new Date().getTime
     updateHistory(new IssueHistory(id, author, "assign", "", user, date, "assign"))
     val query = s"update issue set assigned_to = '$user', active_action = '$action', start_date = $start_date, due_date = $due_date, overtime = '$overtime' where id = $id"
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         s.execute(query)
@@ -754,7 +754,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
       if (numeric_names.contains(name_value)){
         query = s"update issue set $name_value = $new_value, active_action = '${issue.action}', last_update = $date where id = $id"
       }
-      GetConnection() match {
+      DBManager.GetPGConnection() match {
         case Some(c) =>
           val s = c.createStatement()
           s.execute(query)
