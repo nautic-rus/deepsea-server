@@ -1,7 +1,8 @@
 package deepsea.auth
 
 import akka.actor.Actor
-import deepsea.auth.AuthManager.{UpdateEmail, UpdateRocketLogin, GetUser, GetUsers, Login, ShareRights, User, writesUser}
+import deepsea.auth.AuthManager.{GetUser, GetUsers, Login, ShareRights, UpdateEmail, UpdateRocketLogin, User, writesUser}
+import deepsea.database.DBManager
 import deepsea.database.DatabaseManager.GetConnection
 import play.api.libs.json.{Json, OWrites}
 
@@ -91,7 +92,7 @@ class AuthManager extends Actor with AuthManagerHelper {
   }
   def addUserToken(user: String): Option[String] ={
     val token = UUID.randomUUID().toString
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         s.execute(s"" +
@@ -103,7 +104,7 @@ class AuthManager extends Actor with AuthManagerHelper {
     }
   }
   def getUserByToken(token: String): Option[String] ={
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select s.user from sessions s where token = '$token'")
@@ -119,7 +120,7 @@ class AuthManager extends Actor with AuthManagerHelper {
     }
   }
   def getUserByLoginPassword(login: String, password: String): Option[String] ={
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select login from users where login = '$login' and password = '$password' and removed = 0")
@@ -136,7 +137,7 @@ class AuthManager extends Actor with AuthManagerHelper {
   }
   def getUsers: ListBuffer[User] ={
     val res = ListBuffer.empty[User]
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from users where removed = 0")
@@ -172,7 +173,7 @@ class AuthManager extends Actor with AuthManagerHelper {
     }
   }
   def shareWith(user: String, with_user: String): Unit ={
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         s.execute(s"update users set shared_access = '$user' where login = '$with_user'")
