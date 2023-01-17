@@ -30,17 +30,17 @@ class TimeAndWeatherManager extends Actor{
   implicit val executionContext: ExecutionContextExecutor = system.dispatcher
   val executor: ExecutionContextExecutor = system.dispatcher
   var refresh: Long = 0
-  var weather: Weather = Weather(new Date().getTime, "", "", 0, 0, 0)
+  var weather: Weather = _
 
   override def preStart(): Unit = {
-    //system.scheduler.scheduleWithFixedDelay(0.seconds, 5.minutes, self, SetTimeAndWeather())
+    system.scheduler.scheduleWithFixedDelay(0.seconds, 5.minutes, self, SetTimeAndWeather())
   }
   override def receive: Receive = {
     case GetTimeAndWeather() =>
       weather.time = new Date().getTime
       sender() ! Json.toJson(weather)
     case SetTimeAndWeather() =>
-      //setTimeAndWeather()
+      setTimeAndWeather()
 //      DBManager.GetNextCloudConnection() match {
 //        case Some(connection) =>
 //          val stmt = connection.createStatement()
