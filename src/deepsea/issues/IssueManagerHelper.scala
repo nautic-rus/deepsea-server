@@ -1317,7 +1317,7 @@ trait IssueManagerHelper extends MongoCodecs with AuthManagerHelper{
     })
   }
   def updateIssueLabor(issue_id: Int, labor: Double): Unit ={
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         s.execute(s"update issue set plan_hours = $labor where id = $issue_id")
@@ -1327,7 +1327,7 @@ trait IssueManagerHelper extends MongoCodecs with AuthManagerHelper{
     }
   }
   def updateLockPlanHours(issue_id: Int, state: Int): Unit ={
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         s.execute(s"update issue set plan_hours_locked = $state where id = $issue_id")
