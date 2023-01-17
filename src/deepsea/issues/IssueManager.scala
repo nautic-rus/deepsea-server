@@ -182,11 +182,20 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
         case _ => None
       }
     case GetIssues(userName) =>
-      Await.result(ActorManager.auth ? GetUser(userName), timeout.duration) match {
-        case user: User =>
-          sender() ! Json.toJson(getIssuesForUser(user))
-        case _ => sender() ! Json.toJson(ListBuffer.empty[Issue])
+      if (userName == "lvov"){
+        Await.result(ActorManager.auth ? GetUser("op"), timeout.duration) match {
+          case opUser: User =>
+            sender() ! Json.toJson(getIssuesForUser(opUser).filter(x => x.started_by == "lvov" || x.assigned_to == "lvov" || x.responsible == "lvov" || x.project == "170701" || x.project == "170707"))
+          case _ => sender() ! Json.toJson(ListBuffer.empty[Issue])
+        }
       }
+      else{
+        Await.result(ActorManager.auth ? GetUser(userName), timeout.duration) match {
+          case user: User => sender() ! Json.toJson(getIssuesForUser(user))
+          case _ => sender() ! Json.toJson(ListBuffer.empty[Issue])
+        }
+      }
+
     case GetQuestions() =>
       sender() ! Json.toJson(getQuestions)
     case UpdateIssue(user, updateMessage, issueJson) =>
