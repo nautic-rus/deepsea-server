@@ -7,7 +7,6 @@ import deepsea.App
 import deepsea.actors.ActorManager
 import deepsea.auth.AuthManager.{GetUser, User}
 import deepsea.database.{DBManager, DatabaseManager, MongoCodecs}
-import deepsea.database.DatabaseManager.GetConnection
 import deepsea.files.FileManager.{GetCloudFiles, GetDocumentFiles, TreeFile, treeFilesCollection}
 import deepsea.files.FileManagerHelper
 import deepsea.files.classes.FileAttachment
@@ -353,7 +352,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
   }
   def setDayCalendar(user: String, day: String, status: String): ListBuffer[IssueView] ={
     val res = ListBuffer.empty[IssueView]
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val date = new Date().getTime
@@ -373,7 +372,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
   }
   def getCalendar: ListBuffer[DayCalendar] ={
     val res = ListBuffer.empty[DayCalendar]
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from days_calendar")
@@ -389,7 +388,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
   }
   def setIssueViewed(id: Int, user: String): ListBuffer[IssueView] ={
     val res = ListBuffer.empty[IssueView]
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val date = new Date().getTime
@@ -409,7 +408,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
   }
   def getIssueViews(user: String): ListBuffer[IssueView] ={
     val res = ListBuffer.empty[IssueView]
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from issue_viewed where user_login = '$user'")
@@ -425,7 +424,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
   }
   def getIssueId: Int = {
     var res = 0
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery("select nextval('users_id_seq')")
@@ -441,7 +440,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
   }
   def getIssueProjects: ListBuffer[IssueProject] ={
     val res = ListBuffer.empty[IssueProject]
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from issue_projects order by id")
@@ -464,7 +463,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
   }
   def getIssueDepartments: ListBuffer[String] ={
     val res = ListBuffer.empty[String]
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from issue_departments order by id")
@@ -480,7 +479,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
   }
   def getIssuePriorities: ListBuffer[String] ={
     val res = ListBuffer.empty[String]
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from issue_priorities")
@@ -496,7 +495,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
   }
   def setIssueMessage(id: Int, message: IssueMessage): Int ={
     var result = 0
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"insert into issue_messages (issue_id, author, content, date, prefix, to_be_replied) values ($id, '${message.author}', '${message.content}', ${new Date().getTime}, '${message.prefix}', ${message.to_be_replied}) returning id")
@@ -511,7 +510,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
   }
   def updateIssueMessage(id: Int, message: IssueMessage): Int ={
     var result = 0
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         s.execute(s"update issue_messages set content = '${message.content}' where id = $id")
@@ -521,7 +520,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     result
   }
   def setIssueFileAttachments(id: Int, file: FileAttachment): Unit ={
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val date = new Date().getTime
@@ -531,7 +530,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     }
   }
   def setMessageFileAttachments(id: Int, file: FileAttachment): Unit ={
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val date = new Date().getTime
@@ -542,7 +541,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
   }
   def getIssueTypes: ListBuffer[IssueType] ={
     val res = ListBuffer.empty[IssueType]
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from issue_types order by sort")
@@ -565,7 +564,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
   def startIssue(issue: Issue): Int ={
     var res = 0
     val date = new Date().getTime
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val query = s"insert into issue (id, status, project, department, started_by, started_date, issue_type, issue_name, assigned_to, details, priority, last_update, doc_number, responsible, period, parent_id, active_action, due_date) " +
@@ -775,7 +774,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
   }
 
   def deleteFile(url: String): Unit ={
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val query = s"delete from file_attachments where url = '$url'"
@@ -786,7 +785,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     }
   }
   def deleteRevisionFile(url: String, user: String): Unit ={
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val date = new Date().getTime
         val s = c.createStatement()
@@ -798,7 +797,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     }
   }
   def clearRevisionFiles(issueId: Int, user: String, fileGroup: String, revision: String): Unit ={
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val date = new Date().getTime
         val s = c.createStatement()
@@ -810,7 +809,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     }
   }
   def setRevisionFiles(id: Int, revision: String, files: ListBuffer[FileAttachment]): Unit ={
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val date = new Date().getTime
@@ -860,7 +859,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
   }
   def getNestingRevisionFiles: ListBuffer[FileAttachment] ={
     val res = ListBuffer.empty[FileAttachment]
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from revision_files where (group_name like 'Nesting%' or group_name like 'Cutting%') and removed = 0")
@@ -885,7 +884,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
   }
   def getSfiCodes: ListBuffer[SfiCode] ={
     val res = ListBuffer.empty[SfiCode]
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from sfi order by code")
@@ -904,7 +903,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     res
   }
   def setIssueChecks(issue_id: Int, checks: List[IssueCheck]): Unit ={
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         s.execute(s"delete from issue_check where issue_id = $issue_id")
@@ -918,7 +917,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
   }
   def updateIssueCheck(issue_id: Int, user: String, check_description: String, check_group: String, check_status: Int): Unit ={
     val date = new Date().getTime
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         s.execute(s"update issue_check set check_status = $check_status, check_date = $date, user_login = '$user' where issue_id = $issue_id and check_description = '$check_description' and check_group = '$check_group'")
@@ -929,7 +928,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
   }
   def getCheckTemplates(user: String): ListBuffer[IssueCheck] ={
     val res = ListBuffer.empty[IssueCheck]
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from checklist_templates where author = '$user'")
@@ -957,7 +956,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
   def setMessageReaction(jsValue: String): Unit ={
     decode[MessageReaction](jsValue) match {
       case Right(reaction) =>
-        GetConnection() match {
+        DBManager.GetPGConnection() match {
           case Some(c) =>
             val s = c.createStatement()
             val date = new Date().getTime
@@ -970,7 +969,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     }
   }
   def deleteMessageReaction(reaction_id: Int): Unit ={
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         s.execute(s"delete from message_reactions where id = ${reaction_id}")
@@ -981,7 +980,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
   }
   def getMessageReactions: List[MessageReaction] ={
     val res = ListBuffer.empty[MessageReaction]
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from message_reactions")

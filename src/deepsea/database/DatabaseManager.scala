@@ -22,17 +22,17 @@ object DatabaseManager extends MongoCodecs {
   case class GetFireBaseConnectionFromPool()
   case class OracleConnection(project: String, ds: HikariDataSource)
 
-  def GetConnection(): Option[Connection] ={
-    try{
-      Await.result(ActorManager.dataBase ? GetConnectionFromPool(), timeout.duration) match {
-        case response: Connection => Option(response)
-        case _ => Option.empty
-      }
-    }
-    catch {
-      case e: Throwable => Option.empty
-    }
-  }
+//  def DBManager.GetPGConnection(): Option[Connection] ={
+//    try{
+//      Await.result(ActorManager.dataBase ? GetConnectionFromPool(), timeout.duration) match {
+//        case response: Connection => Option(response)
+//        case _ => Option.empty
+//      }
+//    }
+//    catch {
+//      case e: Throwable => Option.empty
+//    }
+//  }
   def GetMongoConnection(): Option[MongoDatabase] = {
     try{
       Await.result(ActorManager.dataBase ? GetMongoConnectionFromPool(), timeout.duration) match {

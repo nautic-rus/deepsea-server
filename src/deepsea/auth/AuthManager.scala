@@ -3,7 +3,6 @@ package deepsea.auth
 import akka.actor.Actor
 import deepsea.auth.AuthManager.{GetUser, GetUsers, Login, ShareRights, UpdateEmail, UpdateRocketLogin, User, writesUser}
 import deepsea.database.DBManager
-import deepsea.database.DatabaseManager.GetConnection
 import play.api.libs.json.{Json, OWrites}
 
 import java.sql.Date

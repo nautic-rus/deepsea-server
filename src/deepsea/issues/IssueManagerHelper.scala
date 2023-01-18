@@ -6,7 +6,6 @@ import deepsea.auth.AuthManager.User
 import deepsea.auth.AuthManagerHelper
 import deepsea.database.DBManager.RsIterator
 import deepsea.database.{DBManager, DatabaseManager, MongoCodecs}
-import deepsea.database.DatabaseManager.GetConnection
 import deepsea.files.FileManager.{CloudFile, DocumentDirectories}
 import deepsea.files.FileManagerHelper
 import deepsea.files.classes.FileAttachment
@@ -794,7 +793,7 @@ trait IssueManagerHelper extends MongoCodecs with AuthManagerHelper{
 
   def getIssuePeriods: ListBuffer[IssuePeriod] ={
     val res = ListBuffer.empty[IssuePeriod]
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val query = s"select stage_name, stage_date, (select p.name as stage_project from issue_projects p where s.stage_project = p.id) from issue_stages s"
@@ -893,7 +892,7 @@ trait IssueManagerHelper extends MongoCodecs with AuthManagerHelper{
   }
   def getMessageFileAttachments(id: Int): ListBuffer[FileAttachment] ={
     val res = ListBuffer.empty[FileAttachment]
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from file_attachments where message_id = $id")

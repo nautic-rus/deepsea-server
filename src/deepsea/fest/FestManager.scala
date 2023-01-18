@@ -1,7 +1,7 @@
 package deepsea.fest
 
 import akka.actor.Actor
-import deepsea.database.DatabaseManager.GetConnection
+import deepsea.database.DBManager
 import deepsea.fest.FestManager._
 import deepsea.fest.classes.{BestPlayer, Mark, TeamWon}
 import deepsea.files.classes.FileAttachment
@@ -107,7 +107,7 @@ class FestManager extends Actor{
 
   def updateMarks(marks: ListBuffer[Mark]): Unit ={
     val current = getFestMarks
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         marks.foreach(mark => {
@@ -125,7 +125,7 @@ class FestManager extends Actor{
   }
   def getFestMarks: ListBuffer[Mark] ={
     val res = ListBuffer.empty[Mark]
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from fest_marks")
@@ -141,7 +141,7 @@ class FestManager extends Actor{
   }
   def getTeamsWon: ListBuffer[TeamWon] ={
     val res = ListBuffer.empty[TeamWon]
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from fest_teams_won")
@@ -157,7 +157,7 @@ class FestManager extends Actor{
   }
   def updateTeamsWon(teams: ListBuffer[TeamWon]): Unit ={
     val current = getTeamsWon
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         teams.foreach(team => {
@@ -175,7 +175,7 @@ class FestManager extends Actor{
   }
   def getBestPlayers: ListBuffer[BestPlayer] ={
     val res = ListBuffer.empty[BestPlayer]
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from fest_best_players")
@@ -191,7 +191,7 @@ class FestManager extends Actor{
   }
   def updateBestPlayer(player: BestPlayer): Unit ={
     val current = getBestPlayers
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         if (current.exists(x => x.disc == player.disc)){
@@ -208,7 +208,7 @@ class FestManager extends Actor{
 
   def getFestStories: ListBuffer[FestStories] ={
     val res = ListBuffer.empty[FestStories]
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from fest_stories")
@@ -227,7 +227,7 @@ class FestManager extends Actor{
     res
   }
   def setFestStories(url: String, thumb: String): Unit ={
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val date = new Date().getTime
@@ -237,7 +237,7 @@ class FestManager extends Actor{
     }
   }
   def deleteFestStories(url: String): Unit ={
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val date = new Date().getTime
@@ -249,7 +249,7 @@ class FestManager extends Actor{
 
   def getFestKaraoke: ListBuffer[FestKaraoke] ={
     val res = ListBuffer.empty[FestKaraoke]
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from fest_karaoke")
@@ -268,7 +268,7 @@ class FestManager extends Actor{
     res
   }
   def setFestKaraoke(users: String, song: String): Unit ={
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val date = new Date().getTime
@@ -279,7 +279,7 @@ class FestManager extends Actor{
     }
   }
   def deleteFestKaraoke(date: Long): Unit ={
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         s.execute(s"delete from fest_karaoke where date = ${date}")
@@ -291,7 +291,7 @@ class FestManager extends Actor{
 
   def getFestSauna: ListBuffer[FestSauna] ={
     val res = ListBuffer.empty[FestSauna]
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from fest_sauna")
@@ -310,7 +310,7 @@ class FestManager extends Actor{
     res
   }
   def setFestSauna(kind: String, users: String, time: String): Unit ={
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val date = new Date().getTime
@@ -321,7 +321,7 @@ class FestManager extends Actor{
     }
   }
   def deleteFestSauna(time: String): Unit ={
-    GetConnection() match {
+    DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         s.execute(s"delete from fest_sauna where time = ${time}")

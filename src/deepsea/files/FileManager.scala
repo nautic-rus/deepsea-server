@@ -4,7 +4,6 @@ import akka.actor.Actor
 import com.mongodb.BasicDBObject
 import deepsea.App
 import deepsea.database.{DatabaseManager, MongoCodecs}
-import deepsea.database.DatabaseManager.GetConnection
 import deepsea.files.FileManager._
 import deepsea.files.classes.FileAttachment
 import deepsea.issues.IssueManagerHelper

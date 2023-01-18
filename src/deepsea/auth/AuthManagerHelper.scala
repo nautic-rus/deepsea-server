@@ -2,7 +2,6 @@ package deepsea.auth
 
 import deepsea.auth.AuthManager.User
 import deepsea.database.DBManager
-import deepsea.database.DatabaseManager.GetConnection
 
 trait AuthManagerHelper {
   def getUser(login: String): Option[User] ={
