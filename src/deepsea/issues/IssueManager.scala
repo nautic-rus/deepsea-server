@@ -161,21 +161,14 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
             val q = '"'
             val rocket = s"Был задан новый вопрос " + s"<${App.HTTPServer.Url}/qna-details?id=${result}|${(issue.doc_number + " " + issue.name).trim}>"
             val email = s"Был задан новый вопрос " + s"<a href=$q${App.HTTPServer.Url}/qna-details?id=${result}$q>${(issue.doc_number + " " + issue.name).trim}</a>"
-            val users = List("isaev")
-            users.foreach(u => {
-              getUser(u) match {
-                case Some(value) =>
-                  ActorManager.rocket ! SendNotification(value.rocket_login, rocket)
-                  ActorManager.mail ! Mail(List(value.name, value.surname).mkString(" "), value.email, "DeepSea Notification", email)
-                case _ => None
-              }
-            })
           }
-          if (issue.assigned_to != ""){
-            ActorManager.rocket ! SendNotification(issue.assigned_to, s"Вам была назначена задача " + s"<${App.HTTPServer.Url}/?taskId=${result}| Просмотреть задачу>")
-          }
-          if (issue.responsible != ""){
-            ActorManager.rocket ! SendNotification(issue.responsible, s"Вы были назначены ответственным к задаче " + s"<${App.HTTPServer.Url}/?taskId=${result}| Просмотреть задачу>")
+          else{
+            if (issue.assigned_to != ""){
+              ActorManager.rocket ! SendNotification(issue.assigned_to, s"Вам была назначена задача " + s"<${App.HTTPServer.Url}/?taskId=${result}| Просмотреть задачу>")
+            }
+            if (issue.responsible != ""){
+              ActorManager.rocket ! SendNotification(issue.responsible, s"Вы были назначены ответственным к задаче " + s"<${App.HTTPServer.Url}/?taskId=${result}| Просмотреть задачу>")
+            }
           }
           sender() ! Json.toJson(result)
         case _ => None
