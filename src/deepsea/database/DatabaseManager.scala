@@ -72,8 +72,8 @@ object DatabaseManager extends MongoCodecs {
 }
 class DatabaseManager extends Actor{
 
-  private val config = new HikariConfig()
-  private var ds: HikariDataSource = _
+//  private val config = new HikariConfig()
+//  private var ds: HikariDataSource = _
 
   private val configOracle = new HikariConfig()
   private var dsOracle: HikariDataSource = _
@@ -84,11 +84,11 @@ class DatabaseManager extends Actor{
   private var mongoClient: MongoClient = _
 
   override def preStart(): Unit = {
-    config.setDriverClassName("org.postgresql.Driver")
-    config.setJdbcUrl("jdbc:postgresql://192.168.1.26/deepsea")
-    config.setUsername("deepsea")
-    config.setPassword("Ship1234")
-    ds = new HikariDataSource(config)
+//    config.setDriverClassName("org.postgresql.Driver")
+//    config.setJdbcUrl("jdbc:postgresql://192.168.1.26/deepsea")
+//    config.setUsername("deepsea")
+//    config.setPassword("Ship1234")
+//    ds = new HikariDataSource(config)
 
     configOracle.setDriverClassName("oracle.jdbc.driver.OracleDriver")
     configOracle.setJdbcUrl("jdbc:oracle:thin:@office.nautic-rus.ru:1521:ORA3DB")
@@ -108,7 +108,7 @@ class DatabaseManager extends Actor{
     ActorManager.startup ! DatabaseManagerStarted()
   }
   override def receive: Receive = {
-    case GetConnectionFromPool() => sender() ! ds.getConnection
+//    case GetConnectionFromPool() => sender() ! ds.getConnection
     case GetOracleConnectionFromPool() => sender() ! dsOracle.getConnection
     case GetFireBaseConnectionFromPool() => sender() ! dsFireBase.getConnection
     case GetMongoConnectionFromPool() => sender() ! mongoClient.getDatabase("3degdatabase").withCodecRegistry(codecRegistry)
