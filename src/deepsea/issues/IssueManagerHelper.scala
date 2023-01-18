@@ -796,7 +796,7 @@ trait IssueManagerHelper extends MongoCodecs with AuthManagerHelper{
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val query = s"select stage_name, stage_date, (select p.name as stage_project from issue_projects p where s.stage_project = p.id) from issue_stages s"
+        val query = s"select stage_name, stage_date, (select p.name as stage_project from issue_projects p where s.id_project = p.id) from issue_stages s"
         val rs = s.executeQuery(query)
         while (rs.next()){
           res += new IssuePeriod(rs.getString("stage_name"), rs.getString("stage_project"), rs.getLong("stage_date"))
