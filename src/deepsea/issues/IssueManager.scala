@@ -194,7 +194,8 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
       Json.parse(issueJson).asOpt[Issue] match {
         case Some(issue) =>
           updateIssue(issue, user, updateMessage)
-          sender() ! (getIssueDetails(issue.id) match {
+          val details = getIssueDetails(issue.id)
+          details match {
             case Some(update) =>
               if (issue.issue_type == "QNA"){
                 val q = '"'
@@ -229,9 +230,9 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
                   ActorManager.rocket ! SendNotification(u, s"Что-то поменялось в задаче " + s"<${App.HTTPServer.Url}/?taskId=${issue.id}|${(issue.doc_number + " " + issue.name).trim}>")
                 })
               }
-              Json.toJson(update)
-            case _ => "error"
-          })
+            case _ => None
+          }
+          sender() ! Json.toJson(details)
         case _ =>
           sender() ! Json.toJson("error")
       }
