@@ -747,6 +747,11 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
           prev_value = oldIssue.plan_hours
           new_value = issue.plan_hours
         }
+        else if (oldIssue.assistant != issue.assistant){
+          name_value = "assistant"
+          prev_value = oldIssue.assistant
+          new_value = issue.assistant
+        }
       case _ => None
     }
     if (name_value != ""){

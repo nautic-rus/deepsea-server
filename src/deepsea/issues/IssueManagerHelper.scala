@@ -165,6 +165,10 @@ trait IssueManagerHelper extends MongoCodecs with AuthManagerHelper{
               case value: Int => value
               case _ => 0
             }
+            assistant = rs.getString("assistant") match {
+              case value: String => value
+              case _ => ""
+            }
           }
         }
         rs.close()
@@ -429,6 +433,10 @@ trait IssueManagerHelper extends MongoCodecs with AuthManagerHelper{
             plan_hours_locked = rs.getInt("plan_hours_locked") match {
               case value: Int => value
               case _ => 0
+            }
+            assistant = rs.getString("assistant") match {
+              case value: String => value
+              case _ => ""
             }
             revision_files = getRevisionFiles(id)
             cloud_files = getCloudFiles(project, doc_number, department)
