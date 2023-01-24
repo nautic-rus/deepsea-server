@@ -105,7 +105,7 @@ object IssueManager{
 
   case class GroupFolder(id: Int, name: String)
   case class DailyTask(issueId: Int, date: Long, dateCreated: Long, userLogin: String, project: String, details: String, time: Double, id: Int)
-  case class IssueProject(id: Int, name: String, pdsp: String, rkd: String, foran: String, factory: String)
+  case class IssueProject(id: Int, name: String, pdsp: String, rkd: String, foran: String, factory: String, managers: String)
 }
 class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with FileManagerHelper {
   implicit val timeout: Timeout = Timeout(30, TimeUnit.SECONDS)
@@ -445,7 +445,8 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
             Option(rs.getString("pdsp")).getOrElse(""),
             Option(rs.getString("rkd")).getOrElse(""),
             Option(rs.getString("foran")).getOrElse(""),
-            Option(rs.getString("factory")).getOrElse("")
+            Option(rs.getString("factory")).getOrElse(""),
+            Option(rs.getString("manegers")).getOrElse("")
           )
         }
         rs.close()
