@@ -4,7 +4,7 @@ import akka.actor.Actor
 import com.mongodb.BasicDBObject
 import com.mongodb.client.model.{ReplaceOptions, UpdateOptions}
 import deepsea.database.DatabaseManager.GetFireBaseConnection
-import deepsea.database.{DatabaseManager, MongoCodecs}
+import deepsea.database.{DBManager, DatabaseManager, MongoCodecs}
 import deepsea.files.FileManager.{TreeDirectory, treeFileDirectoriesCollection}
 import deepsea.materials.MaterialManager.{MaterialNode, MaterialNodeHistory}
 import deepsea.time.TimeControlManager.{AddSpyWatch, AddUserWatch, GetSpyWatches, GetTime, GetUserTimeControl, GetUserWatches, SpyWatch, TimeControlInterval, UserWatch}
@@ -54,7 +54,7 @@ class TimeControlManager extends Actor with MongoCodecs{
   def addSpyWatch(json: String): Unit ={
     decode[SpyWatch](json) match {
       case Right(value) =>
-        DatabaseManager.GetMongoConnection() match {
+        DBManager.GetMongoConnection() match {
           case Some(mongo) =>
             val spyWatches: MongoCollection[SpyWatch] = mongo.getCollection("spyWatches")
             Await.result(spyWatches.replaceOne(and(equal("user", value.user)), value, org.mongodb.scala.model.ReplaceOptions().upsert(true)).toFuture(), Duration(30, SECONDS))
@@ -64,7 +64,7 @@ class TimeControlManager extends Actor with MongoCodecs{
     }
   }
   def getSpyWatches: List[SpyWatch] ={
-    DatabaseManager.GetMongoConnection() match {
+    DBManager.GetMongoConnection() match {
       case Some(mongo) =>
         val spyWatches: MongoCollection[SpyWatch] = mongo.getCollection("spyWatches")
         Await.result(spyWatches.find().toFuture(), Duration(30, SECONDS)) match {
