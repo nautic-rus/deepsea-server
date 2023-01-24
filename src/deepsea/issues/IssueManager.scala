@@ -446,7 +446,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
             Option(rs.getString("rkd")).getOrElse(""),
             Option(rs.getString("foran")).getOrElse(""),
             Option(rs.getString("factory")).getOrElse(""),
-            Option(rs.getString("manegers")).getOrElse("")
+            Option(rs.getString("managers")).getOrElse("")
           )
         }
         rs.close()
