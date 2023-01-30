@@ -562,7 +562,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val query = s"insert into issue (id, status, project, department, started_by, started_date, issue_type, issue_name, assigned_to, details, priority, last_update, doc_number, responsible, period, parent_id, active_action, due_date, plan_hours, reasons_of_change, modification_of_existing, modification_of_description) " +
+        val query = s"insert into issue (id, status, project, department, started_by, started_date, issue_type, issue_name, assigned_to, details, priority, last_update, doc_number, responsible, period, parent_id, active_action, due_date, plan_hours, reason_of_changes, modification_of_existing, modification_of_description) " +
           s"values (default, '${issue.status}', '${issue.project}', '${issue.department}', '${issue.started_by}', $date, '${issue.issue_type}', '${issue.name}', '${issue.assigned_to}', '${issue.details}', '${issue.priority}', $date, '${issue.doc_number}', '${issue.responsible}', '${issue.period}', '${issue.parent_id}', '${issue.action}', ${issue.due_date}, ${issue.plan_hours}, '${issue.reason_of_changes}', ${issue.modification_of_existing}, '${issue.modification_description}')" +
           s" returning id"
         val rs = s.executeQuery(query)
