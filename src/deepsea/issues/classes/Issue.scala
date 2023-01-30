@@ -52,7 +52,10 @@ object Issue{
         "subscribers" -> x.subscribers,
         "plan_hours" -> x.plan_hours,
         "plan_hours_locked" -> x.plan_hours_locked,
-        "assistant" -> x.assistant
+        "assistant" -> x.assistant,
+        "reason_of_changes" -> x.reason_of_changes,
+        "modification_of_existing" -> x.modification_of_existing,
+        "modification_description" -> x.modification_description,
       )
       case _ => JsNull
     }
@@ -92,6 +95,9 @@ object Issue{
         plan_hours = (x \ "plan_hours").asOpt[Double].getOrElse(0)
         plan_hours_locked = (x \ "plan_hours_locked").asOpt[Int].getOrElse(0)
         assistant = (x \ "assistant").asOpt[String].getOrElse("")
+        reason_of_changes = (x \ "reason_of_changes").asOpt[String].getOrElse("")
+        modification_of_existing = (x \ "modification_of_existing").asOpt[Int].getOrElse(0)
+        modification_description = (x \ "modification_description").asOpt[String].getOrElse("")
       })
       case _ => JsSuccess (null)
     }
@@ -133,6 +139,9 @@ class Issue(var id: Int, var status: String, var project: String, var department
   var plan_hours: Double = 0
   var plan_hours_locked: Int = 0
   var assistant: String = ""
+  var reason_of_changes: String = ""
+  var modification_of_existing: Int = 0
+  var modification_description: String = ""
   def toChildIssue: ChildIssue ={
     new ChildIssue(id, status, started_by, started_date, issue_type, name, assigned_to, responsible, doc_number, closing_status)
   }

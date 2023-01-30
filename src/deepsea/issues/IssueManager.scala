@@ -562,8 +562,8 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val query = s"insert into issue (id, status, project, department, started_by, started_date, issue_type, issue_name, assigned_to, details, priority, last_update, doc_number, responsible, period, parent_id, active_action, due_date, plan_hours) " +
-          s"values (default, '${issue.status}', '${issue.project}', '${issue.department}', '${issue.started_by}', $date, '${issue.issue_type}', '${issue.name}', '${issue.assigned_to}', '${issue.details}', '${issue.priority}', $date, '${issue.doc_number}', '${issue.responsible}', '${issue.period}', '${issue.parent_id}', '${issue.action}', ${issue.due_date}, ${issue.plan_hours})" +
+        val query = s"insert into issue (id, status, project, department, started_by, started_date, issue_type, issue_name, assigned_to, details, priority, last_update, doc_number, responsible, period, parent_id, active_action, due_date, plan_hours, reasons_of_change, modification_of_existing, modification_of_description) " +
+          s"values (default, '${issue.status}', '${issue.project}', '${issue.department}', '${issue.started_by}', $date, '${issue.issue_type}', '${issue.name}', '${issue.assigned_to}', '${issue.details}', '${issue.priority}', $date, '${issue.doc_number}', '${issue.responsible}', '${issue.period}', '${issue.parent_id}', '${issue.action}', ${issue.due_date}, ${issue.plan_hours}, '${issue.reason_of_changes}', ${issue.modification_of_existing}, '${issue.modification_description}')" +
           s" returning id"
         val rs = s.executeQuery(query)
         while (rs.next()){
@@ -753,11 +753,26 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
           prev_value = oldIssue.assistant
           new_value = issue.assistant
         }
+        else if (oldIssue.reason_of_changes != issue.reason_of_changes){
+          name_value = "reason_of_changes"
+          prev_value = oldIssue.reason_of_changes
+          new_value = issue.reason_of_changes
+        }
+        else if (oldIssue.modification_of_existing != issue.modification_of_existing){
+          name_value = "modification_of_existing"
+          prev_value = oldIssue.modification_of_existing
+          new_value = issue.modification_of_existing
+        }
+        else if (oldIssue.modification_description != issue.modification_description){
+          name_value = "modification_description"
+          prev_value = oldIssue.modification_description
+          new_value = issue.modification_description
+        }
       case _ => None
     }
     if (name_value != ""){
       updateHistory(new IssueHistory(id, user, name_value, prev_value.toString, new_value.toString, date, updateMessage))
-      val numeric_names = List("started_date", "due_date", "start_date", "first_send_date", "delivered_date", "contract_due_date", "plan_hours")
+      val numeric_names = List("started_date", "due_date", "start_date", "first_send_date", "delivered_date", "contract_due_date", "plan_hours", "modification_description")
       var query = s"update issue set $name_value = '$new_value', active_action = '${issue.action}', last_update = $date where id = $id"
       if (numeric_names.contains(name_value)){
         query = s"update issue set $name_value = $new_value, active_action = '${issue.action}', last_update = $date where id = $id"
