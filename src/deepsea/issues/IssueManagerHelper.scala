@@ -10,7 +10,7 @@ import deepsea.files.FileManager.{CloudFile, DocumentDirectories}
 import deepsea.files.FileManagerHelper
 import deepsea.files.classes.FileAttachment
 import deepsea.issues.IssueManager.{DailyTask, GroupFolder, Subscriber}
-import deepsea.issues.classes.{ChildIssue, Issue, IssueAction, IssueCheck, IssueHistory, IssueMessage, IssuePeriod}
+import deepsea.issues.classes.{ChildIssue, Issue, IssueAction, IssueCheck, IssueHistory, IssueMessage, IssuePeriod, SfiCode}
 import deepsea.mail.MailManager.Mail
 import deepsea.materials.MaterialManager.ProjectName
 import deepsea.rocket.RocketChatManager.{SendMessage, SendNotification}
@@ -1345,5 +1345,25 @@ trait IssueManagerHelper extends MongoCodecs with AuthManagerHelper{
         c.close()
       case _ =>
     }
+  }
+  def getSfiCodes: ListBuffer[SfiCode] ={
+    val res = ListBuffer.empty[SfiCode]
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val rs = s.executeQuery(s"select * from sfi order by code")
+        while (rs.next()){
+          res += new SfiCode(
+            rs.getString("code"),
+            rs.getString("ru"),
+            rs.getString("en"),
+          )
+        }
+        rs.close()
+        s.close()
+        c.close()
+      case _ =>
+    }
+    res
   }
 }

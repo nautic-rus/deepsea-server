@@ -63,6 +63,7 @@ object IssueManager{
   case class GetCalendar()
   case class DeleteFile(url: String)
   case class GetIssuePeriods()
+  case class GetReasonsOfChange()
   case class SetRevisionFiles(id: String, revision: String, filesJson: String)
   case class DeleteRevisionFile(file_url: String, user: String)
   case class ClearRevisionFiles(issueId: String, user: String, fileGroup: String, revision: String)
@@ -96,6 +97,9 @@ object IssueManager{
 
   case class IdName(id: Int, name: String)
   implicit val writesUser: OWrites[IdName] = Json.writes[IdName]
+
+  case class LV(id: String, name: String)
+  implicit val writesLV: OWrites[LV] = Json.writes[LV]
 
   case class DayCalendar(user: String, day: String, status: String)
   implicit val writesDayCalendar: OWrites[DayCalendar] = Json.writes[DayCalendar]
@@ -283,6 +287,8 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
       sender() ! Json.toJson("success")
     case GetIssuePeriods() =>
       sender() ! Json.toJson(getIssuePeriods)
+    case GetReasonsOfChange() =>
+      sender() ! Json.toJson(getReasonsOfChange)
     case SetRevisionFiles(_id, revision, filesJson) =>
       setRevisionFiles(_id.toIntOption.getOrElse(0), revision, Json.parse(filesJson).asOpt[ListBuffer[FileAttachment]].getOrElse(ListBuffer.empty[FileAttachment]))
       sender() ! Json.toJson("success")
@@ -897,17 +903,16 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     }
     res
   }
-  def getSfiCodes: ListBuffer[SfiCode] ={
-    val res = ListBuffer.empty[SfiCode]
+  def getReasonsOfChange: ListBuffer[LV] ={
+    val res = ListBuffer.empty[LV]
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val rs = s.executeQuery(s"select * from sfi order by code")
+        val rs = s.executeQuery(s"select * from reason_of_changes")
         while (rs.next()){
-          res += new SfiCode(
-            rs.getString("code"),
-            rs.getString("ru"),
-            rs.getString("en"),
+          res += new LV(
+            Option(rs.getString("title")).getOrElse(""),
+            Option(rs.getString("id")).getOrElse(""),
           )
         }
         rs.close()
