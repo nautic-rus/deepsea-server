@@ -119,7 +119,7 @@ class HTTPManager extends Actor{
         askFor(ActorManager.issue, GetIssuePeriods())
       },
       (get & path("reasonsOfChange")){
-        askFor(ActorManager.issue, ReasonsOfChange())
+        askFor(ActorManager.issue, GetReasonsOfChange())
       },
       (post & path("setRevisionFiles") & entity(as[String]) & parameter("id") & parameter("revision")){ (files, id, revision) =>
         askFor(ActorManager.issue, SetRevisionFiles(id, revision, files))
