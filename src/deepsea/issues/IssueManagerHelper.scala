@@ -445,6 +445,9 @@ trait IssueManagerHelper extends MongoCodecs with AuthManagerHelper{
             labor = getIssueLabor(id)
             checks = getIssueChecks(id)
             subscribers = getIssueSubscribers(id).map(_.user)
+            reason_of_changes = Option(rs.getString("reason_of_changes")).getOrElse("")
+            modification_of_existing = Option(rs.getInt("modification_of_existing")).getOrElse(0)
+            modification_description = Option(rs.getString("modification_description")).getOrElse("")
           })
         }
         rs.close()
