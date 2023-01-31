@@ -98,7 +98,7 @@ object IssueManager{
   case class IdName(id: Int, name: String)
   implicit val writesUser: OWrites[IdName] = Json.writes[IdName]
 
-  case class LV(id: String, name: String)
+  case class LV(label: String, value: String)
   implicit val writesLV: OWrites[LV] = Json.writes[LV]
 
   case class DayCalendar(user: String, day: String, status: String)
