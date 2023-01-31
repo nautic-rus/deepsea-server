@@ -772,7 +772,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     }
     if (name_value != ""){
       updateHistory(new IssueHistory(id, user, name_value, prev_value.toString, new_value.toString, date, updateMessage))
-      val numeric_names = List("started_date", "due_date", "start_date", "first_send_date", "delivered_date", "contract_due_date", "plan_hours", "modification_description")
+      val numeric_names = List("started_date", "due_date", "start_date", "first_send_date", "delivered_date", "contract_due_date", "plan_hours", "modification_of_existing")
       var query = s"update issue set $name_value = '$new_value', active_action = '${issue.action}', last_update = $date where id = $id"
       if (numeric_names.contains(name_value)){
         query = s"update issue set $name_value = $new_value, active_action = '${issue.action}', last_update = $date where id = $id"
