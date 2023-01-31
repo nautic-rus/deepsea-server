@@ -911,8 +911,8 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
         val rs = s.executeQuery(s"select * from reason_of_changes")
         while (rs.next()){
           res += LV(
-            Option(rs.getString("id")).getOrElse(""),
             Option(rs.getString("title")).getOrElse(""),
+            Option(rs.getString("id")).getOrElse(""),
           )
         }
         rs.close()
