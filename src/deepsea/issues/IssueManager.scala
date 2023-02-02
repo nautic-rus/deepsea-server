@@ -63,6 +63,7 @@ object IssueManager{
   case class GetCalendar()
   case class DeleteFile(url: String)
   case class GetIssuePeriods()
+  case class SetIssuePeriods(id: String, start: String, end: String)
   case class GetReasonsOfChange()
   case class SetRevisionFiles(id: String, revision: String, filesJson: String)
   case class DeleteRevisionFile(file_url: String, user: String)
@@ -287,6 +288,9 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
       sender() ! Json.toJson("success")
     case GetIssuePeriods() =>
       sender() ! Json.toJson(getIssuePeriods)
+    case SetIssuePeriods(id, start, end) =>
+      setIssuePeriods(id.toIntOption.getOrElse(0), start.toLongOption.getOrElse(0), end.toLongOption.getOrElse(0))
+      sender() ! Json.toJson("success")
     case GetReasonsOfChange() =>
       sender() ! Json.toJson(getReasonsOfChange)
     case SetRevisionFiles(_id, revision, filesJson) =>

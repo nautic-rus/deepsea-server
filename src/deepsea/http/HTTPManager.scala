@@ -118,6 +118,9 @@ class HTTPManager extends Actor{
       (get & path("issuePeriods")){
         askFor(ActorManager.issue, GetIssuePeriods())
       },
+      (get & path("setIssuePeriods") & parameter("id", "start", "end")){ (id, start, end) =>
+        askFor(ActorManager.issue, SetIssuePeriods(id, start, end))
+      },
       (get & path("reasonsOfChange")){
         askFor(ActorManager.issue, GetReasonsOfChange())
       },

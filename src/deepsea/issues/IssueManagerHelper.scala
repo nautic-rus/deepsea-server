@@ -20,6 +20,7 @@ import org.mongodb.scala.MongoCollection
 import org.mongodb.scala.model.Filters
 import org.mongodb.scala.model.Filters.{and, equal}
 
+import java.nio.file.Files
 import java.util.Date
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
@@ -946,6 +947,16 @@ trait IssueManagerHelper extends MongoCodecs with AuthManagerHelper{
       case Some(c) =>
         val s = c.createStatement()
         s.execute(s"insert into issue_spent_time (issue_id, labor_date, labor_value, labor_comment, user_labor, date_created, id, project) values ($issue_id, $labor_date, $labor_value, '$labor_comment', '$user_labor', $date_created, default, '$project')")
+        s.close()
+        c.close()
+      case _ =>
+    }
+  }
+  def setIssuePeriods(issue_id: Int, start_date: Long, end_date: Long): Unit ={
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        s.execute(s"update issue set start_date = $start_date, due_date = $end_date where id = $issue_id")
         s.close()
         c.close()
       case _ =>
