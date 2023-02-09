@@ -169,10 +169,10 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
           }
           else{
             if (issue.assigned_to != ""){
-              ActorManager.rocket ! SendNotification(issue.assigned_to, s"Вам была назначена задача " + s"<${App.HTTPServer.Url}/?taskId=${result}| Просмотреть задачу>")
+              ActorManager.rocket ! SendNotification(issue.assigned_to, s"Вам была назначена задача " + s"<${App.HTTPServer.Url}/?taskId=${result}|${(issue.doc_number + " " + issue.name).trim}>")
             }
             if (issue.responsible != ""){
-              ActorManager.rocket ! SendNotification(issue.responsible, s"Вы были назначены ответственным к задаче " + s"<${App.HTTPServer.Url}/?taskId=${result}| Просмотреть задачу>")
+              ActorManager.rocket ! SendNotification(issue.responsible, s"Вы были назначены ответственным к задаче " + s"<${App.HTTPServer.Url}/?taskId=${result}|${(issue.doc_number + " " + issue.name).trim}>")
             }
           }
           sender() ! Json.toJson(result)
@@ -255,7 +255,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
       val start_date: Long = _start_date.toLongOption.getOrElse(0)
       val due_date: Long = _due_date.toLongOption.getOrElse(0)
       assignIssue(id, user, start_date, due_date, overtime, action, author)
-      ActorManager.rocket ! SendNotification(user, s"Вам была назначена задача " + s"<${App.HTTPServer.Url}/?taskId=${id}|Просмотреть задачу>")
+      ActorManager.rocket ! SendNotification(user, s"Вам была назначена задача " + s"<${App.HTTPServer.Url}/?taskId=${id}|${(issue.doc_number + " " + issue.name).trim}>")
       sender() ! Json.toJson("success")
     case ChangeResponsible(_id, user, author, action) =>
       val id = Try(_id.toInt).getOrElse(0)
