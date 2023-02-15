@@ -21,7 +21,7 @@ import deepsea.fest.FestManager.{DeleteFestKaraoke, DeleteFestSauna, DeleteFestS
 import deepsea.files.FileManager.{CreateDocumentCloudDirectory, CreateFile, CreateMaterialCloudDirectory, GetCloudFiles, GetDocumentFiles, GetFileFromCloud, GetPdSpList}
 import deepsea.files.classes.FileAttachment
 import deepsea.issues.IssueManager._
-import deepsea.materials.MaterialManager.{GetMaterialNodes, GetMaterials, GetWCDrawings, GetWCZones, GetWeightControl, RemoveWeightControl, SetWeightControl, UpdateMaterial, UpdateMaterialNode}
+import deepsea.materials.MaterialManager.{GetMaterialNodes, GetMaterials, GetMaterialsCode, GetWCDrawings, GetWCZones, GetWeightControl, RemoveWeightControl, SetWeightControl, UpdateMaterial, UpdateMaterialNode}
 import deepsea.mobile.MobileManager.{GetDrawingInfo, GetDrawings}
 import deepsea.osm.OsmManager.{AddPLS, GetPLS}
 import deepsea.rocket.RocketChatManager.SendNotification
@@ -55,6 +55,9 @@ class HTTPManager extends Actor{
         askFor(ActorManager.auth, Login(Option(token)))
       },
       (get & path("users")){
+        askFor(ActorManager.auth, GetUsers())
+      },
+      (get & path("roles")) {
         askFor(ActorManager.auth, GetUsers())
       },
       //ISSUE MANAGER COMMANDS
@@ -273,6 +276,9 @@ class HTTPManager extends Actor{
       //MATERIAL COMMANDS
       (get & path("materials") & parameter("project")){ project =>
         askFor(ActorManager.materials, GetMaterials(project))
+      },
+      (get & path("materialsCode") & parameter("project") & parameter( "code")) { (project, code) =>
+        askFor(ActorManager.materials, GetMaterialsCode(project, code))
       },
       (get & path("updateMaterial") & parameter("material") & parameter("user") & parameter("remove")){ (material, user, remove) =>
         askFor(ActorManager.materials, UpdateMaterial(material, user, remove))

@@ -5,7 +5,7 @@ import com.mongodb.BasicDBObject
 import com.mongodb.client.model.Filters
 import deepsea.database.{DatabaseManager, MongoCodecs}
 import deepsea.database.DatabaseManager.GetMongoConnection
-import deepsea.materials.MaterialManager.{GetMaterialNodes, GetMaterials, GetWCDrawings, GetWCZones, GetWeightControl, Material, MaterialHistory, MaterialNode, MaterialNodeHistory, RemoveWeightControl, SetWeightControl, UpdateMaterial, UpdateMaterialNode, WCNumberName, WeightControl}
+import deepsea.materials.MaterialManager.{GetMaterialNodes, GetMaterials, GetMaterialsCode, GetWCDrawings, GetWCZones, GetWeightControl, Material, MaterialHistory, MaterialNode, MaterialNodeHistory, RemoveWeightControl, SetWeightControl, UpdateMaterial, UpdateMaterialNode, WCNumberName, WeightControl}
 import io.circe.{jawn, parser}
 import org.bson.Document
 import play.api.libs.json.{JsValue, Json}
@@ -40,6 +40,7 @@ import java.util.{Date, UUID}
 
 object MaterialManager{
   case class GetMaterials(project: String)
+  case class GetMaterialsCode(project: String, code: String)
   case class UpdateMaterial(material: String, user: String, remove: String = "0")
   case class GetMaterialNodes(project: String)
   case class UpdateMaterialNode(project: String, data: String, label: String, user: String, remove: String = "0")
@@ -174,6 +175,17 @@ class MaterialManager extends Actor with MongoCodecs{
                 }
               })
               sender() ! dbMaterials.toList.asJson.noSpaces
+            case _ => List.empty[Material]
+          }
+        case _ => List.empty[Material]
+      }
+    case GetMaterialsCode(project, code) =>
+      DatabaseManager.GetMongoConnection() match {
+        case Some(mongo) =>
+          Await.result(mongo.getCollection(collection).find[Material](new BasicDBObject("project", project)).toFuture(), Duration(30, SECONDS)) match {
+            case dbMaterials =>
+              val errors = ListBuffer.empty[String]
+              sender() ! dbMaterials.toList.filter(_.code == code).asJson.noSpaces
             case _ => List.empty[Material]
           }
         case _ => List.empty[Material]
