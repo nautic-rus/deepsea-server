@@ -255,6 +255,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
       val start_date: Long = _start_date.toLongOption.getOrElse(0)
       val due_date: Long = _due_date.toLongOption.getOrElse(0)
       assignIssue(id, user, start_date, due_date, overtime, action, author)
+      val issue = getIssueDetails(id).get
       ActorManager.rocket ! SendNotification(user, s"Вам была назначена задача " + s"<${App.HTTPServer.Url}/?taskId=${id}|${(issue.doc_number + " " + issue.name).trim}>")
       sender() ! Json.toJson("success")
     case ChangeResponsible(_id, user, author, action) =>

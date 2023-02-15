@@ -1,21 +1,45 @@
 package deepsea.time
 
 import akka.actor.{Actor, ActorSystem}
+import akka.http.scaladsl.model.Uri.Path
 import akka.http.scaladsl.{Http, HttpExt}
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
+import deepsea.App
 import deepsea.actors.ActorManager
 import deepsea.database.DatabaseManager
 import deepsea.mail.MailManager.Mail
-import deepsea.time.BackupManager.BackupForan
+import deepsea.time.BackupManager.{BackupForan, NullHostKeyVerifier}
 import deepsea.time.TimeAndWeatherManager.{SetTimeAndWeather, Weather}
+import net.schmizz.sshj.SSHClient
+import net.schmizz.sshj.sftp.{RemoteResourceInfo, SFTPClient}
+import net.schmizz.sshj.transport.verification.HostKeyVerifier
+import net.schmizz.sshj.userauth.method.AuthMethod
 
+import java.io.File
+import java.nio.file.{Files, StandardCopyOption}
 import java.util.{Calendar, Date}
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.duration.DurationInt
 import scala.io.Source
+import net.schmizz.sshj.transport.verification.HostKeyVerifier
+import org.aarboard.nextcloud.api.NextcloudConnector
+
+import java.net.{URL, URLEncoder}
+import java.security.PublicKey
+import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.util
+import scala.collection.mutable.ListBuffer
+
+
 
 object BackupManager{
   case class BackupForan()
+  class NullHostKeyVerifier() extends HostKeyVerifier {
+    override def verify(s: String, i: Int, publicKey: PublicKey): Boolean = true
+
+    override def findExistingAlgorithms(s: String, i: Int): util.List[String] = util.Arrays.asList()
+  }
 }
 class BackupManager extends Actor{
   val foranProjects: List[String] = List("P701", "P707", "N002", "N003", "N004", "N005", "SC01", "LV01")
@@ -55,5 +79,73 @@ class BackupManager extends Actor{
     s.execute("BEGIN\n    -- Call\n    SYS.NAUTIC_BACKUP;\n\n    -- Transaction Control\n    COMMIT;\nEND;")
     s.close()
     c.close()
+
+
+    val cloud = new NextcloudConnector(App.Cloud.Host, true, 443, "admin", "c6bc9d23ab01701263b03e364ca5a32bacda46514c2d299e")
+    val dir = Files.createTempDirectory("download")
+    val sp = File.separator
+    val date = LocalDate.now().toString
+    val remoteDir = "/backups/foran/backup-" + date
+    cloud.createFolder(remoteDir)
+
+
+
+    val hostname = "192.168.1.30"
+    val username = "backupper"
+    val password = "IsntItEn0ugh"
+
+
+    val ssh = new SSHClient()
+    ssh.addHostKeyVerifier(new NullHostKeyVerifier())
+    ssh.connect(hostname)
+    ssh.authPassword(username, password)
+    val sftp: SFTPClient = ssh.newSFTPClient()
+    val ls = sftp.ls("/backups/oracle/")
+    val backups = ListBuffer.empty[RemoteResourceInfo]
+    ls.forEach(s => backups += s)
+    val sorted = backups.sortBy(_.getAttributes.getMtime).reverse.filter(_.getName.contains(".fdp")).take(foranProjects.length)
+
+    sorted.foreach(s => {
+      val tempFile = new File(dir + sp + s.getName)
+      sftp.get(s.getPath, tempFile.getPath)
+      cloud.uploadFile(tempFile, remoteDir + "/" + s.getName)
+    })
+
+    sftp.close()
+    ssh.disconnect()
+
+
+
+    val hostnameSurf = "192.168.1.15"
+    val usernameSurf = "root"
+    val passwordSurf = "Whatab0utus"
+
+    val sshSurf = new SSHClient()
+    sshSurf.addHostKeyVerifier(new NullHostKeyVerifier())
+    sshSurf.connect(hostnameSurf)
+    sshSurf.authPassword(usernameSurf, passwordSurf)
+    val sftpSurf: SFTPClient = sshSurf.newSFTPClient()
+    val backupsSurf = ListBuffer.empty[RemoteResourceInfo]
+    val remoteSurfDir = "/foran/config/surfaces/"
+    sftpSurf.ls(remoteSurfDir).forEach(l => backupsSurf += l)
+
+    foranProjects.foreach(p => {
+      backupsSurf.find(_.getName.toLowerCase == p.toLowerCase) match {
+        case Some(surfDir) =>
+          val surfLs = ListBuffer.empty[RemoteResourceInfo]
+          sftpSurf.ls(surfDir.getPath).forEach(l => surfLs += l)
+          surfLs.filter(_.isRegularFile).filter(_.getName.split("\\.").last == "fsf").foreach(s => {
+            val tempFile = new File(dir + sp + s.getName)
+            sftpSurf.get(s.getPath, tempFile.getPath)
+            cloud.uploadFile(tempFile, remoteDir + "/" + s.getName)
+          })
+        case _ =>
+      }
+    })
+
+    sftpSurf.close()
+    sshSurf.disconnect()
+
+
   }
 }
