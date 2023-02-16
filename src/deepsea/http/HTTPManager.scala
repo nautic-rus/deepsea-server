@@ -16,7 +16,7 @@ import ch.megard.akka.http.cors.scaladsl.CorsDirectives.cors
 import deepsea.App
 import deepsea.actors.ActorManager
 import deepsea.actors.ActorStartupManager.HTTPManagerStarted
-import deepsea.auth.AuthManager.{GetUsers, Login, ShareRights, UpdateEmail, UpdateRocketLogin}
+import deepsea.auth.AuthManager.{GetRoles, GetUsers, Login, ShareRights, UpdateEmail, UpdateRocketLogin}
 import deepsea.fest.FestManager.{DeleteFestKaraoke, DeleteFestSauna, DeleteFestStories, GetBestPlayers, GetFestKaraoke, GetFestSauna, GetFestStories, GetMarks, GetTeamsWon, SetBestPlayer, SetFestKaraoke, SetFestSauna, SetFestStories, SetMarks, SetTeamsWon}
 import deepsea.files.FileManager.{CreateDocumentCloudDirectory, CreateFile, CreateMaterialCloudDirectory, GetCloudFiles, GetDocumentFiles, GetFileFromCloud, GetPdSpList}
 import deepsea.files.classes.FileAttachment
@@ -57,8 +57,8 @@ class HTTPManager extends Actor{
       (get & path("users")){
         askFor(ActorManager.auth, GetUsers())
       },
-      (get & path("roles")) {
-        askFor(ActorManager.auth, GetUsers())
+      (get & path("adminRoles")) {
+        askFor(ActorManager.auth, GetRoles())
       },
       //ISSUE MANAGER COMMANDS
       (get & path("issueProjects")){

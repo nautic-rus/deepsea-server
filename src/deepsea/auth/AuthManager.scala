@@ -1,7 +1,7 @@
 package deepsea.auth
 
 import akka.actor.Actor
-import deepsea.auth.AuthManager.{GetUser, GetUsers, Login, ShareRights, UpdateEmail, UpdateRocketLogin, User, writesUser}
+import deepsea.auth.AuthManager.{GetRoles, GetUser, GetUsers, Login, Role, ShareRights, UpdateEmail, UpdateRocketLogin, User, writesUser}
 import deepsea.database.DBManager
 import play.api.libs.json.{Json, OWrites}
 
@@ -40,6 +40,12 @@ object AuthManager {
                    var permissions: ListBuffer[String] = ListBuffer.empty[String],
                    var token: String = "")
   implicit val writesUser: OWrites[User] = Json.writes[User]
+  case class GetRoles()
+  case class Role(
+                 name: String,
+                 description: String
+                 )
+  implicit val writesRole: OWrites[Role] = Json.writes[Role]
 }
 class AuthManager extends Actor with AuthManagerHelper {
   override def receive: Receive = {
@@ -73,6 +79,7 @@ class AuthManager extends Actor with AuthManagerHelper {
           }
       }
     case GetUsers() => sender() ! Json.toJson(getUsers)
+    case GetRoles() => sender() ! Json.toJson(getRoles)
     case GetUser(login) =>
       getUser(login) match {
         case Some(user) => sender() ! user
@@ -169,6 +176,26 @@ class AuthManager extends Actor with AuthManagerHelper {
         c.close()
         res
       case _ => ListBuffer.empty[User]
+    }
+  }
+
+  def getRoles: ListBuffer[Role] = {
+    val res = ListBuffer.empty[Role]
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val rs = s.executeQuery(s"select * from roles")
+        while (rs.next()) {
+          res += Role(
+            rs.getString("name"),
+            rs.getString("description")
+          )
+        }
+        rs.close()
+        s.close()
+        c.close()
+        res
+      case _ => ListBuffer.empty[Role]
     }
   }
   def shareWith(user: String, with_user: String): Unit ={
