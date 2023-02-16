@@ -1,7 +1,7 @@
 package deepsea.auth
 
 import akka.actor.Actor
-import deepsea.auth.AuthManager.{GetRoles, GetUser, GetUsers, Login, Role, ShareRights, UpdateEmail, UpdateRocketLogin, User, writesUser}
+import deepsea.auth.AuthManager.{GetRoles, GetUser, GetUserDetails, GetUsers, Login, Role, ShareRights, UpdateEmail, UpdateRocketLogin, User, writesUser}
 import deepsea.database.DBManager
 import play.api.libs.json.{Json, OWrites}
 
@@ -12,6 +12,7 @@ import scala.collection.mutable.ListBuffer
 object AuthManager {
   case class Login(token: Option[String], login: String = "", password: String = "")
   case class GetUsers()
+  case class GetUserDetails(id: String)
   case class GetUser(login: String)
   case class ShareRights(user: String, with_user: String)
   case class UpdateEmail(user: String, email: String)
@@ -79,6 +80,7 @@ class AuthManager extends Actor with AuthManagerHelper {
           }
       }
     case GetUsers() => sender() ! Json.toJson(getUsers)
+    case GetUserDetails(id) => sender() ! Json.toJson(getUserDetails(id))
     case GetRoles() => sender() ! Json.toJson(getRoles)
     case GetUser(login) =>
       getUser(login) match {
@@ -148,6 +150,44 @@ class AuthManager extends Actor with AuthManagerHelper {
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from users where removed = 0")
         while (rs.next()){
+          res += User(
+            rs.getInt("id"),
+            rs.getString("login"),
+            rs.getString("password"),
+            rs.getString("name"),
+            rs.getString("surname"),
+            rs.getString("profession"),
+            rs.getString("department"),
+            rs.getDate("birthday"),
+            rs.getString("email"),
+            rs.getString("phone"),
+            rs.getInt("tcid"),
+            rs.getString("avatar"),
+            rs.getString("avatar_full"),
+            rs.getString("rocket_login"),
+            rs.getString("gender"),
+            rs.getString("visibility"),
+            rs.getString("visible_projects").split(",").toList,
+            rs.getString("visible_pages").split(",").toList,
+            rs.getString("shared_access").split(",").toList,
+            rs.getString("group").split(",").toList
+          )
+        }
+        rs.close()
+        s.close()
+        c.close()
+        res
+      case _ => ListBuffer.empty[User]
+    }
+  }
+
+  def getUserDetails(id: String): ListBuffer[User] = {
+    val res = ListBuffer.empty[User]
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val rs = s.executeQuery(s"select * from users where id = '$id'")
+        while (rs.next()) {
           res += User(
             rs.getInt("id"),
             rs.getString("login"),
