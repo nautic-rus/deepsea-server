@@ -181,15 +181,14 @@ class AuthManager extends Actor with AuthManagerHelper {
     }
   }
 
-  def getUserDetails(id: String): ListBuffer[User] = {
-    val res = ListBuffer.empty[User]
+  def getUserDetails(id: String): Option[User] = {
+    var user: Option[User] = Option.empty[User]
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from users where id = '$id'")
         while (rs.next()) {
-          res += User(
-            rs.getInt("id"),
+          user = Option(new User(rs.getInt("id"),
             rs.getString("login"),
             rs.getString("password"),
             rs.getString("name"),
@@ -208,14 +207,13 @@ class AuthManager extends Actor with AuthManagerHelper {
             rs.getString("visible_projects").split(",").toList,
             rs.getString("visible_pages").split(",").toList,
             rs.getString("shared_access").split(",").toList,
-            rs.getString("group").split(",").toList
-          )
+            rs.getString("group").split(",").toList))
         }
         rs.close()
         s.close()
         c.close()
-        res
-      case _ => ListBuffer.empty[User]
+        user
+      case _ => Option.empty[User]
     }
   }
 
