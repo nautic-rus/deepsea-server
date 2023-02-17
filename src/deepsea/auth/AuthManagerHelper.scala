@@ -3,6 +3,8 @@ package deepsea.auth
 import deepsea.auth.AuthManager.User
 import deepsea.database.DBManager
 
+import scala.collection.mutable.ListBuffer
+
 trait AuthManagerHelper {
   def getUser(login: String): Option[User] ={
     DBManager.GetPGConnection() match {
@@ -19,7 +21,7 @@ trait AuthManagerHelper {
             rs.getString("surname"),
             rs.getString("profession"),
             rs.getString("department"),
-            rs.getDate("birthday"),
+            rs.getDate("birthday").toString,
             rs.getString("email"),
             rs.getString("phone"),
             rs.getInt("tcid"),
@@ -44,9 +46,11 @@ trait AuthManagerHelper {
           //          s.close()
           //          s = c.createStatement()
           rs = s.executeQuery(s"select rights from user_rights where user_id = ${res.get.id}")
+          val permissions = ListBuffer.empty[String]
           while (rs.next()){
-            res.get.permissions += rs.getString("rights")
+            permissions += rs.getString("rights")
           }
+          res.get.permissions = permissions.toList
           rs.close()
           s.close()
         }

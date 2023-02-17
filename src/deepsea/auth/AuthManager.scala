@@ -1,7 +1,7 @@
 package deepsea.auth
 
 import akka.actor.Actor
-import deepsea.auth.AuthManager.{GetRoleDetails, GetRoles, GetUser, GetUserDetails, GetUsers, Login, Role, ShareRights, StartRole, UpdateEmail, UpdateRocketLogin, User, writesUser}
+import deepsea.auth.AuthManager.{GetRoleDetails, GetRoles, GetUser, GetUserDetails, GetUsers, Login, Role, ShareRights, StartRole, UpdateEmail, UpdateRocketLogin, User}
 import deepsea.database.{DBManager, MongoCodecs}
 import io.circe
 import io.circe.jawn
@@ -9,7 +9,8 @@ import io.circe.syntax.EncoderOps
 import play.api.libs.json.{Json, OWrites}
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
-
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
+import io.circe.{Decoder, Encoder}
 import java.sql.Date
 import java.util.UUID
 import scala.collection.mutable.ListBuffer
@@ -37,7 +38,7 @@ object AuthManager extends MongoCodecs {
                    surname: String,
                    profession: String,
                    department: String,
-                   birthday: Date,
+                   birthday: String,
                    email: String,
                    phone: String,
                    tcid: Int,
@@ -50,10 +51,8 @@ object AuthManager extends MongoCodecs {
                    var visible_pages: List[String],
                    var shared_access: List[String],
                    var groups: List[String] = List.empty[String],
-                   var permissions: ListBuffer[String] = ListBuffer.empty[String],
+                   var permissions: List[String] = List.empty[String],
                    var token: String = "")
-
-  implicit val writesUser: OWrites[User] = Json.writes[User]
 
   case class GetRoles()
 
@@ -67,7 +66,7 @@ object AuthManager extends MongoCodecs {
                  )
 }
 
-class AuthManager extends Actor with AuthManagerHelper {
+class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
   override def receive: Receive = {
     case Login(token, login, password) =>
       token match {
@@ -77,7 +76,7 @@ class AuthManager extends Actor with AuthManagerHelper {
               getUser(userLogin) match {
                 case Some(user) =>
                   user.token = token
-                  sender() ! Json.toJson(user)
+                  sender() ! user.asJson.noSpaces
                 case _ => None
               }
             case _ => sender() ! Json.toJson("wrong-token")
@@ -90,7 +89,7 @@ class AuthManager extends Actor with AuthManagerHelper {
                   getUser(userLogin) match {
                     case Some(user) =>
                       user.token = token
-                      sender() ! Json.toJson(user)
+                      sender() ! user.asJson.noSpaces
                     case _ => None
                   }
                 case _ => None
@@ -98,8 +97,8 @@ class AuthManager extends Actor with AuthManagerHelper {
             case _ => sender() ! Json.toJson("wrong-password")
           }
       }
-    case GetUsers() => sender() ! Json.toJson(getUsers)
-    case GetUserDetails(id) => sender() ! Json.toJson(getUserDetails(id))
+    case GetUsers() => sender() ! getUsers.asJson.noSpaces
+    case GetUserDetails(id) => sender() ! getUserDetails(id).asJson.noSpaces
     case GetRoles() => sender() ! getRoles.asJson
     case GetRoleDetails(name) => sender() ! getRoleDetails(name).asJson
     case StartRole(roleJson) =>
@@ -191,7 +190,7 @@ class AuthManager extends Actor with AuthManagerHelper {
             rs.getString("surname"),
             rs.getString("profession"),
             rs.getString("department"),
-            rs.getDate("birthday"),
+            rs.getDate("birthday").toString,
             rs.getString("email"),
             rs.getString("phone"),
             rs.getInt("tcid"),
@@ -228,7 +227,7 @@ class AuthManager extends Actor with AuthManagerHelper {
             rs.getString("surname"),
             rs.getString("profession"),
             rs.getString("department"),
-            rs.getDate("birthday"),
+            rs.getDate("birthday").toString,
             rs.getString("email"),
             rs.getString("phone"),
             rs.getInt("tcid"),
