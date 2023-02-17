@@ -1,22 +1,34 @@
 package deepsea.auth
 
 import akka.actor.Actor
-import deepsea.auth.AuthManager.{GetRoles, GetUser, GetUserDetails, GetUsers, Login, Role, ShareRights, UpdateEmail, UpdateRocketLogin, User, writesUser}
-import deepsea.database.DBManager
+import deepsea.auth.AuthManager.{GetRoleDetails, GetRoles, GetUser, GetUserDetails, GetUsers, Login, Role, ShareRights, StartRole, UpdateEmail, UpdateRocketLogin, User, writesUser}
+import deepsea.database.{DBManager, MongoCodecs}
+import io.circe
+import io.circe.jawn
+import io.circe.syntax.EncoderOps
 import play.api.libs.json.{Json, OWrites}
+import io.circe.{Decoder, Encoder}
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 
 import java.sql.Date
 import java.util.UUID
 import scala.collection.mutable.ListBuffer
 
-object AuthManager {
+object AuthManager extends MongoCodecs {
   case class Login(token: Option[String], login: String = "", password: String = "")
+
   case class GetUsers()
+
   case class GetUserDetails(id: String)
+
   case class GetUser(login: String)
+
   case class ShareRights(user: String, with_user: String)
+
   case class UpdateEmail(user: String, email: String)
+
   case class UpdateRocketLogin(user: String, rocketLogin: String)
+
   case class User(
                    id: Int,
                    login: String,
@@ -40,14 +52,21 @@ object AuthManager {
                    var groups: List[String] = List.empty[String],
                    var permissions: ListBuffer[String] = ListBuffer.empty[String],
                    var token: String = "")
+
   implicit val writesUser: OWrites[User] = Json.writes[User]
+
   case class GetRoles()
+
+  case class GetRoleDetails(name: String)
+
+  case class StartRole(roleJson: String)
+
   case class Role(
-                 name: String,
-                 description: String
+                   name: String,
+                   description: String
                  )
-  implicit val writesRole: OWrites[Role] = Json.writes[Role]
 }
+
 class AuthManager extends Actor with AuthManagerHelper {
   override def receive: Receive = {
     case Login(token, login, password) =>
@@ -81,7 +100,17 @@ class AuthManager extends Actor with AuthManagerHelper {
       }
     case GetUsers() => sender() ! Json.toJson(getUsers)
     case GetUserDetails(id) => sender() ! Json.toJson(getUserDetails(id))
-    case GetRoles() => sender() ! Json.toJson(getRoles)
+    case GetRoles() => sender() ! getRoles.asJson
+    case GetRoleDetails(name) => sender() ! getRoleDetails(name).asJson
+    case StartRole(roleJson) =>
+      circe.jawn.decode[Role](roleJson) match {
+        case Right(role) =>
+          val result = startRole(role)
+          sender() ! result.asJson
+        case _ => None
+      }
+
+
     case GetUser(login) =>
       getUser(login) match {
         case Some(user) => sender() ! user
@@ -98,7 +127,8 @@ class AuthManager extends Actor with AuthManagerHelper {
       sender() ! Json.toJson("success")
     case _ => None
   }
-  def addUserToken(user: String): Option[String] ={
+
+  def addUserToken(user: String): Option[String] = {
     val token = UUID.randomUUID().toString
     DBManager.GetPGConnection() match {
       case Some(c) =>
@@ -111,13 +141,14 @@ class AuthManager extends Actor with AuthManagerHelper {
       case _ => Option.empty[String]
     }
   }
-  def getUserByToken(token: String): Option[String] ={
+
+  def getUserByToken(token: String): Option[String] = {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select s.user from sessions s where token = '$token'")
         var res = Option.empty[String]
-        while (rs.next()){
+        while (rs.next()) {
           res = Option(rs.getString("user"))
         }
         rs.close()
@@ -127,13 +158,14 @@ class AuthManager extends Actor with AuthManagerHelper {
       case _ => Option.empty[String]
     }
   }
-  def getUserByLoginPassword(login: String, password: String): Option[String] ={
+
+  def getUserByLoginPassword(login: String, password: String): Option[String] = {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select login from users where login = '$login' and password = '$password' and removed = 0")
         var res = Option.empty[String]
-        while (rs.next()){
+        while (rs.next()) {
           res = Option(rs.getString("login"))
         }
         rs.close()
@@ -143,13 +175,14 @@ class AuthManager extends Actor with AuthManagerHelper {
       case _ => Option.empty[String]
     }
   }
-  def getUsers: ListBuffer[User] ={
+
+  def getUsers: ListBuffer[User] = {
     val res = ListBuffer.empty[User]
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from users where removed = 0")
-        while (rs.next()){
+        while (rs.next()) {
           res += User(
             rs.getInt("id"),
             rs.getString("login"),
@@ -236,7 +269,45 @@ class AuthManager extends Actor with AuthManagerHelper {
       case _ => ListBuffer.empty[Role]
     }
   }
-  def shareWith(user: String, with_user: String): Unit ={
+
+  def getRoleDetails(name: String): Option[Role] = {
+    var role: Option[Role] = Option.empty[Role]
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val rs = s.executeQuery(s"select * from roles where name = '$name'")
+        while (rs.next()) {
+          role = Option(new Role(
+            rs.getString("name"),
+            rs.getString("description")
+          ))
+        }
+        rs.close()
+        s.close()
+        c.close()
+        role
+      case _ => Option.empty[Role]
+    }
+  }
+
+  def startRole(role: Role): String = {
+    var res = ""
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val query = s"insert into roles (name, description) values ('${role.name}', '${role.description}')"
+        val rs = s.executeQuery(query)
+        while (rs.next()) {
+          res = rs.getString("name")
+        }
+        s.close()
+        c.close()
+        res
+      case _ => res
+    }
+  }
+
+  def shareWith(user: String, with_user: String): Unit = {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
