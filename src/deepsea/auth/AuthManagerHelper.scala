@@ -33,7 +33,10 @@ trait AuthManagerHelper {
             rs.getString("visible_projects").split(",").toList,
             rs.getString("visible_pages").split(",").toList,
             rs.getString("shared_access").split(",").toList,
-            rs.getString("group").split(",").toList
+            rs.getString("group").split(",").toList,
+            List.empty[String],
+            "",
+            rs.getString("projects").split(",").toList
           ))
         }
         s.close()

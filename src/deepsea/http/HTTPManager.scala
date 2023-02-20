@@ -16,7 +16,7 @@ import ch.megard.akka.http.cors.scaladsl.CorsDirectives.cors
 import deepsea.App
 import deepsea.actors.ActorManager
 import deepsea.actors.ActorStartupManager.HTTPManagerStarted
-import deepsea.auth.AuthManager.{GetRoleDetails, GetRoles, GetUserDetails, GetUsers, Login, ShareRights, StartRole, UpdateEmail, UpdateRocketLogin}
+import deepsea.auth.AuthManager.{DeleteRole, EditRole, GetRoleDetails, GetRoles, GetUserDetails, GetUsers, Login, ShareRights, StartRole, UpdateEmail, UpdateRocketLogin}
 import deepsea.fest.FestManager.{DeleteFestKaraoke, DeleteFestSauna, DeleteFestStories, GetBestPlayers, GetFestKaraoke, GetFestSauna, GetFestStories, GetMarks, GetTeamsWon, SetBestPlayer, SetFestKaraoke, SetFestSauna, SetFestStories, SetMarks, SetTeamsWon}
 import deepsea.files.FileManager.{CreateDocumentCloudDirectory, CreateFile, CreateMaterialCloudDirectory, GetCloudFiles, GetDocumentFiles, GetFileFromCloud, GetPdSpList}
 import deepsea.files.classes.FileAttachment
@@ -68,6 +68,12 @@ class HTTPManager extends Actor{
       },
       (post & path("startRole") & entity(as[String])) { (role) =>
         askFor(ActorManager.auth, StartRole(role))
+      },
+      (get & path("deleteRole") & parameter("name")) { name =>
+        askFor(ActorManager.auth, DeleteRole(name))
+      },
+      (post & path("editRole") & entity(as[String]) & parameter("name")) { (role, name) =>
+        askFor(ActorManager.auth, EditRole(role, name))
       },
       //ISSUE MANAGER COMMANDS
       (get & path("issueProjects")){
