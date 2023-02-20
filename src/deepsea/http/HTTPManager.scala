@@ -60,6 +60,7 @@ class HTTPManager extends Actor{
       (get & path("userDetails") & parameter("id")){ id =>
         askFor(ActorManager.auth, GetUserDetails(id))
       },
+      //ROLES
       (get & path("adminRoles")) {
         askFor(ActorManager.auth, GetRoles())
       },
@@ -74,6 +75,19 @@ class HTTPManager extends Actor{
       },
       (post & path("editRole") & entity(as[String]) & parameter("name")) { (role, name) =>
         askFor(ActorManager.auth, EditRole(role, name))
+      },
+      //PROJECTS
+      (get & path("projectDetails") & parameter("id")) { id =>
+        askFor(ActorManager.issue, GetProjectDetails(id))
+      },
+      (post & path("startProject") & entity(as[String])) { (project) =>
+        askFor(ActorManager.issue, StartProject(project))
+      },
+      (get & path("deleteProject") & parameter("id")) { id =>
+        askFor(ActorManager.issue, DeleteProject(id))
+      },
+      (post & path("editProject") & entity(as[String]) & parameter("id")) { (project, id) =>
+        askFor(ActorManager.issue, EditProject(project, id))
       },
       //ISSUE MANAGER COMMANDS
       (get & path("issueProjects")){

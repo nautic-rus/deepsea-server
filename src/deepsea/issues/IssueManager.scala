@@ -15,6 +15,7 @@ import deepsea.issues.classes.{ChildIssue, Issue, IssueAction, IssueCheck, Issue
 import deepsea.mail.MailManager.Mail
 import deepsea.rocket.RocketChatManager.SendNotification
 import deepsea.time.TimeControlManager.UserWatch
+import io.circe
 import org.mongodb.scala.{Document, MongoCollection}
 import play.api.libs.json.{JsValue, Json, OWrites}
 import io.circe.parser._
@@ -45,6 +46,10 @@ object IssueManager{
   case class UpdateIssue(user: String, updateMessage: String, issueJson: String)
   case class RemoveIssue(id: String, user: String)
   case class GetIssueProjects()
+  case class GetProjectDetails(id: String)
+  case class StartProject(projectJson: String)
+  case class DeleteProject(id: String)
+  case class EditProject(projectJson: String, id: String)
   case class GetIssueTypes()
   case class GetIssuePriorities()
   case class GetIssueDepartments()
@@ -110,7 +115,7 @@ object IssueManager{
 
   case class GroupFolder(id: Int, name: String)
   case class DailyTask(issueId: Int, date: Long, dateCreated: Long, userLogin: String, project: String, details: String, time: Double, id: Int)
-  case class IssueProject(id: Int, name: String, pdsp: String, rkd: String, foran: String, factory: String, managers: String)
+  case class IssueProject(id: Int, name: String, pdsp: String, rkd: String, foran: String, factory: String, managers: String, status: String)
 }
 class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with FileManagerHelper {
   implicit val timeout: Timeout = Timeout(30, TimeUnit.SECONDS)
@@ -154,6 +159,22 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
   }
   override def receive: Receive = {
     case GetIssueProjects() => sender() ! getIssueProjects.asJson.noSpaces
+    case GetProjectDetails(id) => sender() ! getProjectDetails(id).asJson
+    case StartProject(projectJson) =>
+      circe.jawn.decode[IssueProject](projectJson) match {
+        case Right(project) =>
+          val result = startProject(project)
+          sender() ! result.asJson
+        case _ => sender() ! "error".asJson
+      }
+    case DeleteProject(id) => sender() ! deleteProject(id).asJson
+    case EditProject(projectJson, id) =>
+      circe.jawn.decode[IssueProject](projectJson) match {
+        case Right(project) =>
+          val result = editProject(project, id)
+          sender() ! result.asJson
+        case _ => sender() ! "error".asJson
+      }
     case GetIssueTypes() => sender() ! Json.toJson(getIssueTypes)
     case GetIssueDepartments() => sender() ! Json.toJson(getIssueDepartments)
     case GetIssuePriorities() => sender() ! Json.toJson(getIssuePriorities)
@@ -457,7 +478,8 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
             Option(rs.getString("rkd")).getOrElse(""),
             Option(rs.getString("foran")).getOrElse(""),
             Option(rs.getString("factory")).getOrElse(""),
-            Option(rs.getString("managers")).getOrElse("")
+            Option(rs.getString("managers")).getOrElse(""),
+            Option(rs.getString("status")).getOrElse("")
           )
         }
         rs.close()
@@ -466,6 +488,31 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
       case _ =>
     }
     res
+  }
+  def getProjectDetails(id: String): Option[IssueProject] = {
+    var project: Option[IssueProject] = Option.empty[IssueProject]
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val rs = s.executeQuery(s"select * from issue_projects where id = $id")
+        while (rs.next()) {
+          project = Option(IssueProject(
+            rs.getInt("id"),
+            rs.getString("name"),
+            rs.getString("pdsp"),
+            rs.getString("rkd"),
+            rs.getString("foran"),
+            rs.getString("factory"),
+            rs.getString("managers"),
+            rs.getString("status")
+          ))
+        }
+        rs.close()
+        s.close()
+        c.close()
+        project
+      case _ => Option.empty[IssueProject]
+    }
   }
   def getIssueDepartments: ListBuffer[String] ={
     val res = ListBuffer.empty[String]
@@ -584,6 +631,43 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
         c.close()
         res
       case _ => res
+    }
+  }
+  def startProject(project: IssueProject): String = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement();
+        val query = s"insert into issue_projects (id, name, foran, rkd, pdsp, factory, managers, status) values (default, '${project.name}', '${project.foran}', '${project.pdsp}', '${project.rkd}', '${project.factory}', '${project.managers}', default)";
+        s.execute(query);
+        s.close();
+        c.close();
+        "success";
+      case _ => "error";
+    }
+  }
+
+  def editProject(project: IssueProject, id: String): String = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement();
+        val query = s"update issue_projects set name = '${project.name}', foran = '${project.foran}', rkd = '${project.rkd}', pdsp = '${project.pdsp}', factory = '${project.factory}', managers = '${project.managers}', status = '${project.status}' where id = '$id'";
+        s.execute(query);
+        s.close();
+        c.close();
+        "success";
+      case _ => "error";
+    }
+  }
+  def deleteProject(id: String): String = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement();
+        val query = s"delete from issue_projects where id = $id";
+        s.execute(query);
+        s.close();
+        c.close();
+        "success";
+      case _ => "error";
     }
   }
   def updateHistory(issue: IssueHistory): Unit ={

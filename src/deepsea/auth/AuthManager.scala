@@ -297,7 +297,7 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from roles where name = '$name'")
         while (rs.next()) {
-          role = Option(new Role(
+          role = Option(Role(
             rs.getString("name"),
             rs.getString("description")
           ))
