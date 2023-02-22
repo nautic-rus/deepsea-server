@@ -16,7 +16,7 @@ import ch.megard.akka.http.cors.scaladsl.CorsDirectives.cors
 import deepsea.App
 import deepsea.actors.ActorManager
 import deepsea.actors.ActorStartupManager.HTTPManagerStarted
-import deepsea.auth.AuthManager.{DeleteRole, EditRole, GetRoleDetails, GetRoles, GetUserDetails, GetUsers, Login, ShareRights, StartRole, UpdateEmail, UpdateRocketLogin}
+import deepsea.auth.AuthManager.{DeleteRole, DeleteUser, EditRole, EditUser, GetPages, GetRightDetails, GetRights, GetRoleDetails, GetRoles, GetUserDetails, GetUsers, Login, ShareRights, StartRole, StartUser, UpdateEmail, UpdateRocketLogin}
 import deepsea.fest.FestManager.{DeleteFestKaraoke, DeleteFestSauna, DeleteFestStories, GetBestPlayers, GetFestKaraoke, GetFestSauna, GetFestStories, GetMarks, GetTeamsWon, SetBestPlayer, SetFestKaraoke, SetFestSauna, SetFestStories, SetMarks, SetTeamsWon}
 import deepsea.files.FileManager.{CreateDocumentCloudDirectory, CreateFile, CreateMaterialCloudDirectory, GetCloudFiles, GetDocumentFiles, GetFileFromCloud, GetPdSpList}
 import deepsea.files.classes.FileAttachment
@@ -57,8 +57,26 @@ class HTTPManager extends Actor{
       (get & path("users")){
         askFor(ActorManager.auth, GetUsers())
       },
+      (get & path("rights")) {
+        askFor(ActorManager.auth, GetRights())
+      },
+      (get & path("rightDetails") & parameter("id")) { id =>
+        askFor(ActorManager.auth, GetRightDetails(id))
+      },
       (get & path("userDetails") & parameter("id")){ id =>
         askFor(ActorManager.auth, GetUserDetails(id))
+      },
+      (post & path("startUser") & entity(as[String])) { (user) =>
+        askFor(ActorManager.auth, StartUser(user))
+      },
+      (get & path("deleteUser") & parameter("id")) { id =>
+        askFor(ActorManager.auth, DeleteUser(id))
+      },
+      (post & path("editUser") & entity(as[String]) & parameter("id")) { (role, id) =>
+        askFor(ActorManager.auth, EditUser(role, id))
+      },
+      (get & path("pages")) {
+        askFor(ActorManager.auth, GetPages())
       },
       //ROLES
       (get & path("adminRoles")) {

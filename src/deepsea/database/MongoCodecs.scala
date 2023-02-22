@@ -1,13 +1,13 @@
 package deepsea.database
 
-import deepsea.auth.AuthManager.{Role, User}
+import deepsea.auth.AuthManager.{Page, RightUser, Role, User}
 import deepsea.files.FileManager.{DocumentDirectories, TreeDirectory, TreeFile, TreeFileHistory}
 import deepsea.issues.IssueManager.{DailyTask, IssueProject, MessageReaction}
 import deepsea.materials.MaterialManager.{Material, MaterialHistory, MaterialNode, MaterialNodeHistory, MaterialTranslation, ProjectName, WCNumberName, WeightControl}
 import deepsea.mobile.MobileManager.{Drawing, DrawingInfo, OrizInfo}
 import deepsea.osm.OsmManager.{LatLng, OSMUser, ParkingLocationSheet}
 import deepsea.time.TimeControlManager.{SpyWatch, UserWatch}
-import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
+import io.circe.generic.semiauto.{deriveCodec, deriveDecoder, deriveEncoder}
 import io.circe.{Decoder, Encoder}
 import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}
 import org.bson.codecs.configuration.CodecRegistry
@@ -93,6 +93,12 @@ trait MongoCodecs {
 
   implicit val UserDecoder: Decoder[User] = deriveDecoder[User]
   implicit val UserEncoder: Encoder[User] = deriveEncoder[User]
+
+  implicit val PageDecoder: Decoder[Page] = deriveDecoder[Page]
+  implicit val PageEncoder: Encoder[Page] = deriveEncoder[Page]
+
+  implicit val RightUserDecoder: Decoder[RightUser] = deriveDecoder[RightUser]
+  implicit val RightUserEncoder: Encoder[RightUser] = deriveEncoder[RightUser]
 
   def codecRegistry: CodecRegistry = fromRegistries(fromProviders(
     classOf[Material],

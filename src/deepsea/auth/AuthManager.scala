@@ -1,7 +1,7 @@
 package deepsea.auth
 
 import akka.actor.Actor
-import deepsea.auth.AuthManager.{DeleteRole, EditRole, GetRoleDetails, GetRoles, GetUser, GetUserDetails, GetUsers, Login, Role, ShareRights, StartRole, UpdateEmail, UpdateRocketLogin, User}
+import deepsea.auth.AuthManager.{DeleteRole, DeleteUser, EditRole, EditUser, GetPages, GetRightDetails, GetRights, GetRoleDetails, GetRoles, GetUser, GetUserDetails, GetUsers, Login, Page, RightUser, Role, ShareRights, StartRole, StartUser, UpdateEmail, UpdateRocketLogin, User}
 import deepsea.database.{DBManager, MongoCodecs}
 import io.circe
 import io.circe.jawn
@@ -15,6 +15,7 @@ import org.mongodb.scala.result
 
 import java.sql.Date
 import java.util.UUID
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 object AuthManager extends MongoCodecs {
@@ -25,6 +26,12 @@ object AuthManager extends MongoCodecs {
   case class GetUserDetails(id: String)
 
   case class GetUser(login: String)
+
+  case class StartUser(userJson: String)
+
+  case class DeleteUser(id: String)
+
+  case class EditUser(userJson: String, id: String)
 
   case class ShareRights(user: String, with_user: String)
 
@@ -70,8 +77,25 @@ object AuthManager extends MongoCodecs {
 
   case class Role(
                    name: String,
-                   description: String
+                   description: String,
+                   visible_pages: List[String]
                  )
+
+  case class GetPages()
+
+  case class Page(
+                   id: Int,
+                   name: String
+                 )
+
+  case class GetRights()
+
+  case class GetRightDetails(id: String)
+
+  case class RightUser(
+                        userId: Int,
+                        role: String
+                      )
 }
 
 class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
@@ -112,7 +136,7 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
     case StartRole(roleJson) =>
       circe.jawn.decode[Role](roleJson) match {
         case Right(role) =>
-          val result = startRole(role)
+          val result = startRole (role)
           sender() ! result.asJson
         case _ => sender() ! "error".asJson
       }
@@ -124,12 +148,28 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
           sender() ! result.asJson
         case _ => sender() ! "error".asJson
       }
-
-
+    case GetPages() => sender() ! getPages().asJson
+    case GetRights() => sender() ! getRights().asJson
+    case GetRightDetails(id) => sender() ! getRightDetails(id).asJson
     case GetUser(login) =>
       getUser(login) match {
         case Some(user) => sender() ! user
         case _ => sender() ! Option.empty[User]
+      }
+    case StartUser(userJson) =>
+      circe.jawn.decode[User](userJson) match {
+        case Right(user) =>
+          val result = startUser(user)
+          sender() ! result.asJson
+        case _ => sender() ! "error".asJson
+      }
+    case DeleteUser(id) => sender() ! deleteUser(id).asJson
+    case EditUser(userJson, id) =>
+      circe.jawn.decode[User](userJson) match {
+        case Right(user) =>
+          val result = editUser(user, id)
+          sender() ! result.asJson
+        case _ => sender() ! "error".asJson
       }
     case ShareRights(user, with_user) =>
       shareWith(user, with_user)
@@ -198,8 +238,9 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from users where removed = 0")
         while (rs.next()) {
+          val id = rs.getInt("id");
           res += User(
-            rs.getInt("id"),
+            id,
             rs.getString("login"),
             rs.getString("password"),
             rs.getString("name"),
@@ -219,7 +260,7 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
             rs.getString("visible_pages").split(",").toList,
             rs.getString("shared_access").split(",").toList,
             rs.getString("group").split(",").toList,
-            List.empty[String],
+            getRightDetails(id.toString).toList,
             "",
             rs.getString("projects").split(",").toList
           )
@@ -259,7 +300,7 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
             rs.getString("visible_pages").split(",").toList,
             rs.getString("shared_access").split(",").toList,
             rs.getString("group").split(",").toList,
-            List.empty[String],
+            getRightDetails(id.toString).toList,
             "",
             rs.getString("projects").split(",").toList))
         }
@@ -268,6 +309,57 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
         c.close()
         user
       case _ => Option.empty[User]
+    }
+  }
+
+  def startUser(user: User): String = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement();
+        val query = s"insert into users (id, login, password, name, surname, birthday, email, phone, tcid, avatar, profession, visibility, gender, avatar_full, department, rocket_login, visible_projects, \"group\", projects) " +
+          s"values (${user.id}, '${user.login}', '${user.password}', '${user.name}', '${user.surname}', '${user.birthday}', '${user.email}', '${user.phone}', ${user.tcid}, '${user.avatar}', '${user.profession}', '${user.visibility}', '${user.gender}', '${user.avatar_full}', '${user.department}', '${user.rocket_login}', '${user.visible_projects.mkString(",")}','${user.groups.mkString(",")}', '${user.projects.mkString(",")}')"
+        s.execute(query);
+        user.permissions.foreach(role => {
+          val query = s"insert into user_rights (user_id, rights) values ('${user.id}', '$role')";
+          s.execute(query);
+        })
+        s.close();
+        c.close();
+        "success"
+    }
+  }
+
+  def deleteUser(id: String): String = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement();
+        val query = s"delete from users where id = '$id'";
+        s.execute(query);
+        val queryR = s"delete from user_rights where user_id = '$id'";
+        s.execute(queryR);
+        s.close();
+        c.close();
+        "success";
+      case _ => "error"
+    }
+  }
+
+  def editUser(user: User, id: String) = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement();
+        val query = s"update users set id = '${user.id}', login = '${user.login}', password = '${user.password}', name = '${user.name}', surname = '${user.surname}', birthday = '${user.birthday}', email = '${user.email}', phone = '${user.phone}', tcid = '${user.tcid}', avatar = '${user.avatar}', profession = '${user.profession}', visibility = '${user.visibility}', gender = '${user.gender}', department = '${user.department}', rocket_login = '${user.rocket_login}' where id = '$id'"
+        s.execute(query);
+        val queryR = s"delete from user_rights where user_id = '$id'";
+        s.execute(queryR);
+        user.permissions.foreach(role => {
+          val query = s"insert into user_rights (user_id, rights) values ('$id', '$role')";
+          s.execute(query);
+        })
+        s.close();
+        c.close();
+        "success"
+      case _ => "error";
     }
   }
 
@@ -280,7 +372,8 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
         while (rs.next()) {
           res += Role(
             rs.getString("name"),
-            rs.getString("description")
+            rs.getString("description"),
+            rs.getString("visible_pages").split(",").toList,
           )
         }
         rs.close()
@@ -290,6 +383,7 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
       case _ => ListBuffer.empty[Role]
     }
   }
+
   def getRoleDetails(name: String): Option[Role] = {
     var role: Option[Role] = Option.empty[Role]
     DBManager.GetPGConnection() match {
@@ -299,7 +393,8 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
         while (rs.next()) {
           role = Option(Role(
             rs.getString("name"),
-            rs.getString("description")
+            rs.getString("description"),
+            rs.getString("visible_pages").split(",").toList
           ))
         }
         rs.close()
@@ -309,6 +404,7 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
       case _ => Option.empty[Role]
     }
   }
+
   def deleteRole(name: String): String = {
     DBManager.GetPGConnection() match {
       case Some(c) =>
@@ -321,11 +417,13 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
       case _ => "error";
     }
   }
+
   def startRole(role: Role): String = {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement();
-        val query = s"insert into roles (name, description) values ('${role.name}', '${role.description}')";
+        var line = "";
+        val query = s"insert into roles (name, description, visible_pages) values ('${role.name}', '${role.description}', '${role.visible_pages.mkString(",")}')";
         s.execute(query);
         s.close();
         c.close();
@@ -333,16 +431,76 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
       case _ => "error";
     }
   }
+
   def editRole(role: Role, name: String): String = {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement();
-        val query = s"update roles set name = '${role.name}', description = '${role.description}' where name = '$name'";
+        val query = s"update roles set description = '${role.description}', visible_pages = '${role.visible_pages.mkString(",")}' where name = '$name'";
         s.execute(query);
         s.close();
         c.close();
         "success"
       case _ => "error";
+    }
+  }
+
+  def getPages(): ListBuffer[Page] = {
+    val res = ListBuffer.empty[Page];
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement();
+        val rs = s.executeQuery(s"select * from pages");
+        while (rs.next()) {
+          res += Page(
+            rs.getInt("id"),
+            rs.getString("name")
+          )
+        }
+        rs.close();
+        s.close();
+        c.close();
+        res
+      case _ => ListBuffer.empty[Page]
+    }
+  }
+
+  def getRights(): ListBuffer[RightUser] = {
+    val res = ListBuffer.empty[RightUser];
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement();
+        val rs = s.executeQuery(s"select * from user_rights");
+        while (rs.next()) {
+          res += RightUser(
+            rs.getInt("user_id"),
+            rs.getString("rights")
+          )
+        }
+        rs.close();
+        s.close();
+        c.close();
+        res
+      case _ => ListBuffer.empty[RightUser]
+    }
+  }
+
+  def getRightDetails(id: String): ListBuffer[String] = {
+    val res = ListBuffer.empty[String];
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement();
+        val rs = s.executeQuery(s"select * from user_rights where user_id = '$id'");
+        while (rs.next()) {
+          res += (
+            rs.getString("rights")
+            )
+        }
+        rs.close();
+        s.close();
+        c.close();
+        res
+      case _ => ListBuffer.empty[String]
     }
   }
 
