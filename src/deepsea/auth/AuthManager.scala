@@ -1,8 +1,11 @@
 package deepsea.auth
 
 import akka.actor.Actor
+import deepsea.actors.ActorManager
 import deepsea.auth.AuthManager.{DeleteRole, DeleteUser, EditRole, EditUser, GetPages, GetRightDetails, GetRights, GetRoleDetails, GetRoles, GetUser, GetUserDetails, GetUsers, Login, Page, RightUser, Role, ShareRights, StartRole, StartUser, UpdateEmail, UpdateRocketLogin, User}
 import deepsea.database.{DBManager, MongoCodecs}
+import deepsea.mail.MailManager.Mail
+import deepsea.rocket.RocketChatManager.SendNotification
 import io.circe
 import io.circe.jawn
 import io.circe.syntax.EncoderOps
@@ -328,7 +331,11 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
         }
         s.close();
         c.close();
+        val message = s"${user.login} ${user.password}"
+        ActorManager.mail ! Mail(List(user.name, user.surname).mkString(" "), user.email, "DeepSea Notification", message);
+        ActorManager.rocket ! SendNotification(user.rocket_login, message);
         "success"
+      case _ => "error"
     }
   }
 
