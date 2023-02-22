@@ -62,7 +62,7 @@ object AuthManager extends MongoCodecs {
                    var groups: List[String] = List.empty[String],
                    var permissions: List[String] = List.empty[String],
                    var token: String = "",
-                   var projects: List[String],
+                   var projects: List[String]
                  )
 
   case class GetRoles()
@@ -317,12 +317,15 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
       case Some(c) =>
         val s = c.createStatement();
         val query = s"insert into users (id, login, password, name, surname, birthday, email, phone, tcid, avatar, profession, visibility, gender, avatar_full, department, rocket_login, visible_projects, \"group\", projects) " +
-          s"values (${user.id}, '${user.login}', '${user.password}', '${user.name}', '${user.surname}', '${user.birthday}', '${user.email}', '${user.phone}', ${user.tcid}, '${user.avatar}', '${user.profession}', '${user.visibility}', '${user.gender}', '${user.avatar_full}', '${user.department}', '${user.rocket_login}', '${user.visible_projects.mkString(",")}','${user.groups.mkString(",")}', '${user.projects.mkString(",")}')"
-        s.execute(query);
-        user.permissions.foreach(role => {
-          val query = s"insert into user_rights (user_id, rights) values ('${user.id}', '$role')";
-          s.execute(query);
-        })
+          s"values (default, '${user.login}', '${user.password}', '${user.name}', '${user.surname}', '${user.birthday}', '${user.email}', '${user.phone}', ${user.tcid}, '${user.avatar}', '${user.profession}', '${user.visibility}', '${user.gender}', '${user.avatar_full}', '${user.department}', '${user.rocket_login}', '${user.visible_projects.mkString(",")}','${user.groups.mkString(",")}', '${user.projects.mkString(",")}')" +
+          s" returning id"
+        val rs = s.executeQuery(query);
+        while (rs.next()) {
+          user.permissions.foreach(role => {
+            val query = s"insert into user_rights (user_id, rights) values ('${rs.getInt("id")}', '$role')";
+            s.execute(query);
+          })
+        }
         s.close();
         c.close();
         "success"
@@ -333,10 +336,8 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement();
-        val query = s"delete from users where id = '$id'";
+        val query = s"update users set removed = 1 where id = $id";
         s.execute(query);
-        val queryR = s"delete from user_rights where user_id = '$id'";
-        s.execute(queryR);
         s.close();
         c.close();
         "success";
