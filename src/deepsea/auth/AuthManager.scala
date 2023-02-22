@@ -2,7 +2,7 @@ package deepsea.auth
 
 import akka.actor.Actor
 import deepsea.actors.ActorManager
-import deepsea.auth.AuthManager.{DeleteRole, DeleteUser, EditRole, EditUser, GetPages, GetRightDetails, GetRights, GetRoleDetails, GetRoles, GetUser, GetUserDetails, GetUsers, Login, Page, RightUser, Role, ShareRights, StartRole, StartUser, UpdateEmail, UpdateRocketLogin, User}
+import deepsea.auth.AuthManager.{DeleteRole, DeleteUser, EditRole, EditUser, GetPages, GetRightDetails, GetRights, GetRoleDetails, GetRoles, GetUser, GetUserDetails, GetUsers, Login, Page, RightUser, Role, SendLogPass, ShareRights, StartRole, StartUser, UpdateEmail, UpdateRocketLogin, User}
 import deepsea.database.{DBManager, MongoCodecs}
 import deepsea.mail.MailManager.Mail
 import deepsea.rocket.RocketChatManager.SendNotification
@@ -20,6 +20,7 @@ import java.sql.Date
 import java.util.UUID
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+import scala.io.Source
 
 object AuthManager extends MongoCodecs {
   case class Login(token: Option[String], login: String = "", password: String = "")
@@ -35,6 +36,7 @@ object AuthManager extends MongoCodecs {
   case class DeleteUser(id: String)
 
   case class EditUser(userJson: String, id: String)
+  case class SendLogPass(id: String)
 
   case class ShareRights(user: String, with_user: String)
 
@@ -174,6 +176,7 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
           sender() ! result.asJson
         case _ => sender() ! "error".asJson
       }
+    case SendLogPass(id) => sender() ! sendLogPass(id).asJson
     case ShareRights(user, with_user) =>
       shareWith(user, with_user)
       sender() ! Json.toJson("success")
@@ -331,10 +334,36 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
         }
         s.close();
         c.close();
-        val message = s"${user.login} ${user.password}"
-        ActorManager.mail ! Mail(List(user.name, user.surname).mkString(" "), user.email, "DeepSea Notification", message);
-        ActorManager.rocket ! SendNotification(user.rocket_login, message);
+        val messageRocket: String = s"Ваши данные для входа в DeepSea - Логин: ${user.login} | Пароль: ${user.password}";
+        val messageMail: String = Source.fromResource("messages/startUser.html").mkString.replaceAll("!login", s"${user.login}").replaceAll("!password", s"${user.password}")
+        ActorManager.rocket ! SendNotification(user.rocket_login, messageRocket);
+        ActorManager.mail ! Mail(List(user.name, user.surname).mkString(" "), user.email, "DeepSea Notification", messageMail);
         "success"
+      case _ => "error"
+    }
+  }
+
+  def sendLogPass(id: String): String = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement();
+        val query = s"select * from users where id = $id";
+        val rs = s.executeQuery(query);
+        while (rs.next()) {
+          val login = rs.getString("login");
+          val password = rs.getString("password");
+          val name = rs.getString("name");
+          val surname = rs.getString("surname");
+          val rocket_login = rs.getString("rocket_login");
+          val email = rs.getString("email");
+          val messageRocket: String = s"Ваши данные для входа в DeepSea - Логин: ${login} | Пароль: ${password}";
+          val messageMail: String = Source.fromResource("messages/sendLogPass.html").mkString.replaceAll("!login", s"${login}").replaceAll("!password", s"${password}")
+          ActorManager.rocket ! SendNotification(rocket_login, messageRocket);
+          ActorManager.mail ! Mail(List(name, surname).mkString(" "), email, "DeepSea Notification", messageMail);
+        };
+        s.close();
+        c.close();
+        "success";
       case _ => "error"
     }
   }
@@ -352,7 +381,7 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
     }
   }
 
-  def editUser(user: User, id: String) = {
+  def editUser(user: User, id: String): String = {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement();
@@ -370,6 +399,8 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
       case _ => "error";
     }
   }
+
+
 
   def getRoles: ListBuffer[Role] = {
     val res = ListBuffer.empty[Role]
@@ -446,6 +477,8 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
         val s = c.createStatement();
         val query = s"update roles set description = '${role.description}', visible_pages = '${role.visible_pages.mkString(",")}' where name = '$name'";
         s.execute(query);
+//        val queryR = s"update user_rights set rights = '${role.name}' where rights = '$name'";
+//        s.execute(queryR);
         s.close();
         c.close();
         "success"
