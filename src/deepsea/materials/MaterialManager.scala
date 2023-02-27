@@ -133,7 +133,7 @@ class MaterialManager extends Actor with MongoCodecs{
 //        }
 //      case _ => List.empty[Material]
 //    }
-    self ! GetMaterials("200101")
+    //self ! GetMaterials("200101")
   }
   override def receive: Receive = {
     case GetMaterialNodes(project) =>

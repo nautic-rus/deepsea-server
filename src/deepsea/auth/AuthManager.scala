@@ -183,7 +183,7 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
       }
     case GetPages() => sender() ! getPages().asJson
     case GetRights() => sender() ! getRights().asJson
-    case GetRightDetails(id) => sender() ! getRightDetails(id).asJson
+    case GetRightDetails(id) => sender() ! getRightDetails(id.toIntOption.getOrElse(0)).asJson
     case GetUser(login) =>
       getUser(login) match {
         case Some(user) => sender() ! user
@@ -265,47 +265,6 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
     }
   }
 
-  def getUsers: ListBuffer[User] = {
-    val res = ListBuffer.empty[User]
-    DBManager.GetPGConnection() match {
-      case Some(c) =>
-        val s = c.createStatement()
-        val rs = s.executeQuery(s"select * from users where removed = 0")
-        while (rs.next()) {
-          val id = rs.getInt("id");
-          res += User(
-            id,
-            rs.getString("login"),
-            rs.getString("password"),
-            rs.getString("name"),
-            rs.getString("surname"),
-            rs.getString("profession"),
-            rs.getString("department"),
-            rs.getDate("birthday").toString,
-            rs.getString("email"),
-            rs.getString("phone"),
-            rs.getInt("tcid"),
-            rs.getString("avatar"),
-            rs.getString("avatar_full"),
-            rs.getString("rocket_login"),
-            rs.getString("gender"),
-            rs.getString("visibility"),
-            rs.getString("visible_projects").split(",").toList,
-            rs.getString("visible_pages").split(",").toList,
-            rs.getString("shared_access").split(",").toList,
-            rs.getString("group").split(",").toList,
-            getRightDetails(id.toString).toList,
-            "",
-            rs.getString("projects").split(",").toList
-          )
-        }
-        rs.close()
-        s.close()
-        c.close()
-        res
-      case _ => ListBuffer.empty[User]
-    }
-  }
 
   def getUserDetails(id: String): Option[User] = {
     var user: Option[User] = Option.empty[User]
@@ -334,7 +293,7 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
             rs.getString("visible_pages").split(",").toList,
             rs.getString("shared_access").split(",").toList,
             rs.getString("group").split(",").toList,
-            getRightDetails(id.toString).toList,
+            getRightDetails(id.toIntOption.getOrElse(0)).toList,
             "",
             rs.getString("projects").split(",").toList))
         }
@@ -350,7 +309,7 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement();
-        val query = s"insert into users (id, login, password, name, surname, birthday, email, phone, tcid, avatar, profession, visibility, gender, avatar_full, department, rocket_login, visible_projects, \"group\", projects) " +
+        val query = s"insert into users (id, login, password, name, surname, birthday, email, phone, tcid, avatar, profession, visibility, gender, avatar_full, department, rocket_login, visible_projects, group, projects) " +
           s"values (default, '${user.login}', '${user.password}', '${user.name}', '${user.surname}', '${user.birthday}', '${user.email}', '${user.phone}', ${user.tcid}, '${user.avatar}', '${user.profession}', '${user.visibility}', '${user.gender}', '${user.avatar_full}', '${user.department}', '${user.rocket_login}', '${user.visible_projects.mkString(",")}','${user.groups.mkString(",")}', '${user.projects.mkString(",")}')" +
           s" returning id"
         val rs = s.executeQuery(query);
@@ -621,25 +580,6 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
         c.close();
         res
       case _ => ListBuffer.empty[RightUser]
-    }
-  }
-
-  def getRightDetails(id: String): ListBuffer[String] = {
-    val res = ListBuffer.empty[String];
-    DBManager.GetPGConnection() match {
-      case Some(c) =>
-        val s = c.createStatement();
-        val rs = s.executeQuery(s"select * from user_rights where user_id = '$id'");
-        while (rs.next()) {
-          res += (
-            rs.getString("rights")
-            )
-        }
-        rs.close();
-        s.close();
-        c.close();
-        res
-      case _ => ListBuffer.empty[String]
     }
   }
 

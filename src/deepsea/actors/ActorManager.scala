@@ -27,6 +27,7 @@ object ActorManager {
   var mobile: ActorRef = _
   var backups: ActorRef = _
   var osmManager: ActorRef = _
+  var planHours: ActorRef = _
 
   def init(): Unit ={
     system = ActorSystem()
