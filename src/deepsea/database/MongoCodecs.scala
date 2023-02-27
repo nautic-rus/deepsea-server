@@ -1,6 +1,6 @@
 package deepsea.database
 
-import deepsea.auth.AuthManager.{Page, RightUser, Role, User}
+import deepsea.auth.AuthManager.{AdminRight, Page, RightUser, Role, User}
 import deepsea.files.FileManager.{DocumentDirectories, TreeDirectory, TreeFile, TreeFileHistory}
 import deepsea.issues.IssueManager.{DailyTask, IssueProject, MessageReaction}
 import deepsea.materials.MaterialManager.{Material, MaterialHistory, MaterialNode, MaterialNodeHistory, MaterialTranslation, ProjectName, WCNumberName, WeightControl}
@@ -100,6 +100,9 @@ trait MongoCodecs {
   implicit val RightUserDecoder: Decoder[RightUser] = deriveDecoder[RightUser]
   implicit val RightUserEncoder: Encoder[RightUser] = deriveEncoder[RightUser]
 
+  implicit val AdminRightDecoder: Decoder[AdminRight] = deriveDecoder[AdminRight]
+  implicit val AdminRightEncoder: Encoder[AdminRight] = deriveEncoder[AdminRight]
+
   def codecRegistry: CodecRegistry = fromRegistries(fromProviders(
     classOf[Material],
     classOf[MaterialHistory],
@@ -122,5 +125,6 @@ trait MongoCodecs {
     classOf[IssueProject],
     classOf[Role],
     classOf[User],
+    classOf[AdminRight]
   ), DEFAULT_CODEC_REGISTRY)
 }
