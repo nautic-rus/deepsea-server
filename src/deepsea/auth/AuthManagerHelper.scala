@@ -62,6 +62,66 @@ trait AuthManagerHelper {
       case _ => Option.empty[User]
     }
   }
+  def getUsers: ListBuffer[User] = {
+    val res = ListBuffer.empty[User]
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val rs = s.executeQuery(s"select * from users where removed = 0")
+        while (rs.next()) {
+          val id = Option(rs.getInt("id")).getOrElse(0)
+          res += User(
+            id,
+            rs.getString("login"),
+            rs.getString("password"),
+            rs.getString("name"),
+            rs.getString("surname"),
+            rs.getString("profession"),
+            rs.getString("department"),
+            rs.getDate("birthday").toString,
+            rs.getString("email"),
+            rs.getString("phone"),
+            rs.getInt("tcid"),
+            rs.getString("avatar"),
+            rs.getString("avatar_full"),
+            rs.getString("rocket_login"),
+            rs.getString("gender"),
+            rs.getString("visibility"),
+            rs.getString("visible_projects").split(",").toList,
+            rs.getString("visible_pages").split(",").toList,
+            rs.getString("shared_access").split(",").toList,
+            rs.getString("group").split(",").toList,
+            getRightDetails(id).toList,
+            "",
+            rs.getString("projects").split(",").toList
+          )
+        }
+        rs.close()
+        s.close()
+        c.close()
+        res
+      case _ => ListBuffer.empty[User]
+    }
+  }
+  def getRightDetails(id: Int): ListBuffer[String] = {
+    val res = ListBuffer.empty[String];
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement();
+        val rs = s.executeQuery(s"select * from user_rights where user_id = $id");
+        while (rs.next()) {
+          res += (
+            rs.getString("rights")
+            )
+        }
+        rs.close();
+        s.close();
+        c.close();
+        res
+      case _ => ListBuffer.empty[String]
+    }
+  }
+
   def updateEmail(login: String, email: String): Unit ={
     DBManager.GetPGConnection() match {
       case Some(c) =>
