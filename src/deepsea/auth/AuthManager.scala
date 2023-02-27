@@ -334,7 +334,7 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
         }
         s.close();
         c.close();
-        val messageRocket: String = s"Ваши данные для входа в DeepSea - Логин: ${user.login} | Пароль: ${user.password}";
+        val messageRocket: String = s"Ваши данные для входа в DeepSea - Логин: ${user.login} | Пароль: ${user.password} | https://deep-sea.ru";
         val messageMail: String = Source.fromResource("messages/startUser.html").mkString.replaceAll("!login", s"${user.login}").replaceAll("!password", s"${user.password}")
         ActorManager.rocket ! SendNotification(user.rocket_login, messageRocket);
         ActorManager.mail ! Mail(List(user.name, user.surname).mkString(" "), user.email, "DeepSea Notification", messageMail);
@@ -356,7 +356,7 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
           val surname = rs.getString("surname");
           val rocket_login = rs.getString("rocket_login");
           val email = rs.getString("email");
-          val messageRocket: String = s"Ваши данные для входа в DeepSea - Логин: ${login} | Пароль: ${password}";
+          val messageRocket: String = s"Ваши данные для входа в DeepSea - Логин: ${login} | Пароль: ${password} | https://deep-sea.ru";
           val messageMail: String = Source.fromResource("messages/sendLogPass.html").mkString.replaceAll("!login", s"${login}").replaceAll("!password", s"${password}")
           ActorManager.rocket ! SendNotification(rocket_login, messageRocket);
           ActorManager.mail ! Mail(List(name, surname).mkString(" "), email, "DeepSea Notification", messageMail);
