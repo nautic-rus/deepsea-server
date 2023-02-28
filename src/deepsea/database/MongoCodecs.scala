@@ -6,6 +6,7 @@ import deepsea.issues.IssueManager.{DailyTask, IssueProject, MessageReaction}
 import deepsea.materials.MaterialManager.{Material, MaterialHistory, MaterialNode, MaterialNodeHistory, MaterialTranslation, ProjectName, WCNumberName, WeightControl}
 import deepsea.mobile.MobileManager.{Drawing, DrawingInfo, OrizInfo}
 import deepsea.osm.OsmManager.{LatLng, OSMUser, ParkingLocationSheet}
+import deepsea.time.PlanHoursManager.PlanHour
 import deepsea.time.TimeControlManager.{SpyWatch, UserWatch}
 import io.circe.generic.semiauto.{deriveCodec, deriveDecoder, deriveEncoder}
 import io.circe.{Decoder, Encoder}
@@ -103,6 +104,9 @@ trait MongoCodecs {
   implicit val AdminRightDecoder: Decoder[AdminRight] = deriveDecoder[AdminRight]
   implicit val AdminRightEncoder: Encoder[AdminRight] = deriveEncoder[AdminRight]
 
+  implicit val PlanHourDecoder: Decoder[PlanHour] = deriveDecoder[PlanHour]
+  implicit val PlanHourEncoder: Encoder[PlanHour] = deriveEncoder[PlanHour]
+
   def codecRegistry: CodecRegistry = fromRegistries(fromProviders(
     classOf[Material],
     classOf[MaterialHistory],
@@ -125,6 +129,7 @@ trait MongoCodecs {
     classOf[IssueProject],
     classOf[Role],
     classOf[User],
-    classOf[AdminRight]
+    classOf[AdminRight],
+    classOf[PlanHour]
   ), DEFAULT_CODEC_REGISTRY)
 }

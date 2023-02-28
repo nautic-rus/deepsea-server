@@ -26,6 +26,7 @@ import deepsea.mobile.MobileManager.{GetDrawingInfo, GetDrawings}
 import deepsea.osm.OsmManager.{AddPLS, GetPLS}
 import deepsea.rocket.RocketChatManager.SendNotification
 import deepsea.time.LicenseManager.GetForanLicenses
+import deepsea.time.PlanHoursManager.GetUserPlanHours
 import deepsea.time.TimeAndWeatherManager.GetTimeAndWeather
 import deepsea.time.TimeControlManager.{AddSpyWatch, AddUserWatch, GetSpyWatches, GetTime, GetUserTimeControl, GetUserWatches}
 import org.apache.log4j.{LogManager, Logger}
@@ -264,8 +265,8 @@ class HTTPManager extends Actor {
       },
 
 
-      (get & path("userPlanHours")) {
-        askFor(ActorManager.planHours, ())
+      (get & path("userPlanHours") & parameter("userId")) { (userId) =>
+        askFor(ActorManager.planHours, GetUserPlanHours(userId))
       },
 
       (get & path("subscribeForIssue") & parameter("user") & parameter("issue") & parameter("options")) { (user, issue, options) =>

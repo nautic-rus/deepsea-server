@@ -2,7 +2,9 @@ package deepsea.time
 
 import akka.actor.Actor
 import deepsea.auth.AuthManagerHelper
-import deepsea.time.PlanHoursManager.{AssignPlanHoursToUsers, InitPlanHours, PlanHour, SpecialDay}
+import deepsea.database.MongoCodecs
+import deepsea.time.PlanHoursManager.{AssignPlanHoursToUsers, GetUserPlanHours, InitPlanHours, PlanHour, SpecialDay}
+import io.circe.syntax.EncoderOps
 
 import java.util.{Calendar, Date}
 import scala.collection.mutable.ListBuffer
@@ -13,13 +15,13 @@ object PlanHoursManager{
       day_type == 1 && (hour_type == 1 || hour_type == 2) && task_id == 0
     }
   }
-  case class AllocateHour(updateHours: List[Int], nextHours: List[NextHour])
-  case class NextHour(id: Int, taskId: Int)
+  case class AllocatedHour(id: Int, taskId: Int)
   case class SpecialDay(day: Int, month: Int, year: Int, kind: String)
   case class InitPlanHours()
   case class AssignPlanHoursToUsers()
+  case class GetUserPlanHours(userId: String)
 }
-class PlanHoursManager extends Actor with PlanHoursHelper with AuthManagerHelper {
+class PlanHoursManager extends Actor with PlanHoursHelper with AuthManagerHelper with MongoCodecs{
   val specialDays: List[SpecialDay] = List(
     SpecialDay(2, 1, 2023, "weekend"),
     SpecialDay(3, 1, 2023, "weekend"),
@@ -38,6 +40,7 @@ class PlanHoursManager extends Actor with PlanHoursHelper with AuthManagerHelper
     SpecialDay(6, 11, 2023, "weekend"),
   )
   override def preStart(): Unit = {
+    //getUserPlanHours(0)
     //self ! InitPlanHours()
     //self ! AssignPlanHoursToUsers()
   }
@@ -86,6 +89,8 @@ class PlanHoursManager extends Actor with PlanHoursHelper with AuthManagerHelper
         addUserPlanHours(planHours, user.id)
       })
       val q = 0
+    case GetUserPlanHours(userId) =>
+      sender() ! getUserPlanHours(userId.toIntOption.getOrElse(0)).asJson.noSpaces
     case _ => None
   }
 }

@@ -2,9 +2,9 @@ package deepsea.time
 
 import deepsea.database.DBManager
 import deepsea.database.DBManager.RsIterator
-import deepsea.time.PlanHoursManager.{AllocateHour, NextHour, PlanHour}
+import deepsea.time.PlanHoursManager.{AllocatedHour, PlanHour}
 
-import java.util.Date
+import java.util.{Calendar, Date}
 import scala.collection.mutable.ListBuffer
 
 trait PlanHoursHelper {
@@ -139,21 +139,75 @@ trait PlanHoursHelper {
       case _ => false
     }
   }
-  def moveTaskRight(taskId: Int, amount: Int): Unit ={
-    val taskHours = getTaskHours(taskId)
-    val reserve = taskHours.take(amount).map(h => NextHour(h.id, 0))
-    //val allocate = allocateHours(taskHours.last.id, amount, taskId)
+  def moveTaskRight(taskId: Int, amount: Int, userId: Int): Unit ={
+    val userHours = getUserPlanHours(userId)
+    val taskHours = userHours.filter(_.id == taskId)
+    val moving = taskHours.take(amount).map(h => AllocatedHour(h.id, h.task_id))
+    val allocate = allocateHours(moving, taskHours.last.id, userHours)
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        c.setAutoCommit(false)
+        allocate.foreach(h => {
+          val query = s"update hours_template_user set task_id = ${h.taskId} where id = ${h.id}"
+          c.createStatement().execute(query)
+        })
+        c.commit()
+        c.close()
+      case _ =>
+    }
   }
-//  def allocateHours(from: Int, amount: Int, taskId: Int): List[AllocateHour] ={
-//    val nextHours = getNextHours(from, amount)
-//    val freeHours = nextHours.filter(_.task_id == 0).map(h => Hour(h.id, taskId))
-//    val tasksHours = nextHours.filter(_.task_id != 0)
-//    AllocateHour(
-//      updateHours,
-//      tasks
-//    )
-//    nextHours.map(h => Hour(h.id, taskId))
-//  }
+  def allocateHours(hoursValue: List[AllocatedHour], fromHourId: Int, userHours: List[PlanHour]): List[AllocatedHour] ={
+    val hours = hoursValue.sortBy(_.id)
+    val nextHours = userHours.filter(_.hour_type == 1).filter(_.id > fromHourId).take(hours.length)
+    val assignedHours = nextHours.map(h => AllocatedHour(h.id, hours(nextHours.indexOf(h)).taskId))
+    val taskHours = nextHours.filter(_.task_id != 0).map(h => AllocatedHour(h.id, h.task_id))
+    assignedHours ++ allocateHours(taskHours, nextHours.last.id, userHours)
+  }
+  def getUserPlanHours(userId: Int, startDate: Long = 0, amount: Int = 31): List[PlanHour] ={
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val calendar = Calendar.getInstance()
+        if (startDate != 0){
+          calendar.setTime(new Date(startDate))
+        }
+        else{
+          calendar.add(Calendar.DATE, -7)
+        }
+        val startDay = calendar.get(Calendar.DATE)
+        val startMonth = calendar.get(Calendar.MONTH)
+        val startYear = calendar.get(Calendar.YEAR)
+
+        calendar.add(Calendar.DATE, amount)
+        val endDay = calendar.get(Calendar.DATE)
+        val endMonth = calendar.get(Calendar.MONTH)
+        val endYear = calendar.get(Calendar.YEAR)
+
+        val userFilter = s"(user_id = $userId or $userId = 0)"
+        val dateFilter = s"(day >= $startDay and day <= $endDay and month >= $startMonth and month <= $endMonth and year <= $startYear and year >= $endYear)"
+        val query = s"select * from hours_template_user where $userFilter and $dateFilter"
+        val s = c.createStatement()
+        val planHours = RsIterator(s.executeQuery(query)).map(rs => {
+          PlanHour(
+            Option(rs.getInt("day")).getOrElse(0),
+            Option(rs.getInt("month")).getOrElse(0),
+            Option(rs.getInt("year")).getOrElse(0),
+            Option(rs.getInt("hour_type")).getOrElse(0),
+            Option(rs.getInt("day_type")).getOrElse(0),
+            Option(rs.getInt("day_of_week")).getOrElse(0),
+            Option(rs.getInt("user_id")).getOrElse(0),
+            Option(rs.getInt("id")).getOrElse(0),
+            Option(rs.getInt("task_id")).getOrElse(0),
+          )
+        }).toList
+        s.close()
+        c.close()
+        planHours.sortBy(_.id)
+      case _ => List.empty[PlanHour]
+    }
+  }
+  def getNextHoursFromDefined(id: Int, amount: Int, userHours: List[PlanHour], hourType: Int = 1): List[PlanHour] ={
+    userHours.filter(_.hour_type == hourType).filter(_.id > id).take(amount)
+  }
   def getNextHours(id: Int, amount: Int, hourType: Int = 1): List[PlanHour] ={
     DBManager.GetPGConnection() match {
       case Some(c) =>
