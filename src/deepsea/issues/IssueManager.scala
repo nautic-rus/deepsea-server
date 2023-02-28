@@ -469,7 +469,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val rs = s.executeQuery(s"select * from issue_projects order by id")
+        val rs = s.executeQuery(s"select * from issue_projects where status = 0 order by id")
         while (rs.next()){
           res += IssueProject(
             Option(rs.getInt("id")).getOrElse(0),
@@ -662,7 +662,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement();
-        val query = s"delete from issue_projects where id = $id";
+        val query = s"update issue_projects set status = '1' where id = $id";
         s.execute(query);
         s.close();
         c.close();
