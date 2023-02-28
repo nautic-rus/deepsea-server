@@ -43,7 +43,7 @@ trait IssueManagerHelper extends MongoCodecs with AuthManagerHelper{
           query += s" or i.issue_type in ${groups}"
         }
         if (user.permissions.contains("view_all_tasks")){
-          query += s" or true"
+          query += s" or (id > 0)"
         }
         query += ")"
         val rs = s.executeQuery(query)

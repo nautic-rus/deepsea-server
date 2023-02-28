@@ -8,7 +8,13 @@ import java.util.{Calendar, Date}
 import scala.collection.mutable.ListBuffer
 
 object PlanHoursManager{
-  case class PlanHour(day: Int, month: Int, year: Int, hour_type: Int, day_type: Int, day_of_week: Int, user: Int = 0, id: Int = 0, task_id: Int = 0)
+  case class PlanHour(day: Int, month: Int, year: Int, hour_type: Int, day_type: Int, day_of_week: Int, user: Int = 0, id: Int = 0, task_id: Int = 0){
+    def isFree: Boolean = {
+      day_type == 1 && (hour_type == 1 || hour_type == 2) && task_id == 0
+    }
+  }
+  case class AllocateHour(updateHours: List[Int], nextHours: List[NextHour])
+  case class NextHour(id: Int, taskId: Int)
   case class SpecialDay(day: Int, month: Int, year: Int, kind: String)
   case class InitPlanHours()
   case class AssignPlanHoursToUsers()
