@@ -226,10 +226,10 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
       shareWith(user, with_user)
       sender() ! Json.toJson("success")
     case UpdateEmail(user, email) =>
-      sender() ! updateEmail(user, email)
+      updateEmail(user, email)
       sender() ! Json.toJson("success")
     case UpdateRocketLogin(user, rocketLogin) =>
-      sender() ! updateRocketLogin(user, rocketLogin)
+      updateRocketLogin(user, rocketLogin)
       sender() ! Json.toJson("success")
     case _ => None
   }
