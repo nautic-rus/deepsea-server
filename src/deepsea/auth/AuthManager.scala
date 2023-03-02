@@ -3,7 +3,7 @@ package deepsea.auth
 import akka.actor.Actor
 import com.sun.mail.imap.Rights
 import deepsea.actors.ActorManager
-import deepsea.auth.AuthManager.{AdminRight, DeleteAdminRight, DeleteRole, DeleteUser, EditAdminRight, EditRole, EditUser, GetAdminRightDetails, GetAdminRights, GetPages, GetRightDetails, GetRights, GetRoleDetails, GetRoles, GetUser, GetUserDepartments, GetUserDetails, GetUsers, Login, Page, RightUser, Role, SendLogPass, ShareRights, StartRight, StartRole, StartUser, UpdateEmail, UpdateRocketLogin, User}
+import deepsea.auth.AuthManager.{AdminRight, DeleteAdminRight, DeleteRole, DeleteUser, Department, EditAdminRight, EditRole, EditUser, GetAdminRightDetails, GetAdminRights, GetDepartmentDetails, GetDepartments, GetPages, GetRightDetails, GetRights, GetRoleDetails, GetRoles, GetUser, GetUserDetails, GetUsers, Login, Page, RightUser, Role, SendLogPass, ShareRights, StartRight, StartRole, StartUser, UpdateEmail, UpdateRocketLogin, User}
 import deepsea.database.{DBManager, MongoCodecs}
 import deepsea.mail.MailManager.Mail
 import deepsea.rocket.RocketChatManager.SendNotification
@@ -71,6 +71,7 @@ object AuthManager extends MongoCodecs {
                    var token: String = "",
                    var projects: List[String]
                  )
+
   case class GetRoles()
 
   case class GetRoleDetails(name: String)
@@ -81,7 +82,11 @@ object AuthManager extends MongoCodecs {
 
   case class EditRole(roleJson: String, name: String)
 
-  case class Role(name: String, description: String, rights: List[String])
+  case class Role(
+                   name: String,
+                   description: String,
+                   rights: List[String]
+                 )
 
   case class GetAdminRights()
 
@@ -91,22 +96,37 @@ object AuthManager extends MongoCodecs {
 
   case class EditAdminRight(rightJson: String, name: String)
 
-  case class AdminRight(name: String)
+  case class AdminRight(
+                         name: String
+                       )
 
   case class StartRight(rightJson: String)
 
   case class GetPages()
 
-  case class Page(id: Int, name: String)
+  case class Page(
+                   id: Int,
+                   name: String
+                 )
 
   case class GetRights()
 
   case class GetRightDetails(id: String)
 
-  case class RightUser(userId: Int, role: String)
+  case class RightUser(
+                        userId: Int,
+                        role: String
+                      )
 
-  case class GetUserDepartments()
-  case class UserDepartment(id: Int, name: String, manager: String)
+  case class Department(
+                         id: Int,
+                         name: String,
+                         manager: String
+                       )
+
+  case class GetDepartments()
+
+  case class GetDepartmentDetails(id: String)
 }
 
 class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
@@ -179,6 +199,8 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
     case GetPages() => sender() ! getPages().asJson
     case GetRights() => sender() ! getRights().asJson
     case GetRightDetails(id) => sender() ! getRightDetails(id.toIntOption.getOrElse(0)).asJson
+    case GetDepartments() => sender() ! getDepartments().asJson
+    case GetDepartmentDetails(id) => sender() ! getDepartmentDetail(id).asJson
     case GetUser(login) =>
       getUser(login) match {
         case Some(user) => sender() ! user
@@ -209,8 +231,6 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
     case UpdateRocketLogin(user, rocketLogin) =>
       sender() ! updateRocketLogin(user, rocketLogin)
       sender() ! Json.toJson("success")
-    case GetUserDepartments() =>
-      sender() ! getUserDepartments.asJson.noSpaces
     case _ => None
   }
 
@@ -384,6 +404,7 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
       case _ => "error";
     }
   }
+
   def getAdminRights: ListBuffer[AdminRight] = {
     val res = ListBuffer.empty[AdminRight]
     DBManager.GetPGConnection() match {
@@ -402,6 +423,7 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
       case _ => ListBuffer.empty[AdminRight]
     }
   }
+
   def getAdminRightsDetails(name: String): Option[AdminRight] = {
     var right: Option[AdminRight] = Option.empty[AdminRight]
     DBManager.GetPGConnection() match {
@@ -420,6 +442,7 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
       case _ => Option.empty[AdminRight]
     }
   }
+
   def startRight(right: AdminRight): String = {
     DBManager.GetPGConnection() match {
       case Some(c) =>
@@ -432,6 +455,7 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
       case _ => "error";
     }
   }
+
   def deleteAdminRight(name: String): String = {
     DBManager.GetPGConnection() match {
       case Some(c) =>
@@ -444,6 +468,7 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
       case _ => "error";
     }
   }
+
   def editAdminRight(right: AdminRight, name: String): String = {
     DBManager.GetPGConnection() match {
       case Some(c) =>
@@ -457,6 +482,7 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
     }
 
   }
+
   def getRoles: ListBuffer[Role] = {
     val res = ListBuffer.empty[Role]
     DBManager.GetPGConnection() match {
@@ -581,6 +607,47 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
     }
   }
 
+  def getDepartments(): ListBuffer[Department] = {
+    val res = ListBuffer.empty[Department];
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement();
+        val rs = s.executeQuery(s"select * from issue_departments order by id");
+        while (rs.next()) {
+          res += Department(
+            rs.getInt("id"),
+            rs.getString("name"),
+            rs.getString("manager")
+          )
+        }
+        rs.close();
+        s.close();
+        c.close();
+        res
+      case _ => ListBuffer.empty[Department]
+    }
+  }
+
+  def getDepartmentDetail(id: String): Option[Department] = {
+    var department: Option[Department] = Option.empty[Department]
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement();
+        val rs = s.executeQuery(s"select * from issue_departments where id = '$id'")
+        while (rs.next()) {
+          department = Option(Department(
+            rs.getInt("id"),
+            rs.getString("name"),
+            rs.getString("manager")
+          ))
+        }
+        rs.close();
+        s.close();
+        c.close();
+        department
+      case _ => Option.empty[Department]
+    }
+  }
   def shareWith(user: String, with_user: String): Unit = {
     DBManager.GetPGConnection() match {
       case Some(c) =>

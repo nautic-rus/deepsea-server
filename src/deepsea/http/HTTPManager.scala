@@ -16,7 +16,7 @@ import ch.megard.akka.http.cors.scaladsl.CorsDirectives.cors
 import deepsea.App
 import deepsea.actors.ActorManager
 import deepsea.actors.ActorStartupManager.HTTPManagerStarted
-import deepsea.auth.AuthManager.{DeleteAdminRight, DeleteRole, DeleteUser, EditAdminRight, EditRole, EditUser, GetAdminRightDetails, GetAdminRights, GetPages, GetRightDetails, GetRights, GetRoleDetails, GetRoles, GetUserDepartments, GetUserDetails, GetUsers, Login, SendLogPass, ShareRights, StartRight, StartRole, StartUser, UpdateEmail, UpdateRocketLogin}
+import deepsea.auth.AuthManager.{DeleteAdminRight, DeleteRole, DeleteUser, EditAdminRight, EditRole, EditUser, GetAdminRightDetails, GetAdminRights, GetDepartmentDetails, GetDepartments, GetPages, GetRightDetails, GetRights, GetRoleDetails, GetRoles, GetUserDetails, GetUsers, Login, SendLogPass, ShareRights, StartRight, StartRole, StartUser, UpdateEmail, UpdateRocketLogin}
 import deepsea.fest.FestManager.{DeleteFestKaraoke, DeleteFestSauna, DeleteFestStories, GetBestPlayers, GetFestKaraoke, GetFestSauna, GetFestStories, GetMarks, GetTeamsWon, SetBestPlayer, SetFestKaraoke, SetFestSauna, SetFestStories, SetMarks, SetTeamsWon}
 import deepsea.files.FileManager.{CreateDocumentCloudDirectory, CreateFile, CreateMaterialCloudDirectory, GetCloudFiles, GetDocumentFiles, GetFileFromCloud, GetPdSpList}
 import deepsea.files.classes.FileAttachment
@@ -83,9 +83,6 @@ class HTTPManager extends Actor {
       (get & path("sendLogPass") & parameter("id")) { id =>
         askFor(ActorManager.auth, SendLogPass(id))
       },
-      (get & path("userDepartments")) {
-        askFor(ActorManager.auth, GetUserDepartments())
-      },
       //ROLES
       (get & path("adminRoles")) {
         askFor(ActorManager.auth, GetRoles())
@@ -116,6 +113,12 @@ class HTTPManager extends Actor {
       },
       (post & path("editAdminRight") & entity(as[String]) & parameter("name")) { (right, name) =>
         askFor(ActorManager.auth, EditAdminRight(right, name))
+      },
+      (get & path("departments")) {
+        askFor(ActorManager.auth, GetDepartments())
+      },
+      (get & path("departmentDetails") & parameter("id")) { id =>
+        askFor(ActorManager.auth, GetDepartmentDetails(id))
       },
       //PROJECTS
       (get & path("projectDetails") & parameter("id")) { id =>
@@ -274,7 +277,6 @@ class HTTPManager extends Actor {
       (get & path("planUserTask") & parameter("userId", "available")) { (userId, available) =>
         askFor(ActorManager.planHours, GetUserPlanHours(userId, available))
       },
-
 
       (get & path("subscribeForIssue") & parameter("user") & parameter("issue") & parameter("options")) { (user, issue, options) =>
         askFor(ActorManager.issue, SubscribeForNotifications(user, issue, options))
