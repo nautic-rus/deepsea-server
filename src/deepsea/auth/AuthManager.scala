@@ -69,7 +69,8 @@ object AuthManager extends MongoCodecs {
                    var groups: List[String] = List.empty[String],
                    var permissions: List[String] = List.empty[String],
                    var token: String = "",
-                   var projects: List[String]
+                   var projects: List[String],
+                   var id_department: Int
                  )
 
   case class GetRoles()
@@ -312,7 +313,8 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
             rs.getString("group").split(",").toList,
             getRightDetails(id.toIntOption.getOrElse(0)).toList,
             "",
-            rs.getString("projects").split(",").toList))
+            rs.getString("projects").split(",").toList,
+            rs.getInt("id_department")))
         }
         rs.close()
         s.close()

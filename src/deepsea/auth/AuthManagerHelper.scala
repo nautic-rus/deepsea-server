@@ -36,7 +36,8 @@ trait AuthManagerHelper {
             rs.getString("group").split(",").toList,
             List.empty[String],
             "",
-            rs.getString("projects").split(",").toList
+            rs.getString("projects").split(",").toList,
+            rs.getInt("id_department")
           ))
         }
         s.close()
@@ -93,7 +94,8 @@ trait AuthManagerHelper {
             rs.getString("group").split(",").toList,
             getRightDetails(id).toList,
             "",
-            rs.getString("projects").split(",").toList
+            rs.getString("projects").split(",").toList,
+            rs.getInt("id_department")
           )
         }
         rs.close()
