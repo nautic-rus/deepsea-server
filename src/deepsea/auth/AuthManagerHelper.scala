@@ -1,6 +1,6 @@
 package deepsea.auth
 
-import deepsea.auth.AuthManager.User
+import deepsea.auth.AuthManager.{User, UserDepartment}
 import deepsea.database.DBManager
 
 import scala.collection.mutable.ListBuffer
@@ -121,7 +121,26 @@ trait AuthManagerHelper {
       case _ => ListBuffer.empty[String]
     }
   }
-
+  def getUserDepartments: ListBuffer[UserDepartment] = {
+    val res = ListBuffer.empty[UserDepartment];
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement();
+        val rs = s.executeQuery(s"select * from issue_departments");
+        while (rs.next()) {
+          res += UserDepartment(
+            Option(rs.getInt("rights")).getOrElse(0),
+            Option(rs.getString("name")).getOrElse(""),
+            Option(rs.getString("manager")).getOrElse("")
+            )
+        }
+        rs.close();
+        s.close();
+        c.close();
+        res
+      case _ => ListBuffer.empty[UserDepartment]
+    }
+  }
   def updateEmail(login: String, email: String): Unit ={
     DBManager.GetPGConnection() match {
       case Some(c) =>

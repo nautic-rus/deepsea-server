@@ -3,7 +3,7 @@ package deepsea.auth
 import akka.actor.Actor
 import com.sun.mail.imap.Rights
 import deepsea.actors.ActorManager
-import deepsea.auth.AuthManager.{AdminRight, DeleteAdminRight, DeleteRole, DeleteUser, EditAdminRight, EditRole, EditUser, GetAdminRightDetails, GetAdminRights, GetPages, GetRightDetails, GetRights, GetRoleDetails, GetRoles, GetUser, GetUserDetails, GetUsers, Login, Page, RightUser, Role, SendLogPass, ShareRights, StartRight, StartRole, StartUser, UpdateEmail, UpdateRocketLogin, User}
+import deepsea.auth.AuthManager.{AdminRight, DeleteAdminRight, DeleteRole, DeleteUser, EditAdminRight, EditRole, EditUser, GetAdminRightDetails, GetAdminRights, GetPages, GetRightDetails, GetRights, GetRoleDetails, GetRoles, GetUser, GetUserDepartments, GetUserDetails, GetUsers, Login, Page, RightUser, Role, SendLogPass, ShareRights, StartRight, StartRole, StartUser, UpdateEmail, UpdateRocketLogin, User}
 import deepsea.database.{DBManager, MongoCodecs}
 import deepsea.mail.MailManager.Mail
 import deepsea.rocket.RocketChatManager.SendNotification
@@ -71,7 +71,6 @@ object AuthManager extends MongoCodecs {
                    var token: String = "",
                    var projects: List[String]
                  )
-
   case class GetRoles()
 
   case class GetRoleDetails(name: String)
@@ -82,36 +81,32 @@ object AuthManager extends MongoCodecs {
 
   case class EditRole(roleJson: String, name: String)
 
-  case class Role(
-                   name: String,
-                   description: String,
-                   rights: List[String]
-                 )
+  case class Role(name: String, description: String, rights: List[String])
 
   case class GetAdminRights()
+
   case class GetAdminRightDetails(name: String)
+
   case class DeleteAdminRight(name: String)
+
   case class EditAdminRight(rightJson: String, name: String)
-  case class AdminRight(
-                         name: String
-                       )
+
+  case class AdminRight(name: String)
+
   case class StartRight(rightJson: String)
 
   case class GetPages()
 
-  case class Page(
-                   id: Int,
-                   name: String
-                 )
+  case class Page(id: Int, name: String)
 
   case class GetRights()
 
   case class GetRightDetails(id: String)
 
-  case class RightUser(
-                        userId: Int,
-                        role: String
-                      )
+  case class RightUser(userId: Int, role: String)
+
+  case class GetUserDepartments()
+  case class UserDepartment(id: Int, name: String, manager: String)
 }
 
 class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
@@ -214,6 +209,8 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
     case UpdateRocketLogin(user, rocketLogin) =>
       sender() ! updateRocketLogin(user, rocketLogin)
       sender() ! Json.toJson("success")
+    case GetUserDepartments() =>
+      sender() ! getUserDepartments.asJson.noSpaces
     case _ => None
   }
 

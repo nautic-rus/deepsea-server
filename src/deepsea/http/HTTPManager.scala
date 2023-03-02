@@ -16,7 +16,7 @@ import ch.megard.akka.http.cors.scaladsl.CorsDirectives.cors
 import deepsea.App
 import deepsea.actors.ActorManager
 import deepsea.actors.ActorStartupManager.HTTPManagerStarted
-import deepsea.auth.AuthManager.{DeleteAdminRight, DeleteRole, DeleteUser, EditAdminRight, EditRole, EditUser, GetAdminRightDetails, GetAdminRights, GetPages, GetRightDetails, GetRights, GetRoleDetails, GetRoles, GetUserDetails, GetUsers, Login, SendLogPass, ShareRights, StartRight, StartRole, StartUser, UpdateEmail, UpdateRocketLogin}
+import deepsea.auth.AuthManager.{DeleteAdminRight, DeleteRole, DeleteUser, EditAdminRight, EditRole, EditUser, GetAdminRightDetails, GetAdminRights, GetPages, GetRightDetails, GetRights, GetRoleDetails, GetRoles, GetUserDepartments, GetUserDetails, GetUsers, Login, SendLogPass, ShareRights, StartRight, StartRole, StartUser, UpdateEmail, UpdateRocketLogin}
 import deepsea.fest.FestManager.{DeleteFestKaraoke, DeleteFestSauna, DeleteFestStories, GetBestPlayers, GetFestKaraoke, GetFestSauna, GetFestStories, GetMarks, GetTeamsWon, SetBestPlayer, SetFestKaraoke, SetFestSauna, SetFestStories, SetMarks, SetTeamsWon}
 import deepsea.files.FileManager.{CreateDocumentCloudDirectory, CreateFile, CreateMaterialCloudDirectory, GetCloudFiles, GetDocumentFiles, GetFileFromCloud, GetPdSpList}
 import deepsea.files.classes.FileAttachment
@@ -82,6 +82,9 @@ class HTTPManager extends Actor {
       },
       (get & path("sendLogPass") & parameter("id")) { id =>
         askFor(ActorManager.auth, SendLogPass(id))
+      },
+      (get & path("userDepartments")) {
+        askFor(ActorManager.auth, GetUserDepartments())
       },
       //ROLES
       (get & path("adminRoles")) {
