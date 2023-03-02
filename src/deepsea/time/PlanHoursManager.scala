@@ -3,7 +3,7 @@ package deepsea.time
 import akka.actor.Actor
 import deepsea.auth.AuthManagerHelper
 import deepsea.database.MongoCodecs
-import deepsea.time.PlanHoursManager.{AssignPlanHoursToUsers, GetUserPlanHours, InitPlanHours, PlanHour, SpecialDay}
+import deepsea.time.PlanHoursManager.{AssignPlanHoursToUsers, GetUserPlanHours, InitPlanHours, PlanHour, PlanUserTask, SpecialDay}
 import io.circe.syntax.EncoderOps
 
 import java.util.{Calendar, Date}
@@ -19,7 +19,8 @@ object PlanHoursManager{
   case class SpecialDay(day: Int, month: Int, year: Int, kind: String)
   case class InitPlanHours()
   case class AssignPlanHoursToUsers()
-  case class GetUserPlanHours(userId: String)
+  case class GetUserPlanHours(userId: String, available: String)
+  case class PlanUserTask(userId: String, taskId: String, fromHour: String, amountOfHours: String, allowMove: String)
 }
 class PlanHoursManager extends Actor with PlanHoursHelper with AuthManagerHelper with MongoCodecs{
   val specialDays: List[SpecialDay] = List(
@@ -76,7 +77,7 @@ class PlanHoursManager extends Actor with PlanHoursHelper with AuthManagerHelper
             }
         }
 
-        addPlanHours(hours.toList)
+        addUserPlanHours(hours.toList, user)
 
 
         calendar.add(Calendar.DATE, 1)
@@ -89,8 +90,16 @@ class PlanHoursManager extends Actor with PlanHoursHelper with AuthManagerHelper
         addUserPlanHours(planHours, user.id)
       })
       val q = 0
-    case GetUserPlanHours(userId) =>
-      sender() ! getUserPlanHours(userId.toIntOption.getOrElse(0)).asJson.noSpaces
+    case GetUserPlanHours(userId, available) =>
+      sender() ! getUserPlanHours(userId.toIntOption.getOrElse(0), available = available.toIntOption.getOrElse(0) == 1).asJson.noSpaces
+    case PlanUserTask(userId, taskId, fromHour, amountOfHours, allowMove) =>
+      if (allowMove.toIntOption.getOrElse(0) == 1){
+        setTaskWithMove(userId.toIntOption.getOrElse(0), taskId.toIntOption.getOrElse(0), fromHour.toIntOption.getOrElse(0), amountOfHours.toIntOption.getOrElse(0))
+      }
+      else{
+        setTaskWithoutMove(userId.toIntOption.getOrElse(0), taskId.toIntOption.getOrElse(0), fromHour.toIntOption.getOrElse(0), amountOfHours.toIntOption.getOrElse(0))
+      }
+      sender() ! "success"
     case _ => None
   }
 }
