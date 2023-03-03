@@ -392,7 +392,7 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement();
-        val query = s"update users set id = '${user.id}', login = '${user.login}', password = '${user.password}', name = '${user.name}', surname = '${user.surname}', birthday = '${user.birthday}', email = '${user.email}', phone = '${user.phone}', tcid = '${user.tcid}', avatar = '${user.avatar}', profession = '${user.profession}', visibility = '${user.visibility}', gender = '${user.gender}', department = '${user.department}', rocket_login = '${user.rocket_login}' where id = '$id'"
+        val query = s"update users set id = '${user.id}', login = '${user.login}', password = '${user.password}', name = '${user.name}', surname = '${user.surname}', birthday = '${user.birthday}', email = '${user.email}', phone = '${user.phone}', tcid = '${user.tcid}', avatar = '${user.avatar}', profession = '${user.profession}', visibility = '${user.visibility}', gender = '${user.gender}', department = '${user.department}', rocket_login = '${user.rocket_login}', id_department = '${user.id_department}' where id = '$id'"
         s.execute(query);
         val queryR = s"delete from user_rights where user_id = '$id'";
         s.execute(queryR);
