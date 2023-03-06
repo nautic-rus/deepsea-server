@@ -19,7 +19,7 @@ object PlanHoursManager{
   case class SpecialDay(day: Int, month: Int, year: Int, kind: String)
   case class InitPlanHours()
   case class AssignPlanHoursToUsers()
-  case class GetUserPlanHours(userId: String, available: String)
+  case class GetUserPlanHours(userId: String, startDate: String, available: String)
   case class PlanUserTask(userId: String, taskId: String, fromHour: String, amountOfHours: String, allowMove: String)
 }
 class PlanHoursManager extends Actor with PlanHoursHelper with AuthManagerHelper with MongoCodecs{
@@ -58,7 +58,7 @@ class PlanHoursManager extends Actor with PlanHoursHelper with AuthManagerHelper
         val hours = ListBuffer.empty[PlanHour]
         val user = 0
 
-        specialDays.find(x => x.day == day && x.month == month && x.year == year) match {
+        specialDays.find(x => x.day == day && x.month - 1 == month && x.year == year) match {
           case Some(specialDay: SpecialDay) =>
             specialDay.kind match {
               case "ordinary" =>
@@ -77,7 +77,7 @@ class PlanHoursManager extends Actor with PlanHoursHelper with AuthManagerHelper
             }
         }
 
-        addUserPlanHours(hours.toList, user)
+        addPlanHours(hours.toList, user)
 
 
         calendar.add(Calendar.DATE, 1)
@@ -90,8 +90,8 @@ class PlanHoursManager extends Actor with PlanHoursHelper with AuthManagerHelper
         addUserPlanHours(planHours, user.id)
       })
       val q = 0
-    case GetUserPlanHours(userId, available) =>
-      sender() ! getUserPlanHours(userId.toIntOption.getOrElse(0), available = available.toIntOption.getOrElse(0) == 1).asJson.noSpaces
+    case GetUserPlanHours(userId, startDate, available) =>
+      sender() ! getUserPlanHours(userId.toIntOption.getOrElse(0), startDate = startDate.toLongOption.getOrElse(0), available = available.toIntOption.getOrElse(0) == 1).asJson.noSpaces
     case PlanUserTask(userId, taskId, fromHour, amountOfHours, allowMove) =>
       if (allowMove.toIntOption.getOrElse(0) == 1){
         setTaskWithMove(userId.toIntOption.getOrElse(0), taskId.toIntOption.getOrElse(0), fromHour.toIntOption.getOrElse(0), amountOfHours.toIntOption.getOrElse(0))

@@ -121,6 +121,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
   implicit val timeout: Timeout = Timeout(30, TimeUnit.SECONDS)
 
   override def preStart(): Unit = {
+    self ! GetIssueDetails(8704.toString)
 //    ActorManager.files ! GetDocumentFiles(602.toString)
 //    self ! GetIssues("op")
 //    self ! GetIssueDetails(1272.toString)
@@ -186,7 +187,18 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
           if (issue.issue_type == "QNA"){
             val q = '"'
             val rocket = s"Был задан новый вопрос " + s"<${App.HTTPServer.Url}/qna-details?id=${result}|${(issue.doc_number + " " + issue.name).trim}>"
-            val email = s"Был задан новый вопрос " + s"<a href=$q${App.HTTPServer.Url}/qna-details?id=${result}$q>${(issue.doc_number + " " + issue.name).trim}</a>"
+
+            getUser(issue.started_by) match {
+              case Some(startedBy) =>
+                val email = s"Hello dear &user, there is a new question with id #${issue.id} has been asked by ${startedBy.surname} ${startedBy.name}. You can view it via clicking next url " + s"<a href=$q${App.HTTPServer.Url}/qna-details?id=${result}$q>${(issue.doc_number + " " + issue.name).trim}</a>"
+//                getUsers.filter(x => (x.groups.contains("Nautic_Is") && x.email != "") || x.login == "voronin").foreach(u => {
+//                  ActorManager.mail ! Mail(u.surname + " " + u.name, u.email, "DeepSea QnA Notification", email.replace("&user", u.surname + " " + u.name))
+//                })
+                getUsers.filter(x => x.login == "isaev").foreach(u => {
+                  ActorManager.mail ! Mail(u.surname + " " + u.name, u.email, "DeepSea QnA Notification", email.replace("&user", u.surname + " " + u.name))
+                })
+              case _ => None
+            }
           }
           else{
             if (issue.assigned_to != ""){
@@ -226,7 +238,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
               if (issue.issue_type == "QNA"){
                 val q = '"'
                 val rocket = s"Изменилась информация в задаче " + s"<${App.HTTPServer.Url}/qna-details?id=${issue.id}|${(issue.doc_number + " " + issue.name).trim}>"
-                val email = s"Изменилась информация в задаче " + s"<a href=$q${App.HTTPServer.Url}/qna-details?id=${issue.id}$q>${(issue.doc_number + " " + issue.name).trim}</a>"
+                val email = s"Changed information for a question " + s"<a href=$q${App.HTTPServer.Url}/qna-details?id=${issue.id}$q>${(issue.doc_number + " " + issue.name).trim}</a>"
                 notifySubscribers(issue.id, email, rocket)
                 getUser(issue.assigned_to) match {
                   case Some(value) =>
@@ -289,6 +301,21 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
           val id = _id.toIntOption.getOrElse(0)
           val messageId = setIssueMessage(id, msg)
           msg.file_attachments.foreach(x => setMessageFileAttachments(messageId, x))
+
+          getIssueDetails(id) match {
+            case Some(issue) =>
+              val notifiers = List(issue.started_by, issue.responsible, issue.assigned_to).filter(_ != msg.author)
+              if (issue.issue_type == "QNA"){
+                val q = '"'
+                val email = s"Hello dear &user, there is a new comment for question with id #${issue.id} has been posted. You can view it via clicking next url " + s"<a href=$q${App.HTTPServer.Url}/qna-details?id=${issue.id}$q>${(issue.doc_number + " " + issue.name).trim}</a>"
+                getUsers.filter(x => x.login == "isaev").foreach(u => {
+                  ActorManager.mail ! Mail(u.surname + " " + u.name, u.email, "DeepSea QnA Notification", email.replace("&user", u.surname + " " + u.name))
+                })
+              }
+
+            case _ => None
+          }
+
           //msg.fileAttachments.foreach(x => setIssueFileAttachments(id, x))
 //          ActorManager.rocket ! SendNotification(msg.author, s"Появилось новое сообщение к задаче " + s"<${App.HTTPServer.Url}/?taskId=${id} | Просмотреть задачу>")
           sender() ! Json.toJson("success")

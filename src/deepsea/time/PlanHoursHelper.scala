@@ -48,6 +48,20 @@ trait PlanHoursHelper {
       case _ => List.empty[PlanHour]
     }
   }
+  def addPlanHours(planHours: List[PlanHour], user: Int): Unit ={
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        c.setAutoCommit(false)
+        planHours.foreach(p => {
+          s.execute(s"insert into hours_template (day, month, year, hour_type, day_type, day_of_week) values (${p.day}, ${p.month}, ${p.year}, ${p.hour_type}, ${p.day_type}, ${p.day_of_week})")
+        })
+        c.commit()
+        s.close()
+        c.close()
+      case _ =>
+    }
+  }
   def addUserPlanHours(planHours: List[PlanHour], user: Int): Unit ={
     DBManager.GetPGConnection() match {
       case Some(c) =>
@@ -160,14 +174,16 @@ trait PlanHoursHelper {
         val startDay = calendar.get(Calendar.DATE)
         val startMonth = calendar.get(Calendar.MONTH)
         val startYear = calendar.get(Calendar.YEAR)
+        val startDateValue = new Date(startYear, startMonth, startDay)
 
         calendar.add(Calendar.DATE, amount)
         val endDay = calendar.get(Calendar.DATE)
         val endMonth = calendar.get(Calendar.MONTH)
         val endYear = calendar.get(Calendar.YEAR)
+        val endDateValue = new Date(endYear, endMonth, endDay)
 
         val userFilter = s"(user_id = $userId or $userId = 0)"
-        val dateFilter = s"((day >= $startDay and day <= $endDay and month >= $startMonth and month <= $endMonth and year <= $startYear and year >= $endYear) or $available)"
+        val dateFilter = s"((month >= $startMonth and month <= $endMonth and year >= $startYear and year <= $endYear) or $available)"
         val query = s"select * from hours_template_user where $userFilter and $dateFilter"
         val s = c.createStatement()
         val planHours = RsIterator(s.executeQuery(query)).map(rs => {
@@ -185,7 +201,7 @@ trait PlanHoursHelper {
         }).toList
         s.close()
         c.close()
-        planHours.sortBy(_.id)
+        planHours.filter(p => available || (startDateValue.getTime <= new Date(p.year, p.month, p.day).getTime && new Date(p.year, p.month, p.day).getTime < endDateValue.getTime)).sortBy(_.id)
       case _ => List.empty[PlanHour]
     }
   }

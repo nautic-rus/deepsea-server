@@ -440,7 +440,7 @@ trait IssueManagerHelper extends MongoCodecs with AuthManagerHelper{
               case _ => ""
             }
             revision_files = getRevisionFiles(id)
-            cloud_files = getCloudFiles(project, doc_number, department)
+            cloud_files = if (issue_type == "RKD") getCloudFiles(project, doc_number, department) else List.empty[FileAttachment]
             //cloud_files = List.empty[FileAttachment]
             archive_revision_files = getRemovedRevisionFiles(id)
             labor = getIssueLabor(id)
