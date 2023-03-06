@@ -184,18 +184,18 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
         case Some(issue) =>
           val result = startIssue(issue)
           issue.file_attachments.foreach(x => setIssueFileAttachments(result, x))
-          if (issue.issue_type == "QNA"){
+          if (issue.issue_type == "QNA" && issue.project == "NR004"){
             val q = '"'
             val rocket = s"Был задан новый вопрос " + s"<${App.HTTPServer.Url}/qna-details?id=${result}|${(issue.doc_number + " " + issue.name).trim}>"
 
             getUser(issue.started_by) match {
               case Some(startedBy) =>
-                val email = s"Hello dear &user, there is a new question with id #${issue.id} has been asked by ${startedBy.surname} ${startedBy.name}. You can view it via clicking next url " + s"<a href=$q${App.HTTPServer.Url}/qna-details?id=${result}$q>${(issue.doc_number + " " + issue.name).trim}</a>"
+                val email = s"Hello &user, there is a new question with id #$result has been asked by ${transliterate(startedBy.surname + " " + startedBy.name)}. You can view it via clicking next url " + s"<a href=$q${App.HTTPServer.Url}/qna?taskId=${result}$q>${(issue.doc_number + " " + issue.name).trim}</a>"
 //                getUsers.filter(x => (x.groups.contains("Nautic_Is") && x.email != "") || x.login == "voronin").foreach(u => {
 //                  ActorManager.mail ! Mail(u.surname + " " + u.name, u.email, "DeepSea QnA Notification", email.replace("&user", u.surname + " " + u.name))
 //                })
-                getUsers.filter(x => x.login == "isaev").foreach(u => {
-                  ActorManager.mail ! Mail(u.surname + " " + u.name, u.email, "DeepSea QnA Notification", email.replace("&user", u.surname + " " + u.name))
+                getUsers.filter(x => (x.groups.contains("Nautic_Is") && x.email != "") || x.login == "voronin").foreach(u => {
+                  ActorManager.mail ! Mail(transliterate(u.surname + " " + u.name), u.email, "DeepSea QnA Notification", email.replace("&user", transliterate(u.surname + " " + u.name)))
                 })
               case _ => None
             }
@@ -237,8 +237,8 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
             case Some(update) =>
               if (issue.issue_type == "QNA"){
                 val q = '"'
-                val rocket = s"Изменилась информация в задаче " + s"<${App.HTTPServer.Url}/qna-details?id=${issue.id}|${(issue.doc_number + " " + issue.name).trim}>"
-                val email = s"Changed information for a question " + s"<a href=$q${App.HTTPServer.Url}/qna-details?id=${issue.id}$q>${(issue.doc_number + " " + issue.name).trim}</a>"
+                val rocket = s"Изменилась информация в задаче " + s"<${App.HTTPServer.Url}/qna?taskId=${issue.id}|${(issue.doc_number + " " + issue.name).trim}>"
+                val email = s"Changed information for a question " + s"<a href=$q${App.HTTPServer.Url}/qna?taskId=${issue.id}$q>${(issue.doc_number + " " + issue.name).trim}</a>"
                 notifySubscribers(issue.id, email, rocket)
                 getUser(issue.assigned_to) match {
                   case Some(value) =>
@@ -304,13 +304,17 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
 
           getIssueDetails(id) match {
             case Some(issue) =>
-              val notifiers = List(issue.started_by, issue.responsible, issue.assigned_to).filter(_ != msg.author)
+              val notifiers = (List(issue.started_by, issue.responsible, issue.assigned_to).filter(_ != msg.author) ++ issue.messages.map(_.author)).distinct
               if (issue.issue_type == "QNA"){
-                val q = '"'
-                val email = s"Hello dear &user, there is a new comment for question with id #${issue.id} has been posted. You can view it via clicking next url " + s"<a href=$q${App.HTTPServer.Url}/qna-details?id=${issue.id}$q>${(issue.doc_number + " " + issue.name).trim}</a>"
-                getUsers.filter(x => x.login == "isaev").foreach(u => {
-                  ActorManager.mail ! Mail(u.surname + " " + u.name, u.email, "DeepSea QnA Notification", email.replace("&user", u.surname + " " + u.name))
-                })
+                getUser(msg.author) match {
+                  case Some(msgAuthor) =>
+                    val q = '"'
+                    val email = s"Hello &user, there is a new comment for question with id #${issue.id} has been posted by ${transliterate(msgAuthor.surname + " " + msgAuthor.name)}. You can view it via clicking next url " + s"<a href=$q${App.HTTPServer.Url}/qna?taskId=${issue.id}$q>${(issue.doc_number + " " + issue.name).trim}</a>"
+                    getUsers.filter(x => notifiers.contains(x.login)).foreach(u => {
+                      ActorManager.mail ! Mail(transliterate(u.surname + " " + u.name), u.email, "DeepSea QnA Notification", email.replace("&user", transliterate(u.surname + " " + u.name)))
+                    })
+                  case _ => None
+                }
               }
 
             case _ => None
