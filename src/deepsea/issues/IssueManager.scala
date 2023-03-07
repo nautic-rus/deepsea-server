@@ -194,7 +194,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
 //                getUsers.filter(x => (x.groups.contains("Nautic_Is") && x.email != "") || x.login == "voronin").foreach(u => {
 //                  ActorManager.mail ! Mail(u.surname + " " + u.name, u.email, "DeepSea QnA Notification", email.replace("&user", u.surname + " " + u.name))
 //                })
-                getUsers.filter(x => (x.groups.contains("Nautic_Is") && x.email != "") || x.login == "voronin").foreach(u => {
+                getUsers.filter(x => (x.groups.contains("Nautic_Is") && x.email != "") || x.login == "voronin" || x.login == "kokovin").foreach(u => {
                   ActorManager.mail ! Mail(transliterate(u.surname + " " + u.name), u.email, "DeepSea QnA Notification", email.replace("&user", transliterate(u.surname + " " + u.name)))
                 })
               case _ => None
@@ -310,7 +310,8 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
                   case Some(msgAuthor) =>
                     val q = '"'
                     val email = s"Hello &user, there is a new comment for question with id #${issue.id} has been posted by ${transliterate(msgAuthor.surname + " " + msgAuthor.name)}. You can view it via clicking next url " + s"<a href=$q${App.HTTPServer.Url}/qna?taskId=${issue.id}$q>${(issue.doc_number + " " + issue.name).trim}</a>"
-                    getUsers.filter(x => notifiers.contains(x.login)).foreach(u => {
+//                    getUsers.filter(x => notifiers.contains(x.login)).foreach(u => {
+                    getUsers.filter(x => (x.groups.contains("Nautic_Is") && x.email != "") || x.login == "voronin" || x.login == "kokovin").foreach(u => {
                       ActorManager.mail ! Mail(transliterate(u.surname + " " + u.name), u.email, "DeepSea QnA Notification", email.replace("&user", transliterate(u.surname + " " + u.name)))
                     })
                   case _ => None

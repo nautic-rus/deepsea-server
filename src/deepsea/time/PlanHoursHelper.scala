@@ -79,17 +79,20 @@ trait PlanHoursHelper {
 
   def setTaskWithoutMove(userId: Int, taskId: Int, fromHour: Int, amountOfHours: Int): Unit ={
     var hoursAssigned = amountOfHours
-    var hourValue = getHour(fromHour, userId)
+    var fromHourValue = fromHour
+    var hourValue = getHour(fromHourValue, userId)
     while (hoursAssigned > 0 || hourValue.nonEmpty){
       hourValue match {
         case Some(hour) =>
           if (hour.isFree){
             setHour(hour.id, taskId)
-            hoursAssigned += 1
+            hoursAssigned -= 1
           }
+          fromHourValue = hour.id
         case _ =>
+          fromHourValue += 1
       }
-      hourValue = getNextHour(fromHour, userId)
+      hourValue = getNextHour(fromHourValue, userId)
     }
   }
   def setTaskWithMove(userId: Int, taskId: Int, fromHourId: Int, amountOfHours: Int): Unit ={
