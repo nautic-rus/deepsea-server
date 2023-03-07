@@ -3,7 +3,7 @@ package deepsea.auth
 import akka.actor.Actor
 import com.sun.mail.imap.Rights
 import deepsea.actors.ActorManager
-import deepsea.auth.AuthManager.{AdminRight, DeleteAdminRight, DeleteRole, DeleteUser, Department, EditAdminRight, EditRole, EditUser, GetAdminRightDetails, GetAdminRights, GetDepartmentDetails, GetDepartments, GetPages, GetRightDetails, GetRights, GetRoleDetails, GetRoles, GetUser, GetUserDetails, GetUsers, Login, Page, RightUser, Role, SendLogPass, ShareRights, StartRight, StartRole, StartUser, UpdateEmail, UpdateRocketLogin, User}
+import deepsea.auth.AuthManager.{AdminRight, DeleteAdminRight, DeleteRole, DeleteUser, Department, EditAdminRight, EditRole, EditUser, GetAdminRightDetails, GetAdminRights, GetDepartmentDetails, GetDepartments, GetPages, GetRightDetails, GetRights, GetRoleDetails, GetRoleRights, GetRoles, GetUser, GetUserDetails, GetUsers, Login, Page, RightUser, Role, SendLogPass, ShareRights, StartRight, StartRole, StartUser, UpdateEmail, UpdateRocketLogin, User}
 import deepsea.database.{DBManager, MongoCodecs}
 import deepsea.mail.MailManager.Mail
 import deepsea.rocket.RocketChatManager.SendNotification
@@ -76,6 +76,7 @@ object AuthManager extends MongoCodecs {
   case class GetRoles()
 
   case class GetRoleDetails(name: String)
+  case class GetRoleRights(name: String)
 
   case class StartRole(roleJson: String)
 
@@ -165,6 +166,7 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
     case GetUserDetails(id) => sender() ! getUserDetails(id).asJson.noSpaces
     case GetRoles() => sender() ! getRoles.asJson
     case GetRoleDetails(name) => sender() ! getRoleDetails(name).asJson
+    case GetRoleRights(name) => sender() ! getRoleRights(name).asJson
     case StartRole(roleJson) =>
       circe.jawn.decode[Role](roleJson) match {
         case Right(role) =>
@@ -392,7 +394,8 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement();
-        val query = s"update users set id = '${user.id}', login = '${user.login}', password = '${user.password}', name = '${user.name}', surname = '${user.surname}', birthday = '${user.birthday}', email = '${user.email}', phone = '${user.phone}', tcid = '${user.tcid}', avatar = '${user.avatar}', profession = '${user.profession}', visibility = '${user.visibility}', gender = '${user.gender}', department = '${user.department}', rocket_login = '${user.rocket_login}', id_department = '${user.id_department}' where id = '$id'"
+        val q = '"'
+        val query = s"update users set id = '${user.id}', login = '${user.login}', password = '${user.password}', name = '${user.name}', surname = '${user.surname}', birthday = '${user.birthday}', email = '${user.email}', phone = '${user.phone}', tcid = '${user.tcid}', avatar = '${user.avatar}', profession = '${user.profession}', visibility = '${user.visibility}', gender = '${user.gender}', department = '${user.department}', rocket_login = '${user.rocket_login}', ${q}group${q} = '${user.groups.mkString(",")}', id_department = '${user.id_department}' where id = '$id'"
         s.execute(query);
         val queryR = s"delete from user_rights where user_id = '$id'";
         s.execute(queryR);
@@ -527,6 +530,23 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
     }
   }
 
+  def getRoleRights(name: String): List[String] = {
+    var rights: List[String] = List.empty[String]
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement();
+        val rs = s.executeQuery(s"select rights from roles where name = '$name'");
+        while (rs.next()) {
+          rights = rs.getString("rights").split(",").toList
+        }
+        rs.close()
+        s.close()
+        c.close()
+        rights
+      case _ => List.empty[String]
+    }
+  }
+
   def deleteRole(name: String): String = {
     DBManager.GetPGConnection() match {
       case Some(c) =>
@@ -558,7 +578,7 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement();
-        val query = s"update roles set description = '${role.description}', rights = '${role.rights.mkString(",")}' where name = '$name'";
+        val query = s"update roles set name = '${role.name}', description = '${role.description}', rights = '${role.rights.mkString(",")}' where name = '$name'";
         s.execute(query);
         //        val queryR = s"update user_rights set rights = '${role.name}' where rights = '$name'";
         //        s.execute(queryR);
