@@ -3,7 +3,7 @@ package deepsea.auth
 import akka.actor.Actor
 import com.sun.mail.imap.Rights
 import deepsea.actors.ActorManager
-import deepsea.auth.AuthManager.{AdminRight, DeleteAdminRight, DeleteRole, DeleteUser, Department, EditAdminRight, EditRole, EditUser, GetAdminRightDetails, GetAdminRights, GetDepartmentDetails, GetDepartments, GetPages, GetRightDetails, GetRights, GetRoleDetails, GetRoleRights, GetRoles, GetUser, GetUserDetails, GetUsers, Login, Page, RightUser, Role, SendLogPass, ShareRights, StartRight, StartRole, StartUser, UpdateEmail, UpdateRocketLogin, User}
+import deepsea.auth.AuthManager.{AdminRight, DeleteAdminRight, DeleteRole, DeleteUser, Department, EditAdminRight, EditRole, EditUser, GetAdminRightDetails, GetAdminRights, GetDepartmentDetails, GetDepartments, GetPages, GetRightDetails, GetRights, GetRoleDetails, GetRoleRights, GetRoles, GetUser, GetUserDetails, GetUsers, Login, Page, RightUser, Role, SaveRoleForAll, SendLogPass, ShareRights, StartRight, StartRole, StartUser, UpdateEmail, UpdateRocketLogin, User}
 import deepsea.database.{DBManager, MongoCodecs}
 import deepsea.mail.MailManager.Mail
 import deepsea.rocket.RocketChatManager.SendNotification
@@ -19,6 +19,7 @@ import org.mongodb.scala.result
 
 import java.sql.Date
 import java.util.UUID
+import scala.collection.immutable.Stream.Empty
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.io.Source
@@ -76,9 +77,12 @@ object AuthManager extends MongoCodecs {
   case class GetRoles()
 
   case class GetRoleDetails(name: String)
+
   case class GetRoleRights(name: String)
 
   case class StartRole(roleJson: String)
+
+  case class SaveRoleForAll(name: String)
 
   case class DeleteRole(name: String)
 
@@ -174,6 +178,7 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
           sender() ! result.asJson
         case _ => sender() ! "error".asJson
       }
+    case SaveRoleForAll(name) => sender() ! saveRoleForAll(name)
     case DeleteRole(name) => sender() ! deleteRole(name).asJson
     case EditRole(rolJson, name) =>
       circe.jawn.decode[Role](rolJson) match {
@@ -395,7 +400,7 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
       case Some(c) =>
         val s = c.createStatement();
         val q = '"'
-        val query = s"update users set id = '${user.id}', login = '${user.login}', password = '${user.password}', name = '${user.name}', surname = '${user.surname}', birthday = '${user.birthday}', email = '${user.email}', phone = '${user.phone}', tcid = '${user.tcid}', avatar = '${user.avatar}', profession = '${user.profession}', visibility = '${user.visibility}', gender = '${user.gender}', department = '${user.department}', rocket_login = '${user.rocket_login}', ${q}group${q} = '${user.groups.mkString(",")}', id_department = '${user.id_department}' where id = '$id'"
+        val query = s"update users set id = '${user.id}', login = '${user.login}', password = '${user.password}', name = '${user.name}', surname = '${user.surname}', email = '${user.email}', phone = '${user.phone}', tcid = '${user.tcid}', avatar = '${user.avatar}', profession = '${user.profession}', visibility = '${user.visibility}', gender = '${user.gender}', department = '${user.department}', rocket_login = '${user.rocket_login}', ${q}group${q} = '${user.groups.mkString(",")}', id_department = '${user.id_department}' where id = '$id'"
         s.execute(query);
         val queryR = s"delete from user_rights where user_id = '$id'";
         s.execute(queryR);
@@ -573,6 +578,28 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
       case _ => "error";
     }
   }
+
+  def saveRoleForAll(name: String): String = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        var id_users = ListBuffer.empty[String]
+        val s = c.createStatement();
+        val q = '"'
+        val query = s"select id from users where ${q}group${q} like '%' || '${name}' || '%'"
+        val rs = s.executeQuery(query);
+        while (rs.next()) {
+          id_users += (
+            rs.getString("id")
+          )
+        }
+        id_users.foreach(id => {
+          ""
+        })
+        "success"
+      case _ => "error";
+    }
+  }
+
 
   def editRole(role: Role, name: String): String = {
     DBManager.GetPGConnection() match {
