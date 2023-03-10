@@ -9,7 +9,7 @@ import deepsea.database.{DBManager, DatabaseManager, MongoCodecs}
 import deepsea.files.FileManager.{CloudFile, DocumentDirectories}
 import deepsea.files.FileManagerHelper
 import deepsea.files.classes.FileAttachment
-import deepsea.issues.IssueManager.{DailyTask, GroupFolder, Subscriber}
+import deepsea.issues.IssueManager.{DailyTask, GroupFolder, IssueProject, Subscriber}
 import deepsea.issues.classes.{ChildIssue, Issue, IssueAction, IssueCheck, IssueHistory, IssueMessage, IssuePeriod, SfiCode}
 import deepsea.mail.MailManager.Mail
 import deepsea.materials.MaterialManager.ProjectName
@@ -46,6 +46,8 @@ trait IssueManagerHelper extends MongoCodecs with AuthManagerHelper{
         if (user.permissions.contains("view_all_tasks")){
           query += s" or (id > 0)"
         }
+        query += s" or (i.department in (select name from issue_departments id where '${user.login}' in (id.manager)))"
+        query += s" or (i.project in (select name from issue_projects ip where '${user.login}' in (ip.managers)))"
         query += ")"
         val rs = s.executeQuery(query)
         while (rs.next()){
@@ -1378,7 +1380,31 @@ trait IssueManagerHelper extends MongoCodecs with AuthManagerHelper{
     }
     res
   }
-
+  def getIssueProjects: ListBuffer[IssueProject] ={
+    val res = ListBuffer.empty[IssueProject]
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val rs = s.executeQuery(s"select * from issue_projects where status = 0 order by id")
+        while (rs.next()){
+          res += IssueProject(
+            Option(rs.getInt("id")).getOrElse(0),
+            Option(rs.getString("name")).getOrElse(""),
+            Option(rs.getString("pdsp")).getOrElse(""),
+            Option(rs.getString("rkd")).getOrElse(""),
+            Option(rs.getString("foran")).getOrElse(""),
+            Option(rs.getString("factory")).getOrElse(""),
+            Option(rs.getString("managers")).getOrElse(""),
+            Option(rs.getString("status")).getOrElse("")
+          )
+        }
+        rs.close()
+        s.close()
+        c.close()
+      case _ =>
+    }
+    res
+  }
   def transliterate(message: String): String = {
     val abcCyr: Array[Char] = Array(' ', 'а', 'б', 'в', 'г', 'д', 'е', 'ё', 'ж', 'з', 'и', 'й', 'к', 'л', 'м', 'н', 'о', 'п', 'р', 'с', 'т', 'у', 'ф', 'х', 'ц', 'ч', 'ш', 'щ', 'ъ', 'ы', 'ь', 'э', 'ю', 'я', 'А', 'Б', 'В', 'Г', 'Д', 'Е', 'Ё', 'Ж', 'З', 'И', 'Й', 'К', 'Л', 'М', 'Н', 'О', 'П', 'Р', 'С', 'Т', 'У', 'Ф', 'Х', 'Ц', 'Ч', 'Ш', 'Щ', 'Ъ', 'Ы', 'Ь', 'Э', 'Ю', 'Я', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z')
     val abcLat: Array[String] = Array(" ", "a", "b", "v", "g", "d", "e", "e", "zh", "z", "i", "y", "k", "l", "m", "n", "o", "p", "r", "s", "t", "u", "f", "h", "ts", "ch", "sh", "sch", "", "i", "", "e", "ju", "ja", "A", "B", "V", "G", "D", "E", "E", "Zh", "Z", "I", "Y", "K", "L", "M", "N", "O", "P", "R", "S", "T", "U", "F", "H", "Ts", "Ch", "Sh", "Sch", "", "I", "", "E", "Ju", "Ja", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z")

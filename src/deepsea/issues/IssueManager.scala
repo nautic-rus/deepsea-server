@@ -496,31 +496,6 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     }
     res
   }
-  def getIssueProjects: ListBuffer[IssueProject] ={
-    val res = ListBuffer.empty[IssueProject]
-    DBManager.GetPGConnection() match {
-      case Some(c) =>
-        val s = c.createStatement()
-        val rs = s.executeQuery(s"select * from issue_projects where status = 0 order by id")
-        while (rs.next()){
-          res += IssueProject(
-            Option(rs.getInt("id")).getOrElse(0),
-            Option(rs.getString("name")).getOrElse(""),
-            Option(rs.getString("pdsp")).getOrElse(""),
-            Option(rs.getString("rkd")).getOrElse(""),
-            Option(rs.getString("foran")).getOrElse(""),
-            Option(rs.getString("factory")).getOrElse(""),
-            Option(rs.getString("managers")).getOrElse(""),
-            Option(rs.getString("status")).getOrElse("")
-          )
-        }
-        rs.close()
-        s.close()
-        c.close()
-      case _ =>
-    }
-    res
-  }
   def getProjectDetails(id: String): Option[IssueProject] = {
     var project: Option[IssueProject] = Option.empty[IssueProject]
     DBManager.GetPGConnection() match {

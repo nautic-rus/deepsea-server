@@ -78,15 +78,15 @@ trait PlanHoursHelper {
   }
 
   def setTaskWithoutMove(userId: Int, taskId: Int, fromHour: Int, amountOfHours: Int): Unit ={
-    var hoursAssigned = amountOfHours
+    var hoursAssigned = 0
     var fromHourValue = fromHour
     var hourValue = getHour(fromHourValue, userId)
-    while (hoursAssigned > 0 || hourValue.nonEmpty){
+    while (hoursAssigned < amountOfHours){
       hourValue match {
         case Some(hour) =>
           if (hour.isFree){
             setHour(hour.id, taskId)
-            hoursAssigned -= 1
+            hoursAssigned += 1
           }
           fromHourValue = hour.id
         case _ =>
@@ -97,7 +97,7 @@ trait PlanHoursHelper {
   }
   def setTaskWithMove(userId: Int, taskId: Int, fromHourId: Int, amountOfHours: Int): Unit ={
     val userPlanHours = getUserPlanHours(userId, available = true)
-    val taskHours = userPlanHours.filter(_.hour_type == 1).filter(_.id > fromHourId).take(amountOfHours).map(h => AllocatedHour(h.id, h.task_id))
+    val taskHours = userPlanHours.filter(_.hour_type == 1).filter(_.id >= fromHourId).take(amountOfHours).map(h => AllocatedHour(h.id, h.task_id))
     moveHoursRight(taskHours, userPlanHours)
     DBManager.GetPGConnection() match {
       case Some(c) =>
@@ -158,11 +158,16 @@ trait PlanHoursHelper {
     }
   }
   def allocateHours(hoursValue: List[AllocatedHour], fromHourId: Int, userHours: List[PlanHour]): List[AllocatedHour] ={
-    val hours = hoursValue.sortBy(_.id)
-    val nextHours = userHours.filter(_.hour_type == 1).filter(_.id > fromHourId).take(hours.length)
-    val assignedHours = nextHours.map(h => AllocatedHour(h.id, hours(nextHours.indexOf(h)).taskId))
-    val taskHours = nextHours.filter(_.task_id != 0).map(h => AllocatedHour(h.id, h.task_id))
-    assignedHours ++ allocateHours(taskHours, nextHours.last.id, userHours)
+    if (hoursValue.nonEmpty){
+      val hours = hoursValue.sortBy(_.id)
+      val nextHours = userHours.filter(_.hour_type == 1).filter(_.id > fromHourId).take(hours.length)
+      val assignedHours = nextHours.map(h => AllocatedHour(h.id, hours(nextHours.indexOf(h)).taskId))
+      val taskHours = nextHours.filter(_.task_id != 0).map(h => AllocatedHour(h.id, h.task_id))
+      assignedHours ++ allocateHours(taskHours, nextHours.last.id, userHours)
+    }
+    else{
+      List.empty[AllocatedHour]
+    }
   }
   def getUserPlanHours(userId: Int, startDate: Long = 0, amount: Int = 31, available: Boolean = false): List[PlanHour] ={
     DBManager.GetPGConnection() match {
@@ -235,10 +240,35 @@ trait PlanHoursHelper {
       case _ => List.empty[PlanHour]
     }
   }
+  def getDayHours(userId: Int, day: Int, month: Int, year: Int): List[PlanHour] ={
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val query = s"select * from hours_template_user where user_id = $userId and day = $day and month = $month and year = $year"
+        val s = c.createStatement()
+        val planHours = RsIterator(s.executeQuery(query)).map(rs => {
+          PlanHour(
+            Option(rs.getInt("day")).getOrElse(0),
+            Option(rs.getInt("month")).getOrElse(0),
+            Option(rs.getInt("year")).getOrElse(0),
+            Option(rs.getInt("hour_type")).getOrElse(0),
+            Option(rs.getInt("day_type")).getOrElse(0),
+            Option(rs.getInt("day_of_week")).getOrElse(0),
+            Option(rs.getInt("user_id")).getOrElse(0),
+            Option(rs.getInt("id")).getOrElse(0),
+            Option(rs.getInt("task_id")).getOrElse(0),
+          )
+        }).toList
+        s.close()
+        c.close()
+        planHours.sortBy(_.id)
+      case _ => List.empty[PlanHour]
+    }
+  }
+
   def getTaskHours(taskId: Int): List[PlanHour] ={
     DBManager.GetPGConnection() match {
       case Some(c) =>
-        val query = s"select * from hours_template_user where taskId = $taskId"
+        val query = s"select * from hours_template_user where task_id = $taskId"
         val s = c.createStatement()
         val planHours = RsIterator(s.executeQuery(query)).map(rs => {
           PlanHour(
@@ -290,6 +320,15 @@ trait PlanHoursHelper {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val query = s"update hours_template_user set task_id = $taskId where id = $id"
+        c.createStatement().execute(query)
+        c.close()
+      case _ =>
+    }
+  }
+  def deleteUserTask(userId: Int, taskId: Int, fromHour: Int): Unit ={
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val query = s"update hours_template_user set task_id = 0 where task_id = $taskId and (id >= $fromHour or $fromHour = 0) and user_id = $userId"
         c.createStatement().execute(query)
         c.close()
       case _ =>
