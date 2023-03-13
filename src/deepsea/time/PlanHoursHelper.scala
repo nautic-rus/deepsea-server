@@ -169,7 +169,7 @@ trait PlanHoursHelper {
       List.empty[AllocatedHour]
     }
   }
-  def getUserPlanHours(userId: Int, startDate: Long = 0, amount: Int = 31, available: Boolean = false): List[PlanHour] ={
+  def getUserPlanHours(userId: Int, startDate: Long = 0, amount: Int = 25, available: Boolean = false): List[PlanHour] ={
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val calendar = Calendar.getInstance()
@@ -177,7 +177,7 @@ trait PlanHoursHelper {
           calendar.setTime(new Date(startDate))
         }
         else{
-          calendar.add(Calendar.DATE, -7)
+          calendar.add(Calendar.DATE, -4)
         }
         val startDay = calendar.get(Calendar.DATE)
         val startMonth = calendar.get(Calendar.MONTH)
