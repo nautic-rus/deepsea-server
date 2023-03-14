@@ -340,12 +340,7 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
           s"values (default, '${user.login}', '${user.password}', '${user.name}', '${user.surname}', '${user.birthday}', '${user.email}', '${user.phone}', ${user.tcid}, '${user.avatar}', '${user.profession}', '${user.visibility}', '${user.gender}', '${user.avatar_full}', '${user.department}', '${user.rocket_login}', '${user.visible_projects.mkString(",")}','${user.groups.mkString(",")}', '${user.projects.mkString(",")}')" +
           s" returning id"
         val rs = s.executeQuery(query);
-        while (rs.next()) {
-          user.permissions.foreach(role => {
-            val query = s"insert into user_rights (user_id, rights) values ('${rs.getInt("id")}', '$role')";
-            s.execute(query)
-          })
-        }
+        if (user.permissions.nonEmpty) {user.permissions.foreach(role => s.execute(s"insert into user_rights (user_id, rights) values ('${rs.getInt("id")}', '$role')"))}
         s.close();
         c.close();
         val messageRocket: String = s"Ваши данные для входа в DeepSea - Логин: ${user.login} | Пароль: ${user.password} | https://deep-sea.ru";
@@ -590,7 +585,7 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
         while (rs.next()) {
           id_users += (
             rs.getString("id")
-          )
+            )
         }
         id_users.foreach(id => {
           ""
@@ -697,6 +692,7 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
       case _ => Option.empty[Department]
     }
   }
+
   def shareWith(user: String, with_user: String): Unit = {
     DBManager.GetPGConnection() match {
       case Some(c) =>
