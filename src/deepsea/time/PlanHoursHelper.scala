@@ -2,7 +2,8 @@ package deepsea.time
 
 import deepsea.database.DBManager
 import deepsea.database.DBManager.RsIterator
-import deepsea.time.PlanHoursManager.{AllocatedHour, PlanHour}
+import deepsea.time.PlanHoursManager.{AllocatedHour, ConsumedHour, PlanHour}
+
 import java.util.{Calendar, Date}
 
 trait PlanHoursHelper {
@@ -264,6 +265,41 @@ trait PlanHoursHelper {
       case _ => List.empty[PlanHour]
     }
   }
+  def getConsumedHours(userId: Int): List[ConsumedHour] ={
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val query = s"select * from hours_consumed where user_id = $userId"
+        val s = c.createStatement()
+        val consumedHours = RsIterator(s.executeQuery(query)).map(rs => {
+          ConsumedHour(
+            Option(rs.getInt("id")).getOrElse(0),
+            Option(rs.getInt("hour_id")).getOrElse(0),
+            Option(rs.getInt("user_id")).getOrElse(0),
+            Option(rs.getLong("date_inserted")).getOrElse(0),
+            Option(rs.getInt("task_id")).getOrElse(0),
+            Option(rs.getString("comment")).getOrElse(""),
+          )
+        }).toList
+        s.close()
+        c.close()
+        consumedHours.sortBy(_.id)
+      case _ => List.empty[ConsumedHour]
+    }
+  }
+  def consumeHours(consumed: List[PlanHour], taskId: Int, details: String): Unit = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        consumed.foreach(h => {
+          val date = new Date().getTime
+          val query = s"insert into hours_consumed (id, hour_id, user_id, date_inserted, task_id, comment) values (default, ${h.id}, ${h.user}, $date, ${taskId}, '${details}')"
+          s.execute(query)
+        })
+        s.close()
+        c.close()
+      case _ =>
+    }
+  }
 
   def getTaskHours(taskId: Int): List[PlanHour] ={
     DBManager.GetPGConnection() match {
@@ -334,4 +370,5 @@ trait PlanHoursHelper {
       case _ =>
     }
   }
+
 }

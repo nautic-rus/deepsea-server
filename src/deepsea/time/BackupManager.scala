@@ -1,35 +1,25 @@
 package deepsea.time
 
 import akka.actor.{Actor, ActorSystem}
-import akka.http.scaladsl.model.Uri.Path
-import akka.http.scaladsl.{Http, HttpExt}
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import deepsea.App
 import deepsea.actors.ActorManager
-import deepsea.database.DatabaseManager
 import deepsea.mail.MailManager.Mail
 import deepsea.time.BackupManager.{BackupForan, NullHostKeyVerifier}
-import deepsea.time.TimeAndWeatherManager.{SetTimeAndWeather, Weather}
 import net.schmizz.sshj.SSHClient
 import net.schmizz.sshj.sftp.{RemoteResourceInfo, SFTPClient}
 import net.schmizz.sshj.transport.verification.HostKeyVerifier
-import net.schmizz.sshj.userauth.method.AuthMethod
-
+import org.aarboard.nextcloud.api.NextcloudConnector
 import java.io.File
-import java.nio.file.{Files, StandardCopyOption}
+import java.nio.file.Files
+import java.security.PublicKey
+import java.time.LocalDate
+import java.util
 import java.util.{Calendar, Date}
+import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.duration.DurationInt
 import scala.io.Source
-import net.schmizz.sshj.transport.verification.HostKeyVerifier
-import org.aarboard.nextcloud.api.NextcloudConnector
-
-import java.net.{URL, URLEncoder}
-import java.security.PublicKey
-import java.text.SimpleDateFormat
-import java.time.LocalDate
-import java.util
-import scala.collection.mutable.ListBuffer
 
 
 
@@ -42,7 +32,7 @@ object BackupManager{
   }
 }
 class BackupManager extends Actor{
-  val foranProjects: List[String] = List("P701", "P707", "N002", "N003", "N004", "N005", "SC01", "LV01")
+  val foranProjects: List[String] = List("P701", "P707", "N002", "N003", "N004", "N005", "SC01", "LV01", "KA01", "AN01")
   val procedure: String = Source.fromResource("queries/backupForan.sql").mkString
 
   implicit val system: ActorSystem = ActorSystem()
@@ -64,7 +54,7 @@ class BackupManager extends Actor{
   def backupForan(): Unit ={
     val configOracle = new HikariConfig()
     configOracle.setDriverClassName("oracle.jdbc.driver.OracleDriver")
-    configOracle.setJdbcUrl("jdbc:oracle:thin:@office.nautic-rus.ru:1521:ORA3DB")
+    configOracle.setJdbcUrl("jdbc:oracle:thin:@192.168.1.12:1521:ORA3DB")
     configOracle.setUsername("SYS AS SYSDBA")
     configOracle.setPassword("Whatab0utus")
     configOracle.setMaximumPoolSize(1)

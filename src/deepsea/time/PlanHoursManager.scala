@@ -1,11 +1,12 @@
 package deepsea.time
 
 import akka.actor.Actor
+import deepsea.auth.AuthManager.User
 import deepsea.auth.AuthManagerHelper
 import deepsea.database.MongoCodecs
 import deepsea.issues.IssueManagerHelper
 import deepsea.issues.classes.Issue
-import deepsea.time.PlanHoursManager.{AssignPlanHoursToUsers, DeleteUserTask, GetUserPlanHours, InitPlanHours, PlanAlreadyPlannedIssues, PlanHour, PlanUserTask, SpecialDay}
+import deepsea.time.PlanHoursManager.{AssignPlanHoursToUsers, ConsumedHour, DeleteUserTask, FillConsumed, GetUserPlanHours, InitPlanHours, PlanAlreadyPlannedIssues, PlanHour, PlanUserTask, SpecialDay}
 import io.circe.syntax.EncoderOps
 
 import java.util.{Calendar, Date}
@@ -24,7 +25,9 @@ object PlanHoursManager{
   case class GetUserPlanHours(userId: String, startDate: String, available: String)
   case class PlanUserTask(userId: String, taskId: String, fromHour: String, amountOfHours: String, allowMove: String)
   case class DeleteUserTask(userId: String, taskId: String, fromHour: String)
+  case class ConsumedHour(id: Int, hour_id: Int, user_id: Int, date_inserted: Long, task_id: Int, comment: String)
   case class PlanAlreadyPlannedIssues()
+  case class FillConsumed()
 }
 class PlanHoursManager extends Actor with PlanHoursHelper with AuthManagerHelper with IssueManagerHelper with MongoCodecs{
   val specialDays: List[SpecialDay] = List(
@@ -49,7 +52,9 @@ class PlanHoursManager extends Actor with PlanHoursHelper with AuthManagerHelper
     //self ! InitPlanHours()
     //self ! AssignPlanHoursToUsers()
     //self ! PlanAlreadyPlannedIssues()
+    //self ! FillConsumed()
   }
+
   override def receive: Receive = {
     case InitPlanHours() =>
       val calendar = Calendar.getInstance()
@@ -147,6 +152,47 @@ class PlanHoursManager extends Actor with PlanHoursHelper with AuthManagerHelper
         }
       })
       val qa = 0
+    case FillConsumed() =>
+      val userFull = ListBuffer.empty[Tuple4[Int, Int, Int, Int]]
+      val users = ListBuffer.empty[User]
+      val st = getIssueSpentTime
+      st.foreach(t => {
+        println(st.indexOf(t) + "/" + st.length)
+        val c = Calendar.getInstance()
+        c.setTime(new Date(t.date))
+        val d = c.get(Calendar.DATE)
+        val m = c.get(Calendar.MONTH)
+        val y = c.get(Calendar.YEAR)
+        if (y == 2023){
+          (users.find(_.login == t.userLogin) match {
+            case Some(value) => Option(value)
+            case _ => getUser(t.userLogin)
+          }) match {
+            case Some(u) =>
+              users += u
+              if (userFull.find(x => x._1 == d && x._2 == m && x._3 == y && x._4 == u.id) != null){
+                val dayHours = getDayHours(u.id, d, m, y).filter(_.hour_type == 1)
+                val consumed = getConsumedHours(u.id).map(_.hour_id)
+                val free = dayHours.filterNot(x => consumed.contains(x.id))
+                val amount = Math.floor(t.time).toInt
+                val taskId = if (t.issueId != 0){
+                  t.issueId
+                }
+                else{
+                  -10
+                }
+                if (free.nonEmpty){
+                  consumeHours(free.take(if (amount > free.length) free.length else amount), taskId, t.details)
+                }
+                if (free.isEmpty){
+                  userFull += Tuple4(d, m, y, u.id)
+                }
+              }
+            case _ =>
+          }
+        }
+      })
+      val q = 0
     case _ => None
   }
 }

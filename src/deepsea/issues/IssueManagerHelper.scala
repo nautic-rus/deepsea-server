@@ -46,8 +46,8 @@ trait IssueManagerHelper extends MongoCodecs with AuthManagerHelper{
         if (user.permissions.contains("view_all_tasks")){
           query += s" or (id > 0)"
         }
-        query += s" or (i.department in (select name from issue_departments id where '${user.login}' in (id.manager)))"
-        query += s" or (i.project in (select name from issue_projects ip where '${user.login}' in (ip.managers)))"
+        query += s" or (i.department in (select name from issue_departments id where id.manager like '%${user.login}%'))"
+        query += s" or (i.project in (select name from issue_projects ip where ip.managers like '%${user.login}%'))"
         query += ")"
         val rs = s.executeQuery(query)
         while (rs.next()){
