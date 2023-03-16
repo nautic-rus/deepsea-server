@@ -3,8 +3,9 @@ package deepsea.auth
 import akka.actor.Actor
 import com.sun.mail.imap.Rights
 import deepsea.actors.ActorManager
-import deepsea.auth.AuthManager.{AdminRight, DeleteAdminRight, DeleteRole, DeleteUser, Department, EditAdminRight, EditRole, EditUser, GetAdminRightDetails, GetAdminRights, GetDepartmentDetails, GetDepartments, GetPages, GetRightDetails, GetRights, GetRoleDetails, GetRoleRights, GetRoles, GetUser, GetUserDetails, GetUsers, Login, Page, RightUser, Role, SaveRoleForAll, SendLogPass, ShareRights, StartRight, StartRole, StartUser, UpdateEmail, UpdateRocketLogin, User}
+import deepsea.auth.AuthManager.{AdminRight, DeleteAdminRight, DeleteRole, DeleteUser, Department, EditAdminRight, EditRole, EditUser, EditUsersProject, GetAdminRightDetails, GetAdminRights, GetDepartmentDetails, GetDepartments, GetPages, GetRightDetails, GetRights, GetRoleDetails, GetRoleRights, GetRoles, GetUser, GetUserDetails, GetUsers, JoinUsersProjects, Login, Page, RightUser, Role, SaveRoleForAll, SendLogPass, ShareRights, StartRight, StartRole, StartUser, UpdateEmail, UpdateRocketLogin, User}
 import deepsea.database.{DBManager, MongoCodecs}
+import deepsea.issues.{IssueManager, IssueManagerHelper}
 import deepsea.mail.MailManager.Mail
 import deepsea.rocket.RocketChatManager.SendNotification
 import io.circe
@@ -38,6 +39,10 @@ object AuthManager extends MongoCodecs {
   case class DeleteUser(id: String)
 
   case class EditUser(userJson: String, id: String)
+
+  case class EditUsersProject(idUsers: String, idProject: String)
+
+  case class JoinUsersProjects()
 
   case class SendLogPass(id: String)
 
@@ -135,7 +140,7 @@ object AuthManager extends MongoCodecs {
   case class GetDepartmentDetails(id: String)
 }
 
-class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
+class AuthManager extends Actor with AuthManagerHelper with IssueManagerHelper with MongoCodecs {
   override def receive: Receive = {
     case Login(token, login, password) =>
       token match {
@@ -229,6 +234,8 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
           sender() ! result.asJson
         case _ => sender() ! "error".asJson
       }
+    case EditUsersProject(idUsers, idProject) => sender() ! editUsersProject(idUsers, idProject).asJson
+    case JoinUsersProjects() => sender() ! joinUsersProjects().asJson
     case SendLogPass(id) => sender() ! sendLogPass(id).asJson
     case ShareRights(user, with_user) =>
       shareWith(user, with_user)
@@ -407,6 +414,33 @@ class AuthManager extends Actor with AuthManagerHelper with MongoCodecs {
         c.close();
         "success"
       case _ => "error";
+    }
+  }
+
+  def editUsersProject(idUsers: String, idProject: String) {
+  }
+
+  def joinUsersProjects(): String = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement();
+        s.execute("delete from users_visibility_projects");
+        val queryUsers = s"select id, visible_projects from users";
+        val rs = s.executeQuery(queryUsers);
+        val users: List[User] = getUsers.toList;
+        val projects: List[IssueManager.IssueProject] = getIssueProjects.toList;
+        users.foreach(user => {
+          user.visible_projects.foreach(uProject => {
+            projects.foreach(project => {
+              if (uProject == project.name) {
+                val queryProject = s"insert into users_visibility_projects (user_id, project_id) values ('${user.id}', '${project.id}')";
+                s.execute(queryProject);
+              }
+            })
+          })
+        })
+        "success"
+      case _ => "error"
     }
   }
 
