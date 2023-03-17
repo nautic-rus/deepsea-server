@@ -5,6 +5,7 @@ import com.sun.mail.imap.Rights
 import deepsea.actors.ActorManager
 import deepsea.auth.AuthManager.{AdminRight, DeleteAdminRight, DeleteRole, DeleteUser, Department, EditAdminRight, EditRole, EditUser, EditUsersProject, GetAdminRightDetails, GetAdminRights, GetDepartmentDetails, GetDepartments, GetPages, GetRightDetails, GetRights, GetRoleDetails, GetRoleRights, GetRoles, GetUser, GetUserDetails, GetUsers, GetUsersProject, JoinUsersProjects, Login, Page, RightUser, Role, SaveRoleForAll, SendLogPass, ShareRights, StartRight, StartRole, StartUser, UpdateEmail, UpdateRocketLogin, User}
 import deepsea.database.{DBManager, MongoCodecs}
+import deepsea.issues.IssueManager.IssueProject
 import deepsea.issues.{IssueManager, IssueManagerHelper}
 import deepsea.mail.MailManager.Mail
 import deepsea.rocket.RocketChatManager.SendNotification
@@ -236,7 +237,13 @@ class AuthManager extends Actor with AuthManagerHelper with IssueManagerHelper w
           sender() ! result.asJson
         case _ => sender() ! "error".asJson
       }
-    case EditUsersProject(idUsers, idProject) => sender() ! editUsersProject(idUsers, idProject).asJson
+    case EditUsersProject(idUsers, idProject) =>
+      circe.jawn.decode[List[Int]](idUsers) match {
+        case Right(arrayOfUsers) =>
+          val result = editUsersProject(arrayOfUsers, idProject)
+          sender() ! result.asJson
+        case _ => sender() ! "error".asJson
+      }
     case JoinUsersProjects() => sender() ! joinUsersProjects().asJson
     case GetUsersProject(id) => sender() ! getUsersProject(id).asJson
     case SendLogPass(id) => sender() ! sendLogPass(id).asJson
@@ -351,8 +358,9 @@ class AuthManager extends Actor with AuthManagerHelper with IssueManagerHelper w
           s" returning id"
         val rs = s.executeQuery(query);
         if (user.permissions.nonEmpty) {user.permissions.foreach(role => s.execute(s"insert into user_rights (user_id, rights) values ('${rs.getInt("id")}', '$role')"))}
-        s.close();
-        c.close();
+        rs.close()
+        s.close()
+        c.close()
         val messageRocket: String = s"Ваши данные для входа в DeepSea - Логин: ${user.login} | Пароль: ${user.password} | https://deep-sea.ru";
         val messageMail: String = Source.fromResource("messages/startUser.html").mkString.replaceAll("!login", s"${user.login}").replaceAll("!password", s"${user.password}")
         ActorManager.rocket ! SendNotification(user.rocket_login, messageRocket);
@@ -380,8 +388,9 @@ class AuthManager extends Actor with AuthManagerHelper with IssueManagerHelper w
           ActorManager.rocket ! SendNotification(rocket_login, messageRocket);
           ActorManager.mail ! Mail(List(name, surname).mkString(" "), email, "DeepSea Notification", messageMail);
         };
-        s.close();
-        c.close();
+        rs.close()
+        s.close()
+        c.close()
         "success";
       case _ => "error"
     }
@@ -405,7 +414,7 @@ class AuthManager extends Actor with AuthManagerHelper with IssueManagerHelper w
       case Some(c) =>
         val s = c.createStatement();
         val q = '"'
-        val query = s"update users set id = '${user.id}', login = '${user.login}', password = '${user.password}', name = '${user.name}', surname = '${user.surname}', email = '${user.email}', phone = '${user.phone}', tcid = '${user.tcid}', avatar = '${user.avatar}', profession = '${user.profession}', visibility = '${user.visibility}', gender = '${user.gender}', department = '${user.department}', rocket_login = '${user.rocket_login}', ${q}group${q} = '${user.groups.mkString(",")}', id_department = '${user.id_department}' where id = '$id'"
+        val query = s"update users set id = '${user.id}', login = '${user.login}', password = '${user.password}', name = '${user.name}', surname = '${user.surname}', email = '${user.email}', phone = '${user.phone}', tcid = '${user.tcid}', avatar = '${user.avatar}', profession = '${user.profession}', visibility = '${user.visibility}', gender = '${user.gender}', department = '${user.department}', visible_projects = '${user.visible_projects.mkString(",")}', rocket_login = '${user.rocket_login}', ${q}group${q} = '${user.groups.mkString(",")}', id_department = '${user.id_department}' where id = '$id'"
         s.execute(query);
         val queryR = s"delete from user_rights where user_id = '$id'";
         s.execute(queryR);
@@ -413,6 +422,7 @@ class AuthManager extends Actor with AuthManagerHelper with IssueManagerHelper w
           val query = s"insert into user_rights (user_id, rights) values ('$id', '$role')";
           s.execute(query);
         })
+        editUserProjects(id)
         s.close();
         c.close();
         "success"
@@ -420,7 +430,48 @@ class AuthManager extends Actor with AuthManagerHelper with IssueManagerHelper w
     }
   }
 
-  def editUsersProject(idUsers: String, idProject: String): Unit = {
+  def editUserProjects(idUser: String): String = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement();
+        s.execute(s"delete from users_visibility_projects where user_id = '$idUser'");
+        val user: User = getUserDetails(idUser).get;
+        val projects: List[IssueManager.IssueProject] = getIssueProjects.toList;
+        user.visible_projects.foreach(uProject => {
+            projects.foreach(project => {
+              if (uProject == project.name) {
+                val queryProject = s"insert into users_visibility_projects (user_id, project_id) values ('${user.id}', '${project.id}')";
+                s.execute(queryProject);
+              }
+            })
+          })
+        s.close()
+        c.close()
+        "success"
+      case _ => "error"
+    }
+  }
+
+  def editUsersProject(idUsers: List[Int], idProject: String): String = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement();
+        val delQuery = s"delete from users_visibility_projects where project_id = '$idProject'";
+        s.execute(delQuery);
+        idUsers.foreach(id => {
+          val insertQuery = s"insert into users_visibility_projects (user_id, project_id) values ('$id', '$idProject')";
+          s.execute(insertQuery);
+          val project: IssueManager.IssueProject = getProjectDetails(idProject).get;
+          val user: User = getUserDetails(id.toString).get;
+          val userProjects = user.visible_projects.appended(project.name);
+          val updateQuery = s"update users set visible_projects = '${userProjects.mkString(",")}' where id = '$id'";
+          s.execute(updateQuery);
+        })
+        s.close()
+        c.close()
+        "success"
+      case _ => "error"
+    }
   }
 
   def joinUsersProjects(): String = {
@@ -442,29 +493,16 @@ class AuthManager extends Actor with AuthManagerHelper with IssueManagerHelper w
             })
           })
         })
+        rs.close()
+        s.close()
+        c.close()
         "success"
       case _ => "error"
     }
   }
 
-//  def getUsersProject(id: String): ListBuffer[Int] = {
-//    val res = ListBuffer.empty[Int];
-//    val users: ListBuffer[User] = getUsers;
-//    DBManager.GetPGConnection() match {
-//      case Some(c) =>
-//        val s = c.createStatement();
-//        val query = s"select user_id from users_visibility_projects where project_id = '$id'";
-//        val rs = s.executeQuery(query);
-//        while (rs.next()) {
-//          res.append(rs.getInt("user_id"));
-//        }
-//        res
-//      case _ => ListBuffer.empty[Int]
-//    }
-//  }
-
-  def getUsersProject(id: String): ListBuffer[User] = {
-    val res = ListBuffer.empty[User];
+  def getUsersProject(id: String): ListBuffer[Int] = {
+    val res = ListBuffer.empty[Int];
     val users: ListBuffer[User] = getUsers;
     DBManager.GetPGConnection() match {
       case Some(c) =>
@@ -472,18 +510,37 @@ class AuthManager extends Actor with AuthManagerHelper with IssueManagerHelper w
         val query = s"select user_id from users_visibility_projects where project_id = '$id'";
         val rs = s.executeQuery(query);
         while (rs.next()) {
-          val userId = rs.getInt("user_id");
-          users.foreach(user => {
-            if (userId == user.id) {
-              res.append(user);
-            }
-          })
-
+          res.append(rs.getInt("user_id"));
         }
+        rs.close()
+        s.close()
+        c.close()
         res
-      case _ => ListBuffer.empty[User]
+      case _ => ListBuffer.empty[Int]
     }
   }
+
+//  def getUsersProject(id: String): ListBuffer[User] = {
+//    val res = ListBuffer.empty[User];
+//    val users: ListBuffer[User] = getUsers;
+//    DBManager.GetPGConnection() match {
+//      case Some(c) =>
+//        val s = c.createStatement();
+//        val query = s"select user_id from users_visibility_projects where project_id = '$id'";
+//        val rs = s.executeQuery(query);
+//        while (rs.next()) {
+//          val userId = rs.getInt("user_id");
+//          users.foreach(user => {
+//            if (userId == user.id) {
+//              res.append(user);
+//            }
+//          })
+//
+//        }
+//        res
+//      case _ => ListBuffer.empty[User]
+//    }
+//  }
 
   def getAdminRights: ListBuffer[AdminRight] = {
     val res = ListBuffer.empty[AdminRight]

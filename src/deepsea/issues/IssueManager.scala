@@ -496,31 +496,6 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     }
     res
   }
-  def getProjectDetails(id: String): Option[IssueProject] = {
-    var project: Option[IssueProject] = Option.empty[IssueProject]
-    DBManager.GetPGConnection() match {
-      case Some(c) =>
-        val s = c.createStatement()
-        val rs = s.executeQuery(s"select * from issue_projects where id = $id")
-        while (rs.next()) {
-          project = Option(IssueProject(
-            rs.getInt("id"),
-            rs.getString("name"),
-            rs.getString("pdsp"),
-            rs.getString("rkd"),
-            rs.getString("foran"),
-            rs.getString("factory"),
-            rs.getString("managers"),
-            rs.getString("status")
-          ))
-        }
-        rs.close()
-        s.close()
-        c.close()
-        project
-      case _ => Option.empty[IssueProject]
-    }
-  }
   def getIssueDepartments: ListBuffer[String] ={
     val res = ListBuffer.empty[String]
     DBManager.GetPGConnection() match {
@@ -671,6 +646,8 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
         val s = c.createStatement();
         val query = s"update issue_projects set status = '1' where id = $id";
         s.execute(query);
+        val delQuery = s"delete from users_visibility_projects where project_id = '$id'";
+        s.execute(delQuery);
         s.close();
         c.close();
         "success";
