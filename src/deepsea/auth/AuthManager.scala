@@ -3,7 +3,7 @@ package deepsea.auth
 import akka.actor.Actor
 import com.sun.mail.imap.Rights
 import deepsea.actors.ActorManager
-import deepsea.auth.AuthManager.{AdminRight, DeleteAdminRight, DeleteRole, DeleteUser, Department, EditAdminRight, EditRole, EditUser, EditUsersProject, GetAdminRightDetails, GetAdminRights, GetDepartmentDetails, GetDepartments, GetPages, GetRightDetails, GetRights, GetRoleDetails, GetRoleRights, GetRoles, GetUser, GetUserDetails, GetUsers, JoinUsersProjects, Login, Page, RightUser, Role, SaveRoleForAll, SendLogPass, ShareRights, StartRight, StartRole, StartUser, UpdateEmail, UpdateRocketLogin, User}
+import deepsea.auth.AuthManager.{AdminRight, DeleteAdminRight, DeleteRole, DeleteUser, Department, EditAdminRight, EditRole, EditUser, EditUsersProject, GetAdminRightDetails, GetAdminRights, GetDepartmentDetails, GetDepartments, GetPages, GetRightDetails, GetRights, GetRoleDetails, GetRoleRights, GetRoles, GetUser, GetUserDetails, GetUsers, GetUsersProject, JoinUsersProjects, Login, Page, RightUser, Role, SaveRoleForAll, SendLogPass, ShareRights, StartRight, StartRole, StartUser, UpdateEmail, UpdateRocketLogin, User}
 import deepsea.database.{DBManager, MongoCodecs}
 import deepsea.issues.{IssueManager, IssueManagerHelper}
 import deepsea.mail.MailManager.Mail
@@ -43,6 +43,8 @@ object AuthManager extends MongoCodecs {
   case class EditUsersProject(idUsers: String, idProject: String)
 
   case class JoinUsersProjects()
+
+  case class GetUsersProject(id: String)
 
   case class SendLogPass(id: String)
 
@@ -236,6 +238,7 @@ class AuthManager extends Actor with AuthManagerHelper with IssueManagerHelper w
       }
     case EditUsersProject(idUsers, idProject) => sender() ! editUsersProject(idUsers, idProject).asJson
     case JoinUsersProjects() => sender() ! joinUsersProjects().asJson
+    case GetUsersProject(id) => sender() ! getUsersProject(id).asJson
     case SendLogPass(id) => sender() ! sendLogPass(id).asJson
     case ShareRights(user, with_user) =>
       shareWith(user, with_user)
@@ -417,7 +420,7 @@ class AuthManager extends Actor with AuthManagerHelper with IssueManagerHelper w
     }
   }
 
-  def editUsersProject(idUsers: String, idProject: String) {
+  def editUsersProject(idUsers: String, idProject: String): Unit = {
   }
 
   def joinUsersProjects(): String = {
@@ -441,6 +444,44 @@ class AuthManager extends Actor with AuthManagerHelper with IssueManagerHelper w
         })
         "success"
       case _ => "error"
+    }
+  }
+
+//  def getUsersProject(id: String): ListBuffer[Int] = {
+//    val res = ListBuffer.empty[Int];
+//    val users: ListBuffer[User] = getUsers;
+//    DBManager.GetPGConnection() match {
+//      case Some(c) =>
+//        val s = c.createStatement();
+//        val query = s"select user_id from users_visibility_projects where project_id = '$id'";
+//        val rs = s.executeQuery(query);
+//        while (rs.next()) {
+//          res.append(rs.getInt("user_id"));
+//        }
+//        res
+//      case _ => ListBuffer.empty[Int]
+//    }
+//  }
+
+  def getUsersProject(id: String): ListBuffer[User] = {
+    val res = ListBuffer.empty[User];
+    val users: ListBuffer[User] = getUsers;
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement();
+        val query = s"select user_id from users_visibility_projects where project_id = '$id'";
+        val rs = s.executeQuery(query);
+        while (rs.next()) {
+          val userId = rs.getInt("user_id");
+          users.foreach(user => {
+            if (userId == user.id) {
+              res.append(user);
+            }
+          })
+
+        }
+        res
+      case _ => ListBuffer.empty[User]
     }
   }
 
