@@ -18,6 +18,7 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
         var s = c.createStatement()
         var rs = s.executeQuery(s"select * from users where login = '$login' and removed = 0")
         var res = Option.empty[User]
+        val usersProjects = getUsersProjects();
         while (rs.next()) {
           val id = Option(rs.getInt("id")).getOrElse(0);
           res = Option(User(
@@ -37,13 +38,14 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
             rs.getString("rocket_login"),
             rs.getString("gender"),
             rs.getString("visibility"),
-            getUserVisibleProjects(id.toString),
+            usersProjects.filter(x => {
+              x.user_id.equals(id.toString)
+            }).map(x => x.project_name),
             rs.getString("visible_pages").split(",").toList,
             rs.getString("shared_access").split(",").toList,
             rs.getString("group").split(",").toList,
             List.empty[String],
             "",
-            rs.getString("projects").split(",").toList,
             rs.getInt("id_department")
           ))
         }
@@ -75,8 +77,9 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
     val res = ListBuffer.empty[User]
     DBManager.GetPGConnection() match {
       case Some(c) =>
-        val s = c.createStatement()
-        val rs = s.executeQuery(s"select * from users where removed = 0 order by id")
+        val s = c.createStatement();
+        val rs = s.executeQuery(s"select * from users where removed = 0 order by id");
+        val usersProjects = getUsersProjects();
         while (rs.next()) {
           val id = Option(rs.getInt("id")).getOrElse(0);
           res += User(
@@ -96,13 +99,14 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
             rs.getString("rocket_login"),
             rs.getString("gender"),
             rs.getString("visibility"),
-            getUserVisibleProjects(id.toString),
+            usersProjects.filter(x => {
+              x.user_id.equals(id.toString)
+            }).map(x => x.project_name),
             rs.getString("visible_pages").split(",").toList,
             rs.getString("shared_access").split(",").toList,
             rs.getString("group").split(",").toList,
             getRightDetails(id).toList,
             "",
-            rs.getString("projects").split(",").toList,
             rs.getInt("id_department")
           )
         }
@@ -160,9 +164,12 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val rs = s.executeQuery(s"select * from users where id = '$id'")
+        val rs = s.executeQuery(s"select * from users where id = '$id'");
+        val usersProjects = getUsersProjects();
         while (rs.next()) {
-          user = Option(new User(rs.getInt("id"),
+          val userId = Option(rs.getInt("id")).getOrElse(0);
+          user = Option(new User(
+            userId,
             rs.getString("login"),
             rs.getString("password"),
             rs.getString("name"),
@@ -178,13 +185,14 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
             rs.getString("rocket_login"),
             rs.getString("gender"),
             rs.getString("visibility"),
-            getUserVisibleProjects(id.toString),
+            usersProjects.filter(x => {
+              x.user_id.equals(id.toString)
+            }).map(x => x.project_name),
             rs.getString("visible_pages").split(",").toList,
             rs.getString("shared_access").split(",").toList,
             rs.getString("group").split(",").toList,
             getRightDetails(id.toIntOption.getOrElse(0)).toList,
             "",
-            rs.getString("projects").split(",").toList,
             rs.getInt("id_department")))
         }
         rs.close()
@@ -201,7 +209,7 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
         val s = c.createStatement()
         val q = '"'
         val query = s"insert into users (id, login, password, name, surname, birthday, email, phone, tcid, avatar, profession, visibility, gender, avatar_full, department, rocket_login, visible_projects, ${q}group${q}, projects) " +
-          s"values (default, '${user.login}', '${user.password}', '${user.name}', '${user.surname}', '${user.birthday}', '${user.email}', '${user.phone}', ${user.tcid}, '${user.avatar}', '${user.profession}', '${user.visibility}', '${user.gender}', '${user.avatar_full}', '${user.department}', '${user.rocket_login}', '${user.visible_projects.mkString(",")}','${user.groups.mkString(",")}', '${user.projects.mkString(",")}')" +
+          s"values (default, '${user.login}', '${user.password}', '${user.name}', '${user.surname}', '${user.birthday}', '${user.email}', '${user.phone}', ${user.tcid}, '${user.avatar}', '${user.profession}', '${user.visibility}', '${user.gender}', '${user.avatar_full}', '${user.department}', '${user.rocket_login}', '${user.visible_projects.mkString(",")}','${user.groups.mkString(",")}')" +
           s" returning id"
         val rs = s.executeQuery(query);
         if (user.permissions.nonEmpty) {
@@ -265,39 +273,25 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
         val q = '"'
         val query = s"update users set id = '${user.id}', login = '${user.login}', password = '${user.password}', name = '${user.name}', surname = '${user.surname}', email = '${user.email}', phone = '${user.phone}', tcid = '${user.tcid}', avatar = '${user.avatar}', profession = '${user.profession}', visibility = '${user.visibility}', gender = '${user.gender}', department = '${user.department}', visible_projects = '${user.visible_projects.mkString(",")}', rocket_login = '${user.rocket_login}', ${q}group${q} = '${user.groups.mkString(",")}', id_department = '${user.id_department}' where id = '$id'"
         s.execute(query);
-        val queryR = s"delete from user_rights where user_id = '$id'";
-        s.execute(queryR);
+
+        s.execute(s"delete from user_rights where user_id = '$id'");
         user.permissions.foreach(role => {
           val query = s"insert into user_rights (user_id, rights) values ('$id', '$role')";
           s.execute(query);
         })
-        editUserProjects(id)
+
+        s.execute(s"delete from users_visibility_projects where user_id = '$id'");
+        val projects: List[IssueManager.IssueProject] = getIssueProjects.toList;
+        user.visible_projects.foreach(uProject => {
+          projects.filter(x => x.name == uProject).map(project => {
+            val queryProject = s"insert into users_visibility_projects (user_id, project_id) values ('${user.id}', '${project.id}')";
+            s.execute(queryProject);
+          })
+        })
         s.close();
         c.close();
         "success"
       case _ => "error";
-    }
-  }
-
-  def editUserProjects(idUser: String): String = {
-    DBManager.GetPGConnection() match {
-      case Some(c) =>
-        val s = c.createStatement();
-        s.execute(s"delete from users_visibility_projects where user_id = '$idUser'");
-        val user: User = getUserDetails(idUser).get;
-        val projects: List[IssueManager.IssueProject] = getIssueProjects.toList;
-        user.visible_projects.foreach(uProject => {
-          projects.foreach(project => {
-            if (uProject == project.name) {
-              val queryProject = s"insert into users_visibility_projects (user_id, project_id) values ('${user.id}', '${project.id}')";
-              s.execute(queryProject);
-            }
-          })
-        })
-        s.close()
-        c.close()
-        "success"
-      case _ => "error"
     }
   }
 
@@ -352,7 +346,10 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
 
   def getUserVisibleProjects(id: String): List[String] = {
     val res = ListBuffer.empty[String];
-    getUsersProjects.filter(x => (x.user_id.equals(id))).foreach(row => {
+    val usersProjects = getUsersProjects();
+    usersProjects.filter(x => {
+      x.user_id.equals(id)
+    }).foreach(row => {
       res.append(row.project_name)
     })
     res.toList
@@ -360,7 +357,6 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
 
   def getUsersProject(id: String): List[Int] = {
     val res = ListBuffer.empty[Int];
-    val users: List[User] = getUsers.toList;
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement();
@@ -377,7 +373,7 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
     }
   }
 
-  def getUsersProjects(): ListBuffer[UserProject] = {
+  def getUsersProjects(): List[UserProject] = {
     var res: ListBuffer[UserProject] = ListBuffer.empty[UserProject];
     DBManager.GetPGConnection() match {
       case Some(c) =>
@@ -385,40 +381,19 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
         val query = s"select uvp.user_id, ip.name from users_visibility_projects uvp, issue_projects ip where uvp.project_id = ip.id";
         val rs = s.executeQuery(query);
         while (rs.next()) {
-          res += UserProject(
+          res += (UserProject(
             rs.getString("user_id"),
             rs.getString("name")
-          )
+          ))
         }
         rs.close()
         s.close()
         c.close()
-        res
-      case _ => ListBuffer.empty[UserProject]
+        res.toList
+      case _ => List.empty[UserProject]
     }
   }
 
-  //  def getUsersProject(id: String): ListBuffer[User] = {
-  //    val res = ListBuffer.empty[User];
-  //    val users: ListBuffer[User] = getUsers;
-  //    DBManager.GetPGConnection() match {
-  //      case Some(c) =>
-  //        val s = c.createStatement();
-  //        val query = s"select user_id from users_visibility_projects where project_id = '$id'";
-  //        val rs = s.executeQuery(query);
-  //        while (rs.next()) {
-  //          val userId = rs.getInt("user_id");
-  //          users.foreach(user => {
-  //            if (userId == user.id) {
-  //              res.append(user);
-  //            }
-  //          })
-  //
-  //        }
-  //        res
-  //      case _ => ListBuffer.empty[User]
-  //    }
-  //  }
 
   def getAdminRights: ListBuffer[AdminRight] = {
     val res = ListBuffer.empty[AdminRight]

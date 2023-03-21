@@ -82,7 +82,6 @@ object AuthManager extends MongoCodecs {
                    var groups: List[String] = List.empty[String],
                    var permissions: List[String] = List.empty[String],
                    var token: String = "",
-                   var projects: List[String],
                    var id_department: Int
                  )
 
