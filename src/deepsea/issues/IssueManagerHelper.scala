@@ -28,7 +28,7 @@ import scala.concurrent.Await
 import scala.concurrent.duration.{Duration, SECONDS}
 import scala.io.Source
 
-trait IssueManagerHelper extends MongoCodecs with AuthManagerHelper{
+trait IssueManagerHelper extends MongoCodecs {
 
   def getIssuesForUser(user: User): ListBuffer[Issue] ={
     val issues = ListBuffer.empty[Issue]
@@ -1327,19 +1327,6 @@ trait IssueManagerHelper extends MongoCodecs with AuthManagerHelper{
     }
     res.toList
   }
-  def notifySubscribers(issue: Int, email: String, rocket: String): Unit ={
-    getIssueSubscribers(issue).foreach(s => {
-      getUser(s.user) match {
-        case Some(user) =>
-          s.options.split(",").foreach {
-            case "mail" =>  ActorManager.mail ! Mail(List(user.surname, user.name).mkString(" "), user.email, "DeepSea Notification", rocket)
-            case "rocket" => ActorManager.rocket ! SendNotification(s.user, email)
-            case _ => None
-          }
-        case _ => None
-      }
-    })
-  }
   def updateIssueLabor(issue_id: Int, labor: Double): Unit ={
     DBManager.GetPGConnection() match {
       case Some(c) =>
@@ -1429,6 +1416,47 @@ trait IssueManagerHelper extends MongoCodecs with AuthManagerHelper{
         c.close()
         project
       case _ => Option.empty[IssueProject]
+    }
+  }
+
+  def startProject(project: IssueProject): String = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement();
+        val query = s"insert into issue_projects (id, name, foran, rkd, pdsp, factory, managers, status) values (default, '${project.name}', '${project.foran}', '${project.pdsp}', '${project.rkd}', '${project.factory}', '${project.managers}', default)";
+        s.execute(query);
+        s.close();
+        c.close();
+        "success";
+      case _ => "error";
+    }
+  }
+
+  def editProject(project: IssueProject, id: String): String = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement();
+        val query = s"update issue_projects set name = '${project.name}', foran = '${project.foran}', rkd = '${project.rkd}', pdsp = '${project.pdsp}', factory = '${project.factory}', managers = '${project.managers}', status = '${project.status}' where id = '$id'";
+        s.execute(query);
+        s.close();
+        c.close();
+        "success";
+      case _ => "error";
+    }
+  }
+
+  def deleteProject(id: String): String = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement();
+        val query = s"update issue_projects set status = '1' where id = $id";
+        s.execute(query);
+        val delQuery = s"delete from users_visibility_projects where project_id = '$id'";
+        s.execute(delQuery);
+        s.close();
+        c.close();
+        "success";
+      case _ => "error";
     }
   }
   def transliterate(message: String): String = {

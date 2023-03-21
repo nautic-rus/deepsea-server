@@ -6,6 +6,7 @@ import akka.util.Timeout
 import deepsea.App
 import deepsea.actors.ActorManager
 import deepsea.auth.AuthManager.{GetUser, User}
+import deepsea.auth.AuthManagerHelper
 import deepsea.database.{DBManager, DatabaseManager, MongoCodecs}
 import deepsea.files.FileManager.{GetCloudFiles, GetDocumentFiles, TreeFile, treeFilesCollection}
 import deepsea.files.FileManagerHelper
@@ -117,7 +118,7 @@ object IssueManager{
   case class DailyTask(issueId: Int, date: Long, dateCreated: Long, userLogin: String, project: String, details: String, time: Double, id: Int)
   case class IssueProject(id: Int, name: String, pdsp: String, rkd: String, foran: String, factory: String, managers: String, status: String)
 }
-class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with FileManagerHelper {
+class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with FileManagerHelper with AuthManagerHelper{
   implicit val timeout: Timeout = Timeout(30, TimeUnit.SECONDS)
 
   override def preStart(): Unit = {
@@ -613,45 +614,6 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
         c.close()
         res
       case _ => res
-    }
-  }
-  def startProject(project: IssueProject): String = {
-    DBManager.GetPGConnection() match {
-      case Some(c) =>
-        val s = c.createStatement();
-        val query = s"insert into issue_projects (id, name, foran, rkd, pdsp, factory, managers, status) values (default, '${project.name}', '${project.foran}', '${project.pdsp}', '${project.rkd}', '${project.factory}', '${project.managers}', default)";
-        s.execute(query);
-        s.close();
-        c.close();
-        "success";
-      case _ => "error";
-    }
-  }
-
-  def editProject(project: IssueProject, id: String): String = {
-    DBManager.GetPGConnection() match {
-      case Some(c) =>
-        val s = c.createStatement();
-        val query = s"update issue_projects set name = '${project.name}', foran = '${project.foran}', rkd = '${project.rkd}', pdsp = '${project.pdsp}', factory = '${project.factory}', managers = '${project.managers}', status = '${project.status}' where id = '$id'";
-        s.execute(query);
-        s.close();
-        c.close();
-        "success";
-      case _ => "error";
-    }
-  }
-  def deleteProject(id: String): String = {
-    DBManager.GetPGConnection() match {
-      case Some(c) =>
-        val s = c.createStatement();
-        val query = s"update issue_projects set status = '1' where id = $id";
-        s.execute(query);
-        val delQuery = s"delete from users_visibility_projects where project_id = '$id'";
-        s.execute(delQuery);
-        s.close();
-        c.close();
-        "success";
-      case _ => "error";
     }
   }
   def updateHistory(issue: IssueHistory): Unit ={
