@@ -49,6 +49,8 @@ object AuthManager extends MongoCodecs {
 
   case class GetUserVisibleProjects(id: String)
 
+  case class UserProject(user_id: String, project_name: String)
+
   case class SendLogPass(id: String)
 
   case class ShareRights(user: String, with_user: String)
