@@ -103,10 +103,12 @@ trait PlanHoursHelper {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         c.setAutoCommit(false)
+        val s = c.createStatement()
         taskHours.foreach(h => {
           val query = s"update hours_template_user set task_id = ${taskId} where id = ${h.id}"
-          c.createStatement().execute(query)
+          s.execute(query)
         })
+        s.close()
         c.commit()
         c.close()
       case _ =>
@@ -115,9 +117,11 @@ trait PlanHoursHelper {
   def setUserPlanUpdate(userId: Int): Unit ={
     DBManager.GetPGConnection() match {
       case Some(c) =>
+        val s = c.createStatement()
         val date = new Date().getTime
         val query = s"update users set last_plan_update = $date where id = $userId"
-        c.createStatement().execute(query)
+        s.execute(query)
+        s.close()
         c.close()
       case _ =>
     }

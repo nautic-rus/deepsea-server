@@ -534,6 +534,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
           result = rs.getInt("id")
         }
         rs.close()
+        s.close()
         c.close()
       case _ =>
     }
@@ -545,6 +546,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
       case Some(c) =>
         val s = c.createStatement()
         s.execute(s"update issue_messages set content = '${message.content}' where id = $id")
+        s.close()
         c.close()
       case _ =>
     }
@@ -556,6 +558,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
         val s = c.createStatement()
         val date = new Date().getTime
         s.execute(s"insert into file_attachments (issue_id, file_name, url, upload_date, author) values ($id, '${file.name}', '${file.url}', $date, '${file.author}')")
+        s.close()
         c.close()
       case _ =>
     }
@@ -566,6 +569,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
         val s = c.createStatement()
         val date = new Date().getTime
         s.execute(s"insert into file_attachments (message_id, file_name, url, upload_date, author) values ($id, '${file.name}', '${file.url}', $date, '${file.author}')")
+        s.close()
         c.close()
       case _ =>
     }
@@ -606,6 +610,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
           res = rs.getInt("id")
         }
         rs.close()
+        s.close()
         c.close()
         res
       case _ => res
@@ -616,6 +621,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
       case Some(c) =>
         val s = c.createStatement()
         s.execute(s"insert into issue_history values ('${issue.id}', '${issue.author}', '${issue.name_value}', '${issue.prev_value}', '${issue.new_value}', ${issue.update_date}, '${issue.update_message}')")
+        s.close()
         c.close()
       case _ => None
     }
@@ -625,6 +631,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
       case Some(c) =>
         val s = c.createStatement()
         s.execute(s"update issue set removed = 1 where id = $id")
+        s.close()
         c.close()
         updateHistory(new IssueHistory(id, user, "removed", "0", "1", new Date().getTime, "remove"))
       case _ => None
@@ -638,6 +645,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
       case Some(c) =>
         val s = c.createStatement()
         s.executeQuery(query)
+        s.close()
         c.close()
         sender() ! Json.toJson("success")
       case _ => sender() ! Json.toJson("error")
@@ -651,6 +659,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
       case Some(c) =>
         val s = c.createStatement()
         s.execute(query)
+        s.close()
         c.close()
         sender() ! Json.toJson("success")
       case _ => sender() ! Json.toJson("error")
@@ -817,6 +826,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
         case Some(c) =>
           val s = c.createStatement()
           s.execute(query)
+          s.close()
           c.close()
         case _ => None
       }
@@ -867,6 +877,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
         files.foreach(file => {
           s.execute(s"insert into revision_files (issue_id, file_name, file_url, upload_date, upload_user, issue_revision, group_name) values ($id, '${file.name}', '${file.url}', $date, '${file.author}', '$revision', '${file.group}')")
         })
+        s.close()
         c.close()
       case _ =>
     }

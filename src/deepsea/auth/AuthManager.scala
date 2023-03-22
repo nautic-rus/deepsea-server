@@ -20,7 +20,6 @@ import org.mongodb.scala.result
 
 import java.sql.Date
 import java.util.UUID
-import scala.collection.immutable.Stream.Empty
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.io.Source
