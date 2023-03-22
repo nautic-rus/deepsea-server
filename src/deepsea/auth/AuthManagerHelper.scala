@@ -575,6 +575,9 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
         id_users.foreach(id => {
           ""
         })
+        rs.close()
+        s.close()
+        s.close()
         "success"
       case _ => "error";
     }

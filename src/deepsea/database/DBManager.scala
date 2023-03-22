@@ -27,12 +27,17 @@ object DBManager extends MongoCodecs {
 
 
   List("N002", "N004", "SC01", "LV01").foreach(project => {
-    configOracle.setDriverClassName("oracle.jdbc.driver.OracleDriver")
-    configOracle.setJdbcUrl("jdbc:oracle:thin:@office.nautic-rus.ru:1521:ORA3DB")
-    configOracle.setUsername("C" + project)
-    configOracle.setPassword("Whatab0utus")
-    configOracle.setMaximumPoolSize(5)
-    oracleConnections += OracleConnection(project, new HikariDataSource(configOracle))
+    try{
+      configOracle.setDriverClassName("oracle.jdbc.driver.OracleDriver")
+      configOracle.setJdbcUrl("jdbc:oracle:thin:@office.nautic-rus.ru:1521:ORA3DB")
+      configOracle.setUsername("C" + project)
+      configOracle.setPassword("Whatab0utus")
+      configOracle.setMaximumPoolSize(5)
+      oracleConnections += OracleConnection(project, new HikariDataSource(configOracle))
+    }
+    catch {
+      case e: Exception =>
+    }
   })
 
   private val configPG = new HikariConfig()

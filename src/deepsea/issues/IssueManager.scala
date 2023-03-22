@@ -122,7 +122,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
   implicit val timeout: Timeout = Timeout(30, TimeUnit.SECONDS)
 
   override def preStart(): Unit = {
-    self ! GetIssueDetails(8704.toString)
+    //self ! GetIssueDetails(8704.toString)
 //    ActorManager.files ! GetDocumentFiles(602.toString)
 //    self ! GetIssues("op")
 //    self ! GetIssueDetails(1272.toString)

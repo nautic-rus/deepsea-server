@@ -572,7 +572,7 @@ class HTTPManager extends Actor {
 
   override def preStart(): Unit = {
     server = Http().newServerAt(App.HTTPServer.Host, App.HTTPServer.Port).bind(routes)
-    logger.debug("HTTP server has been started at " + App.HTTPServer.Host + " with port " + App.HTTPServer.Port)
+    logger.error("HTTP server has been started at " + App.HTTPServer.Host + " with port " + App.HTTPServer.Port)
     ActorManager.startup ! HTTPManagerStarted()
   }
 
