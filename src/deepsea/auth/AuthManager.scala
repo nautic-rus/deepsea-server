@@ -177,49 +177,50 @@ class AuthManager extends Actor with AuthManagerHelper with IssueManagerHelper w
             case _ => sender() ! Json.toJson("wrong-password")
           }
       }
-    case GetUsers() => sender() ! getUsers.asJson.noSpaces
+    case GetUsers() =>
+      sender() ! getUsers.asJson.noSpaces
     case GetUserDetails(id) => sender() ! getUserDetails(id).asJson.noSpaces
-    case GetRoles() => sender() ! getRoles.asJson
-    case GetRoleDetails(name) => sender() ! getRoleDetails(name).asJson
-    case GetRoleRights(name) => sender() ! getRoleRights(name).asJson
+    case GetRoles() => sender() ! getRoles.asJson.noSpaces
+    case GetRoleDetails(name) => sender() ! getRoleDetails(name).asJson.noSpaces
+    case GetRoleRights(name) => sender() ! getRoleRights(name).asJson.noSpaces
     case StartRole(roleJson) =>
       circe.jawn.decode[Role](roleJson) match {
         case Right(role) =>
           val result = startRole(role)
-          sender() ! result.asJson
-        case _ => sender() ! "error".asJson
+          sender() ! result.asJson.noSpaces
+        case _ => sender() ! "error".asJson.noSpaces
       }
     case SaveRoleForAll(name) => sender() ! saveRoleForAll(name)
-    case DeleteRole(name) => sender() ! deleteRole(name).asJson
+    case DeleteRole(name) => sender() ! deleteRole(name).asJson.noSpaces
     case EditRole(rolJson, name) =>
       circe.jawn.decode[Role](rolJson) match {
         case Right(role) =>
           val result = editRole(role, name)
-          sender() ! result.asJson
-        case _ => sender() ! "error".asJson
+          sender() ! result.asJson.noSpaces
+        case _ => sender() ! "error".asJson.noSpaces
       }
-    case GetAdminRights() => sender() ! getAdminRights.asJson
-    case GetAdminRightDetails(name) => sender() ! getAdminRightsDetails(name).asJson
-    case DeleteAdminRight(name) => sender() ! deleteAdminRight(name).asJson
+    case GetAdminRights() => sender() ! getAdminRights.asJson.noSpaces
+    case GetAdminRightDetails(name) => sender() ! getAdminRightsDetails(name).asJson.noSpaces
+    case DeleteAdminRight(name) => sender() ! deleteAdminRight(name).asJson.noSpaces
     case EditAdminRight(rightJson, name) =>
       circe.jawn.decode[AdminRight](rightJson) match {
         case Right(right) =>
           val result = editAdminRight(right, name)
-          sender() ! result.asJson
-        case _ => sender() ! "error".asJson
+          sender() ! result.asJson.noSpaces
+        case _ => sender() ! "error".asJson.noSpaces
       }
     case StartRight(rightJson) =>
       circe.jawn.decode[AdminRight](rightJson) match {
         case Right(right) =>
           val result = startRight(right)
-          sender() ! result.asJson
-        case _ => sender() ! "error".asJson
+          sender() ! result.asJson.noSpaces
+        case _ => sender() ! "error".asJson.noSpaces
       }
-    case GetPages() => sender() ! getPages().asJson
-    case GetRights() => sender() ! getRights().asJson
-    case GetRightDetails(id) => sender() ! getRightDetails(id.toIntOption.getOrElse(0)).asJson
-    case GetDepartments() => sender() ! getDepartments().asJson
-    case GetDepartmentDetails(id) => sender() ! getDepartmentDetail(id).asJson
+    case GetPages() => sender() ! getPages.asJson.noSpaces
+    case GetRights() => sender() ! getRights.asJson.noSpaces
+    case GetRightDetails(id) => sender() ! getRightDetails(id.toIntOption.getOrElse(0)).asJson.noSpaces
+    case GetDepartments() => sender() ! getDepartments.asJson
+    case GetDepartmentDetails(id) => sender() ! getDepartmentDetail(id).asJson.noSpaces
     case GetUser(login) =>
       getUser(login) match {
         case Some(user) => sender() ! user
@@ -229,28 +230,28 @@ class AuthManager extends Actor with AuthManagerHelper with IssueManagerHelper w
       circe.jawn.decode[User](userJson) match {
         case Right(user) =>
           val result = startUser(user)
-          sender() ! result.asJson
-        case _ => sender() ! "error".asJson
+          sender() ! result.asJson.noSpaces
+        case _ => sender() ! "error".asJson.noSpaces
       }
-    case DeleteUser(id) => sender() ! deleteUser(id).asJson
+    case DeleteUser(id) => sender() ! deleteUser(id).asJson.noSpaces
     case EditUser(userJson, id) =>
       circe.jawn.decode[User](userJson) match {
         case Right(user) =>
           val result = editUser(user, id)
-          sender() ! result.asJson
-        case _ => sender() ! "error".asJson
+          sender() ! result.asJson.noSpaces
+        case _ => sender() ! "error".asJson.noSpaces
       }
     case EditUsersProject(idUsers, idProject) =>
       circe.jawn.decode[List[Int]](idUsers) match {
         case Right(arrayOfUsers) =>
           val result = editUsersProject(arrayOfUsers, idProject)
-          sender() ! result.asJson
-        case _ => sender() ! "error".asJson
+          sender() ! result.asJson.noSpaces
+        case _ => sender() ! "error".asJson.noSpaces
       }
-    case JoinUsersProjects() => sender() ! joinUsersProjects().asJson
-    case GetUsersProject(id) => sender() ! getUsersProject(id).asJson
-    case GetUserVisibleProjects(id) => sender() ! getUserVisibleProjects(id).asJson
-    case SendLogPass(id) => sender() ! sendLogPass(id).asJson
+    case JoinUsersProjects() => sender() ! joinUsersProjects.asJson.noSpaces
+    case GetUsersProject(id) => sender() ! getUsersProject(id).asJson.noSpaces
+    case GetUserVisibleProjects(id) => sender() ! getUserVisibleProjects(id).asJson.noSpaces
+    case SendLogPass(id) => sender() ! sendLogPass(id).asJson.noSpaces
     case ShareRights(user, with_user) =>
       shareWith(user, with_user)
       sender() ! Json.toJson("success")

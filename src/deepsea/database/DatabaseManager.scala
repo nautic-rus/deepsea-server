@@ -6,7 +6,7 @@ import akka.util.Timeout
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import deepsea.actors.ActorManager
 import deepsea.actors.ActorStartupManager.DatabaseManagerStarted
-import deepsea.database.DatabaseManager.{GetConnectionFromPool, GetFireBaseConnectionFromPool, GetMongoConnectionFromPool, GetOracleConnectionFromPool, codecRegistry}
+import deepsea.database.DBManager._
 import org.mongodb.scala.{MongoClient, MongoDatabase}
 
 import java.sql.{Connection, DriverManager}
@@ -33,17 +33,17 @@ object DatabaseManager extends MongoCodecs {
 //      case e: Throwable => Option.empty
 //    }
 //  }
-  def GetMongoConnection(): Option[MongoDatabase] = {
-    try{
-      Await.result(ActorManager.dataBase ? GetMongoConnectionFromPool(), timeout.duration) match {
-        case response: MongoDatabase => Option(response)
-        case _ => Option.empty
-      }
-    }
-    catch {
-      case e: Throwable => Option.empty
-    }
-  }
+//  def GetMongoConnection(): Option[MongoDatabase] = {
+//    try{
+//      Await.result(ActorManager.dataBase ? GetMongoConnectionFromPool(), timeout.duration) match {
+//        case response: MongoDatabase => Option(response)
+//        case _ => Option.empty
+//      }
+//    }
+//    catch {
+//      case e: Throwable => Option.empty
+//    }
+//  }
   def GetOracleConnection(): Option[Connection] ={
     try{
       Await.result(ActorManager.dataBase ? GetOracleConnectionFromPool(), timeout.duration) match {
@@ -90,7 +90,7 @@ class DatabaseManager extends Actor{
 //    config.setPassword("Ship1234")
 //    ds = new HikariDataSource(config)
 
-    configOracle.setDriverClassName("oracle.jdbc.driver.OracleDriver")
+    configOracle.setDriverClassName("oracle.jdbc.OracleDriver")
     configOracle.setJdbcUrl("jdbc:oracle:thin:@office.nautic-rus.ru:1521:ORA3DB")
     configOracle.setUsername("CN002")
     configOracle.setPassword("Whatab0utus")
@@ -109,9 +109,9 @@ class DatabaseManager extends Actor{
   }
   override def receive: Receive = {
 //    case GetConnectionFromPool() => sender() ! ds.getConnection
-    case GetOracleConnectionFromPool() => sender() ! dsOracle.getConnection
-    case GetFireBaseConnectionFromPool() => sender() ! dsFireBase.getConnection
-    case GetMongoConnectionFromPool() => sender() ! mongoClient.getDatabase("3degdatabase").withCodecRegistry(codecRegistry)
+//    case GetOracleConnectionFromPool() => sender() ! dsOracle.getConnection
+//    case GetFireBaseConnectionFromPool() => sender() ! dsFireBase.getConnection
+//    case GetMongoConnectionFromPool() => sender() ! mongoClient.getDatabase("3degdatabase").withCodecRegistry(codecRegistry)
     case _ => None
   }
 }

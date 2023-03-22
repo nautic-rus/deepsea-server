@@ -13,12 +13,13 @@ import scala.io.Source
 
 trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
   def getUser(login: String): Option[User] = {
+    val usersProjects = getUsersProjects
+    val rights = getRights
     DBManager.GetPGConnection() match {
       case Some(c) =>
-        var s = c.createStatement()
-        var rs = s.executeQuery(s"select * from users where login = '$login' and removed = 0")
         var res = Option.empty[User]
-        val usersProjects = getUsersProjects();
+        val s = c.createStatement()
+        val rs = s.executeQuery(s"select * from users where login = '$login' and removed = 0")
         while (rs.next()) {
           val id = Option(rs.getInt("id")).getOrElse(0);
           res = Option(User(
@@ -38,48 +39,42 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
             rs.getString("rocket_login"),
             rs.getString("gender"),
             rs.getString("visibility"),
-            usersProjects.filter(x => {
-              x.user_id.equals(id.toString)
-            }).map(x => x.project_name),
+            usersProjects.filter(_.user_id == id.toString).map(x => x.project_name),
             rs.getString("visible_pages").split(",").toList,
             rs.getString("shared_access").split(",").toList,
             rs.getString("group").split(",").toList,
-            List.empty[String],
+            rights.filter(_.userId == id).map(_.role),
             "",
             rs.getInt("id_department")
           ))
         }
+        rs.close()
         s.close()
-        if (res.nonEmpty) {
-          s = c.createStatement()
-          //          rs = s.executeQuery(s"select type_name from issue_types where id in (select group_id from user_membership where user_id = ${res.get.id})")
-          //          while (rs.next()){
-          //            res.get.groups += rs.getString("type_name")
-          //          }
-          //          s.close()
-          //          s = c.createStatement()
-          rs = s.executeQuery(s"select rights from user_rights where user_id = ${res.get.id}")
-          val permissions = ListBuffer.empty[String]
-          while (rs.next()) {
-            permissions += rs.getString("rights")
-          }
-          res.get.permissions = permissions.toList
-          rs.close()
-          s.close()
-        }
         c.close()
+//        if (res.nonEmpty) {
+//          s = c.createStatement()
+//          rs = s.executeQuery(s"select rights from user_rights where user_id = ${res.get.id}")
+//          val permissions = ListBuffer.empty[String]
+//          while (rs.next()) {
+//            permissions += rs.getString("rights")
+//          }
+//          res.get.permissions = permissions.toList
+//          rs.close()
+//          s.close()
+//        }
         res
       case _ => Option.empty[User]
     }
   }
 
-  def getUsers: ListBuffer[User] = {
+  def getUsers: List[User] = {
     val res = ListBuffer.empty[User]
+    val rights = getRights
+    val usersProjects = getUsersProjects
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement();
         val rs = s.executeQuery(s"select * from users where removed = 0 order by id");
-        val usersProjects = getUsersProjects();
         while (rs.next()) {
           val id = Option(rs.getInt("id")).getOrElse(0);
           res += User(
@@ -105,7 +100,7 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
             rs.getString("visible_pages").split(",").toList,
             rs.getString("shared_access").split(",").toList,
             rs.getString("group").split(",").toList,
-            getRightDetails(id).toList,
+            rights.filter(_.userId == id).toList.map(_.role),
             "",
             rs.getInt("id_department")
           )
@@ -113,9 +108,9 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
         rs.close()
         s.close()
         c.close()
-        res
-      case _ => ListBuffer.empty[User]
+      case _ => None
     }
+    res.toList
   }
 
   def getRightDetails(id: Int): ListBuffer[String] = {
@@ -125,13 +120,11 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
         val s = c.createStatement();
         val rs = s.executeQuery(s"select * from user_rights where user_id = $id");
         while (rs.next()) {
-          res += (
-            rs.getString("rights")
-            )
+          res += rs.getString("rights")
         }
-        rs.close();
-        s.close();
-        c.close();
+        rs.close()
+        s.close()
+        c.close()
         res
       case _ => ListBuffer.empty[String]
     }
@@ -161,14 +154,15 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
 
   def getUserDetails(id: String): Option[User] = {
     var user: Option[User] = Option.empty[User]
+    val usersProjects = getUsersProjects
+    val userRights = getRights
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from users where id = '$id'");
-        val usersProjects = getUsersProjects();
         while (rs.next()) {
           val userId = Option(rs.getInt("id")).getOrElse(0);
-          user = Option(new User(
+          user = Option(User(
             userId,
             rs.getString("login"),
             rs.getString("password"),
@@ -185,13 +179,11 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
             rs.getString("rocket_login"),
             rs.getString("gender"),
             rs.getString("visibility"),
-            usersProjects.filter(x => {
-              x.user_id.equals(id.toString)
-            }).map(x => x.project_name),
+            usersProjects.filter(_.user_id == id).map(x => x.project_name),
             rs.getString("visible_pages").split(",").toList,
             rs.getString("shared_access").split(",").toList,
             rs.getString("group").split(",").toList,
-            getRightDetails(id.toIntOption.getOrElse(0)).toList,
+            userRights.filter(_.userId == userId).toList.map(_.role),
             "",
             rs.getInt("id_department")))
         }
@@ -318,41 +310,32 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
   }
 
   def joinUsersProjects(): String = {
-    DBManager.GetPGConnection() match {
-      case Some(c) =>
-        val s = c.createStatement();
-        s.execute("delete from users_visibility_projects");
-        val queryUsers = s"select id, visible_projects from users";
-        val rs = s.executeQuery(queryUsers);
-        val users: List[User] = getUsers.toList;
-        val projects: List[IssueProject] = getIssueProjects.toList
-        users.foreach(user => {
-          user.visible_projects.foreach(uProject => {
-            projects.foreach(project => {
-              if (uProject == project.name) {
-                val queryProject = s"insert into users_visibility_projects (user_id, project_id) values ('${user.id}', '${project.id}')";
-                s.execute(queryProject);
-              }
-            })
-          })
-        })
-        rs.close()
-        s.close()
-        c.close()
-        "success"
-      case _ => "error"
-    }
+//    DBManager.GetPGConnection() match {
+//      case Some(c) =>
+//        val s = c.createStatement();
+//        s.execute("delete from users_visibility_projects");
+//        val users: List[User] = getUsers
+//        val projects: List[IssueProject] = getIssueProjects.toList
+//        users.foreach(user => {
+//          user.visible_projects.foreach(uProject => {
+//            projects.foreach(project => {
+//              if (uProject == project.name) {
+//                val queryProject = s"insert into users_visibility_projects (user_id, project_id) values ('${user.id}', '${project.id}')";
+//                s.execute(queryProject);
+//              }
+//            })
+//          })
+//        })
+//        s.close()
+//        c.close()
+//        "success"
+//      case _ => "error"
+//    }
+    "success"
   }
 
   def getUserVisibleProjects(id: String): List[String] = {
-    val res = ListBuffer.empty[String];
-    val usersProjects = getUsersProjects();
-    usersProjects.filter(x => {
-      x.user_id.equals(id)
-    }).foreach(row => {
-      res.append(row.project_name)
-    })
-    res.toList
+    getUsersProjects.filter(_.user_id == id).map(_.project_name)
   }
 
   def getUsersProject(id: String): List[Int] = {
@@ -373,8 +356,8 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
     }
   }
 
-  def getUsersProjects(): List[UserProject] = {
-    var res: ListBuffer[UserProject] = ListBuffer.empty[UserProject];
+  def getUsersProjects: List[UserProject] = {
+    val res: ListBuffer[UserProject] = ListBuffer.empty[UserProject];
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement();
@@ -473,7 +456,7 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
 
   }
 
-  def getRoles: ListBuffer[Role] = {
+  def getRoles: List[Role] = {
     val res = ListBuffer.empty[Role]
     DBManager.GetPGConnection() match {
       case Some(c) =>
@@ -489,8 +472,8 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
         rs.close()
         s.close()
         c.close()
-        res
-      case _ => ListBuffer.empty[Role]
+        res.toList
+      case _ => List.empty[Role]
     }
   }
 
@@ -599,27 +582,27 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
     }
   }
 
-  def getPages(): ListBuffer[Page] = {
-    val res = ListBuffer.empty[Page];
+  def getPages: List[Page] = {
+    val res = ListBuffer.empty[Page]
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement();
-        val rs = s.executeQuery(s"select * from pages");
+        val rs = s.executeQuery(s"select * from pages")
         while (rs.next()) {
           res += Page(
             rs.getInt("id"),
             rs.getString("name")
           )
         }
-        rs.close();
-        s.close();
-        c.close();
-        res
-      case _ => ListBuffer.empty[Page]
+        rs.close()
+        s.close()
+        c.close()
+        res.toList
+      case _ => List.empty[Page]
     }
   }
 
-  def getRights(): ListBuffer[RightUser] = {
+  def getRights: List[RightUser] = {
     val res = ListBuffer.empty[RightUser];
     DBManager.GetPGConnection() match {
       case Some(c) =>
@@ -631,15 +614,15 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
             rs.getString("rights")
           )
         }
-        rs.close();
-        s.close();
-        c.close();
-        res
-      case _ => ListBuffer.empty[RightUser]
+        rs.close()
+        s.close()
+        c.close()
+        res.toList
+      case _ => List.empty[RightUser]
     }
   }
 
-  def getDepartments(): ListBuffer[Department] = {
+  def getDepartments: List[Department] = {
     val res = ListBuffer.empty[Department];
     DBManager.GetPGConnection() match {
       case Some(c) =>
@@ -655,8 +638,8 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
         rs.close();
         s.close();
         c.close();
-        res
-      case _ => ListBuffer.empty[Department]
+        res.toList
+      case _ => List.empty[Department]
     }
   }
 
@@ -664,7 +647,7 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
     var department: Option[Department] = Option.empty[Department]
     DBManager.GetPGConnection() match {
       case Some(c) =>
-        val s = c.createStatement();
+        val s = c.createStatement()
         val rs = s.executeQuery(s"select * from issue_departments where id = '$id'")
         while (rs.next()) {
           department = Option(Department(
@@ -673,9 +656,9 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
             rs.getString("manager")
           ))
         }
-        rs.close();
-        s.close();
-        c.close();
+        rs.close()
+        s.close()
+        c.close()
         department
       case _ => Option.empty[Department]
     }

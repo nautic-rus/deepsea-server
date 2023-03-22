@@ -1,6 +1,7 @@
 package deepsea.actors
 
 import akka.actor.{Actor, Props}
+import akka.pattern.{BackoffOpts, BackoffSupervisor}
 import akka.routing.RoundRobinPool
 import deepsea.actors.ActorManager.system
 import deepsea.actors.ActorStartupManager.{DatabaseManagerStarted, HTTPManagerStarted, Start}
@@ -17,6 +18,8 @@ import deepsea.osm.OsmManager
 import deepsea.rocket.RocketChatManager
 import deepsea.time.{BackupManager, LicenseManager, PlanHoursManager, TimeAndWeatherManager, TimeControlManager}
 
+import scala.concurrent.duration.DurationInt
+
 
 object ActorStartupManager{
   case class Start()
@@ -28,7 +31,12 @@ class ActorStartupManager extends Actor{
     case Start() =>
       ActorManager.dataBase = system.actorOf(Props[DatabaseManager])
     case DatabaseManagerStarted() =>
-      ActorManager.httpServer = system.actorOf(RoundRobinPool(1).props(Props[HTTPManager]))
+      ActorManager.httpServer = system.actorOf(RoundRobinPool(1).props(Props(classOf[HTTPManager])))
+//      val http = Props(classOf[HTTPManager])
+//      val supervisor = BackoffSupervisor.props(
+//        BackoffOpts.onFailure(http, "http", 3.seconds, 10.seconds, 0.2),
+//      )
+//      ActorManager.httpServer = system.actorOf(supervisor)
     case HTTPManagerStarted() =>
       ActorManager.auth = system.actorOf(RoundRobinPool(3).props(Props[AuthManager]))
       ActorManager.issue = system.actorOf(RoundRobinPool(3).props(Props[IssueManager]))

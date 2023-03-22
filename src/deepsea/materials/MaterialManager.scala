@@ -3,8 +3,7 @@ package deepsea.materials
 import akka.actor.Actor
 import com.mongodb.BasicDBObject
 import com.mongodb.client.model.Filters
-import deepsea.database.{DatabaseManager, MongoCodecs}
-import deepsea.database.DatabaseManager.GetMongoConnection
+import deepsea.database.{DBManager, DatabaseManager, MongoCodecs}
 import deepsea.materials.MaterialManager.{GetMaterialNodes, GetMaterials, GetMaterialsCode, GetWCDrawings, GetWCZones, GetWeightControl, Material, MaterialHistory, MaterialNode, MaterialNodeHistory, RemoveWeightControl, SetWeightControl, UpdateMaterial, UpdateMaterialNode, WCNumberName, WeightControl}
 import io.circe.{jawn, parser}
 import org.bson.Document
@@ -137,7 +136,7 @@ class MaterialManager extends Actor with MongoCodecs{
   }
   override def receive: Receive = {
     case GetMaterialNodes(project) =>
-      DatabaseManager.GetMongoConnection() match {
+      DBManager.GetMongoConnection() match {
         case Some(mongo) =>
           Await.result(mongo.getCollection(collectionNodes).find[MaterialNode](equal("project", project)).toFuture(), Duration(30, SECONDS)) match {
             case nodes => sender() ! nodes.toList.asJson.noSpaces
@@ -147,7 +146,7 @@ class MaterialManager extends Actor with MongoCodecs{
       }
     case UpdateMaterialNode(project, data, label, user, remove) =>
       val node = MaterialNode(project, label, data, user, new Date().getTime)
-      DatabaseManager.GetMongoConnection() match {
+      DBManager.GetMongoConnection() match {
         case Some(mongo) =>
           val nodes: MongoCollection[MaterialNode] = mongo.getCollection(collectionNodes)
           val nodesHistory: MongoCollection[MaterialNodeHistory] = mongo.getCollection(collectionNodesHistory)
@@ -164,7 +163,7 @@ class MaterialManager extends Actor with MongoCodecs{
       }
       sender() ! Json.toJson("success")
     case GetMaterials(project) =>
-      DatabaseManager.GetMongoConnection() match {
+      DBManager.GetMongoConnection() match {
         case Some(mongo) =>
           Await.result(mongo.getCollection(collection).find[Material](new BasicDBObject("project", project)).toFuture(), Duration(30, SECONDS)) match {
             case dbMaterials =>
@@ -180,7 +179,7 @@ class MaterialManager extends Actor with MongoCodecs{
         case _ => List.empty[Material]
       }
     case GetMaterialsCode(project, code) =>
-      DatabaseManager.GetMongoConnection() match {
+      DBManager.GetMongoConnection() match {
         case Some(mongo) =>
           Await.result(mongo.getCollection(collection).find[Material](new BasicDBObject("project", project)).toFuture(), Duration(30, SECONDS)) match {
             case dbMaterials =>
@@ -193,7 +192,7 @@ class MaterialManager extends Actor with MongoCodecs{
     case UpdateMaterial(materialValue, user, remove) =>
       decode[Material](materialValue) match {
         case Right(material) =>
-          DatabaseManager.GetMongoConnection() match {
+          DBManager.GetMongoConnection() match {
             case Some(mongo) =>
               val materials: MongoCollection[Material] = mongo.getCollection(collection)
               val materialsHistory: MongoCollection[MaterialHistory] = mongo.getCollection(collectionHistory)
@@ -212,7 +211,7 @@ class MaterialManager extends Actor with MongoCodecs{
       }
       sender() ! Json.toJson("success")
     case GetWeightControl() =>
-      DatabaseManager.GetMongoConnection() match {
+      DBManager.GetMongoConnection() match {
         case Some(mongo) =>
           Await.result(mongo.getCollection("weightControl").find[WeightControl]().toFuture(), Duration(30, SECONDS)) match {
             case dbValues => sender() ! dbValues.toList.filter(_.removedDate == 0).asJson.noSpaces
@@ -223,7 +222,7 @@ class MaterialManager extends Actor with MongoCodecs{
     case SetWeightControl(controlValue) =>
       decode[WeightControl](controlValue) match {
         case Right(weightControl) =>
-          DatabaseManager.GetMongoConnection() match {
+          DBManager.GetMongoConnection() match {
             case Some(mongo) =>
               val controls: MongoCollection[WeightControl] = mongo.getCollection("weightControl")
               Await.result(controls.insertOne(weightControl).toFuture(), Duration(30, SECONDS))
@@ -235,7 +234,7 @@ class MaterialManager extends Actor with MongoCodecs{
     case RemoveWeightControl(controlValue, user) =>
       decode[WeightControl](controlValue) match {
         case Right(weightControl) =>
-          DatabaseManager.GetMongoConnection() match {
+          DBManager.GetMongoConnection() match {
             case Some(mongo) =>
               val controls: MongoCollection[WeightControl] = mongo.getCollection("weightControl")
               weightControl.removedUser = user
@@ -247,7 +246,7 @@ class MaterialManager extends Actor with MongoCodecs{
       }
       sender() ! Json.toJson("success")
     case GetWCDrawings() =>
-      DatabaseManager.GetMongoConnection() match {
+      DBManager.GetMongoConnection() match {
         case Some(mongo) =>
           Await.result(mongo.getCollection("wcDrawings").find[WCNumberName]().toFuture(), Duration(30, SECONDS)) match {
             case dbValues => sender() ! dbValues.toList.asJson.noSpaces
@@ -256,7 +255,7 @@ class MaterialManager extends Actor with MongoCodecs{
         case _ => List.empty[WCNumberName]
       }
     case GetWCZones() =>
-      DatabaseManager.GetMongoConnection() match {
+      DBManager.GetMongoConnection() match {
         case Some(mongo) =>
           Await.result(mongo.getCollection("wcZones").find[WCNumberName]().toFuture(), Duration(30, SECONDS)) match {
             case dbValues => sender() ! dbValues.toList.asJson.noSpaces
