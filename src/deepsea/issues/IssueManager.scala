@@ -166,15 +166,15 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
       circe.jawn.decode[IssueProject](projectJson) match {
         case Right(project) =>
           val result = startProject(project)
-          sender() ! result.asJson
-        case _ => sender() ! "error".asJson
+          sender() ! result.asJson.noSpaces
+        case _ => sender() ! "error".asJson.noSpaces
       }
     case DeleteProject(id) => sender() ! deleteProject(id).asJson
     case EditProject(projectJson, id) =>
       circe.jawn.decode[IssueProject](projectJson) match {
         case Right(project) =>
           val result = editProject(project, id)
-          sender() ! result.asJson
+          sender() ! result.asJson.noSpaces
         case _ => sender() ! "error".asJson
       }
     case GetIssueTypes() => sender() ! Json.toJson(getIssueTypes)

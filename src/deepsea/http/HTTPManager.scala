@@ -6,8 +6,9 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.{Actor, ActorRef}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.Multipart.BodyPart
-import akka.http.scaladsl.model.{HttpEntity, Multipart}
+import akka.http.scaladsl.model.{HttpEntity, HttpRequest, Multipart}
 import akka.http.scaladsl.server.Directives.{path, _}
+import akka.http.scaladsl.server.directives.DebuggingDirectives
 import akka.http.scaladsl.server.{Route, StandardRoute}
 import akka.pattern.ask
 import akka.stream.scaladsl.{FileIO, Sink}
@@ -20,6 +21,7 @@ import deepsea.auth.AuthManager.{DeleteAdminRight, DeleteRole, DeleteUser, EditA
 import deepsea.fest.FestManager.{DeleteFestKaraoke, DeleteFestSauna, DeleteFestStories, GetBestPlayers, GetFestKaraoke, GetFestSauna, GetFestStories, GetMarks, GetTeamsWon, SetBestPlayer, SetFestKaraoke, SetFestSauna, SetFestStories, SetMarks, SetTeamsWon}
 import deepsea.files.FileManager.{CreateDocumentCloudDirectory, CreateFile, CreateMaterialCloudDirectory, GetCloudFiles, GetDocumentFiles, GetFileFromCloud, GetPdSpList}
 import deepsea.files.classes.FileAttachment
+import deepsea.http.HTTPManager.server
 import deepsea.issues.IssueManager._
 import deepsea.materials.MaterialManager.{GetMaterialNodes, GetMaterials, GetMaterialsCode, GetWCDrawings, GetWCZones, GetWeightControl, RemoveWeightControl, SetWeightControl, UpdateMaterial, UpdateMaterialNode}
 import deepsea.mobile.MobileManager.{GetDrawingInfo, GetDrawings}
@@ -39,14 +41,17 @@ import scala.concurrent.{Await, ExecutionContextExecutor, Future}
 
 object HTTPManager {
   case class Response(value: String)
+  var server: Future[Http.ServerBinding] = _
+  def check(): String ={
+    server.value.get.get.localAddress.toString
+  }
 }
 
 class HTTPManager extends Actor {
   implicit val system: ActorSystem[Nothing] = ActorSystem(Behaviors.empty, "http")
   implicit val executionContext: ExecutionContextExecutor = system.executionContext
-  implicit val timeout: Timeout = Timeout(60, TimeUnit.SECONDS)
+  implicit val timeout: Timeout = Timeout(50, TimeUnit.SECONDS)
   val logger: Logger = LogManager.getLogger("HttpManager")
-  var server: Future[Http.ServerBinding] = _
   val routes: Route = cors() {
     concat(
       //AUTHORIZATION COMMANDS

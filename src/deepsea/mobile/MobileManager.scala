@@ -2,7 +2,7 @@ package deepsea.mobile
 
 import akka.actor.Actor
 import com.mongodb.BasicDBObject
-import deepsea.database.{DatabaseManager, MongoCodecs}
+import deepsea.database.{DBManager, DatabaseManager, MongoCodecs}
 import deepsea.materials.MaterialManager.{GetMaterials, Material}
 import deepsea.mobile.MobileManager.{Drawing, DrawingInfo, GetDrawingInfo, GetDrawings, OrizInfo}
 import io.circe.syntax.EncoderOps
@@ -26,7 +26,7 @@ class MobileManager extends Actor with MongoCodecs{
     case GetDrawings() =>
       sender() ! Json.toJson(getDrawings)
     case GetDrawingInfo(drawingName) =>
-      DatabaseManager.GetMongoConnection() match {
+      DBManager.GetMongoConnection() match {
         case Some(mongo) =>
           val oriz = Await.result(mongo.getCollection("orIzDrawings").find(new BasicDBObject("name", drawingName)).map(doc => {
               OrizInfo(
@@ -88,7 +88,7 @@ class MobileManager extends Actor with MongoCodecs{
 
 
   def getDrawings: List[String] ={
-    DatabaseManager.GetMongoConnection() match {
+    DBManager.GetMongoConnection() match {
       case Some(mongo) =>
         Await.result(mongo.getCollection("drawings").find[Document].toFuture(), Duration(30, SECONDS)) match {
           case files => files.toList.map(x => x.getString("name"))

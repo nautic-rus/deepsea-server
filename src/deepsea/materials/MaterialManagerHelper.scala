@@ -15,7 +15,7 @@ import scala.concurrent.duration.{Duration, SECONDS}
 
 trait MaterialManagerHelper extends IssueManagerHelper {
   def getNodes: List[MaterialNode] ={
-    DatabaseManager.GetMongoConnection() match {
+    DBManager.GetMongoConnection() match {
       case Some(mongo) =>
         Await.result(mongo.getCollection("materials-n-nodes").find[MaterialNode].toFuture(), Duration(30, SECONDS)) match {
           case nodes => nodes.toList
@@ -25,7 +25,7 @@ trait MaterialManagerHelper extends IssueManagerHelper {
     }
   }
   def getMaterials: List[Material] ={
-    DatabaseManager.GetMongoConnection() match {
+    DBManager.GetMongoConnection() match {
       case Some(mongo) =>
         Await.result(mongo.getCollection("materials-n").find[Material]().toFuture(), Duration(30, SECONDS)) match {
           case dbMaterials => dbMaterials.toList
@@ -35,7 +35,7 @@ trait MaterialManagerHelper extends IssueManagerHelper {
     }
   }
   def getMaterial(code: String): Option[Material] ={
-    DatabaseManager.GetMongoConnection() match {
+    DBManager.GetMongoConnection() match {
       case Some(mongo) =>
         Await.result(mongo.getCollection("materials-n").find[Material](Filters.eq("code", code)).first().toFuture(), Duration(30, SECONDS)) match {
           case material: Material => Option(material)

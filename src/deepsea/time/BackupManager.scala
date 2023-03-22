@@ -53,7 +53,7 @@ class BackupManager extends Actor{
   }
   def backupForan(): Unit ={
     val configOracle = new HikariConfig()
-    configOracle.setDriverClassName("oracle.jdbc.driver.OracleDriver")
+    configOracle.setDriverClassName("oracle.jdbc.OracleDriver")
     configOracle.setJdbcUrl("jdbc:oracle:thin:@192.168.1.12:1521:ORA3DB")
     configOracle.setUsername("SYS AS SYSDBA")
     configOracle.setPassword("Whatab0utus")

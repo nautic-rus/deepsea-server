@@ -3,7 +3,7 @@ package deepsea.files
 import akka.actor.Actor
 import com.mongodb.BasicDBObject
 import deepsea.App
-import deepsea.database.{DatabaseManager, MongoCodecs}
+import deepsea.database.{DBManager, DatabaseManager, MongoCodecs}
 import deepsea.files.FileManager._
 import deepsea.files.classes.FileAttachment
 import deepsea.issues.IssueManagerHelper
@@ -126,7 +126,7 @@ class FileManager extends Actor with MongoCodecs with MaterialManagerHelper with
 
 
   def getTreeFiles: List[TreeFile] ={
-    DatabaseManager.GetMongoConnection() match {
+    DBManager.GetMongoConnection() match {
       case Some(mongo) =>
         Await.result(mongo.getCollection(treeFilesCollection).find[TreeFile].toFuture(), Duration(30, SECONDS)) match {
           case files => files.toList
@@ -138,7 +138,7 @@ class FileManager extends Actor with MongoCodecs with MaterialManagerHelper with
   def setTreeFiles(value: String): Unit ={
     decode[List[TreeFile]](value) match {
       case Right(files) =>
-        DatabaseManager.GetMongoConnection() match {
+        DBManager.GetMongoConnection() match {
           case Some(mongo) =>
             val treeFiles: MongoCollection[TreeFile] = mongo.getCollection(treeFilesCollection)
             Await.result(treeFiles.insertMany(files).toFuture(), Duration(30, SECONDS))
@@ -150,7 +150,7 @@ class FileManager extends Actor with MongoCodecs with MaterialManagerHelper with
   def deleteTeeFiles(urlsValue: String, user: String): Unit={
     decode[List[String]](urlsValue) match {
       case Right(urls) =>
-        DatabaseManager.GetMongoConnection() match {
+        DBManager.GetMongoConnection() match {
           case Some(mongo) =>
             val files: MongoCollection[TreeFile] = mongo.getCollection(treeFilesCollection)
             val filesHistory: MongoCollection[TreeFileHistory] = mongo.getCollection(treeFilesHistoryCollection)
@@ -168,7 +168,7 @@ class FileManager extends Actor with MongoCodecs with MaterialManagerHelper with
     }
   }
   def getTreeDirectories: List[TreeDirectory] ={
-    DatabaseManager.GetMongoConnection() match {
+    DBManager.GetMongoConnection() match {
       case Some(mongo) =>
         Await.result(mongo.getCollection(treeFileDirectoriesCollection).find[TreeDirectory].toFuture(), Duration(30, SECONDS)) match {
           case files => files.toList
@@ -180,7 +180,7 @@ class FileManager extends Actor with MongoCodecs with MaterialManagerHelper with
   def setTreeDirectory(jsValue: String): Unit ={
     decode[TreeDirectory](jsValue) match {
       case Right(value) =>
-        DatabaseManager.GetMongoConnection() match {
+        DBManager.GetMongoConnection() match {
           case Some(mongo) =>
             val files: MongoCollection[TreeDirectory] = mongo.getCollection(treeFileDirectoriesCollection)
             Await.result(files.insertOne(value).toFuture(), Duration(30, SECONDS))

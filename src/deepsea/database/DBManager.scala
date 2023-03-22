@@ -28,7 +28,7 @@ object DBManager extends MongoCodecs {
 
   List("N002", "N004", "SC01", "LV01").foreach(project => {
     try{
-      configOracle.setDriverClassName("oracle.jdbc.driver.OracleDriver")
+      configOracle.setDriverClassName("oracle.jdbc.OracleDriver")
       configOracle.setJdbcUrl("jdbc:oracle:thin:@office.nautic-rus.ru:1521:ORA3DB")
       configOracle.setUsername("C" + project)
       configOracle.setPassword("Whatab0utus")
@@ -45,7 +45,7 @@ object DBManager extends MongoCodecs {
   configPG.setJdbcUrl("jdbc:postgresql://192.168.1.26/deepsea")
   configPG.setUsername("deepsea")
   configPG.setPassword("Ship1234")
-  configPG.setMaximumPoolSize(25)
+  configPG.setMaximumPoolSize(10)
   val dsPG = new HikariDataSource(configPG)
 
 //  private val configNextCloud = new HikariConfig()
@@ -61,8 +61,16 @@ object DBManager extends MongoCodecs {
   configNextCloud.setJdbcUrl("jdbc:postgresql://cloud.nautic-rus.com:5570/nextcloud_database")
   configNextCloud.setUsername("oc_nextcloud")
   configNextCloud.setPassword("cab5a0e8b5db655ec2d8ce46efd22cea3f5b137ee450deb3")
-  configNextCloud.setMaximumPoolSize(25)
+  configNextCloud.setMaximumPoolSize(2)
   var dsNextCloud = new HikariDataSource(configNextCloud)
+
+  val configFireBase = new HikariConfig()
+  configFireBase.setDriverClassName("org.firebirdsql.jdbc.FBDriver")
+  configFireBase.setJdbcUrl("jdbc:firebirdsql://192.168.1.21:3053/C:/Program Files (x86)/TimeControl/BASE/OKO.FDB?charSet=UTF8")
+  configFireBase.setUsername("MEGA")
+  configFireBase.setPassword("STMEGA21")
+  val dsFireBase = new HikariDataSource(configFireBase)
+
 
   def GetOracleConnection(project: String): Option[Connection] ={
     oracleConnections.find(_.project == project) match {
@@ -80,16 +88,9 @@ object DBManager extends MongoCodecs {
     Option(mongoClient.getDatabase("cache").withCodecRegistry(codecRegistry))
   }
   def GetNextCloudConnection(): Option[Connection] = {
-//    if (!nextcloudSSHSession.isConnected){
-//      try{
-//        nextcloudSSHSession.connect()
-//        dsNextCloud = new HikariDataSource(configNextCloud)
-//        nextcloudSSHSession.setPortForwardingL("localhost", 1155, "172.18.0.5", 5432)
-//      }
-//      catch {
-//        case e: Exception => None
-//      }
-//    }
     Option(dsNextCloud.getConnection)
+  }
+  def GetFireBaseConnection(): Option[Connection] = {
+    Option(dsFireBase.getConnection)
   }
 }
