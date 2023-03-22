@@ -85,9 +85,9 @@ class HTTPManager extends Actor {
       (post & path("editUsersProject") & entity(as[String]) & parameter("idProject")) { (idUsers, idProject) =>
         askFor(ActorManager.auth, EditUsersProject(idUsers, idProject))
       },
-      (get & path("joinUsersProjects")) {
-        askFor(ActorManager.auth, JoinUsersProjects())
-      },
+//      (get & path("joinUsersProjects")) {
+//        askFor(ActorManager.auth, JoinUsersProjects())
+//      },
       (get & path("usersProject") & parameter("id")) { id =>
         askFor(ActorManager.auth, GetUsersProject(id))
       },
