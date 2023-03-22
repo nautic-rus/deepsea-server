@@ -12,7 +12,6 @@ import deepsea.rocket.RocketChatManager.SendNotification
 import io.circe
 import io.circe.jawn
 import io.circe.syntax.EncoderOps
-import play.api.libs.json.{Json, OWrites}
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
@@ -159,7 +158,7 @@ class AuthManager extends Actor with AuthManagerHelper with IssueManagerHelper w
                   sender() ! user.asJson.noSpaces
                 case _ => None
               }
-            case _ => sender() ! Json.toJson("wrong-token")
+            case _ => sender() ! ("wrong-token").asJson.noSpaces
           }
         case _ =>
           getUserByLoginPassword(login, password) match {
@@ -174,7 +173,7 @@ class AuthManager extends Actor with AuthManagerHelper with IssueManagerHelper w
                   }
                 case _ => None
               }
-            case _ => sender() ! Json.toJson("wrong-password")
+            case _ => sender() !("wrong-password").asJson.noSpaces
           }
       }
     case GetUsers() =>
@@ -254,13 +253,13 @@ class AuthManager extends Actor with AuthManagerHelper with IssueManagerHelper w
     case SendLogPass(id) => sender() ! sendLogPass(id).asJson.noSpaces
     case ShareRights(user, with_user) =>
       shareWith(user, with_user)
-      sender() ! Json.toJson("success")
+      sender() ! ("success").asJson.noSpaces
     case UpdateEmail(user, email) =>
       updateEmail(user, email)
-      sender() ! Json.toJson("success")
+      sender() ! ("success").asJson.noSpaces
     case UpdateRocketLogin(user, rocketLogin) =>
       updateRocketLogin(user, rocketLogin)
-      sender() ! Json.toJson("success")
+      sender() ! ("success").asJson.noSpaces
     case _ => None
   }
 

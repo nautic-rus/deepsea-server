@@ -1,13 +1,15 @@
 package deepsea.database
 
 import deepsea.auth.AuthManager.{AdminRight, Department, Page, RightUser, Role, User}
+import deepsea.fest.FestManager.{FestKaraoke, FestSauna, FestStories}
+import deepsea.fest.classes.Mark
 import deepsea.files.FileManager.{DocumentDirectories, TreeDirectory, TreeFile, TreeFileHistory}
-import deepsea.issues.IssueManager.{DailyTask, IssueProject, MessageReaction}
+import deepsea.issues.IssueManager.{DailyTask, DayCalendar, IdName, IssueDef, IssueProject, LV, MessageReaction}
 import deepsea.materials.MaterialManager.{Material, MaterialHistory, MaterialNode, MaterialNodeHistory, MaterialTranslation, ProjectName, WCNumberName, WeightControl}
 import deepsea.mobile.MobileManager.{Drawing, DrawingInfo, OrizInfo}
 import deepsea.osm.OsmManager.{LatLng, OSMUser, ParkingLocationSheet}
 import deepsea.time.PlanHoursManager.PlanHour
-import deepsea.time.TimeControlManager.{SpyWatch, UserWatch}
+import deepsea.time.TimeControlManager.{SpyWatch, TimeControlInterval, UserWatch}
 import io.circe.generic.semiauto.{deriveCodec, deriveDecoder, deriveEncoder}
 import io.circe.{Decoder, Encoder}
 import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}
@@ -109,6 +111,37 @@ trait MongoCodecs {
 
   implicit val DepartmentDecoder: Decoder[Department] = deriveDecoder[Department]
   implicit val DepartmentEncoder: Encoder[Department] = deriveEncoder[Department]
+
+  implicit val IdNameDecoder: Decoder[IdName] = deriveDecoder[IdName]
+  implicit val IdNameEncoder: Encoder[IdName] = deriveEncoder[IdName]
+
+  implicit val LVDecoder: Decoder[LV] = deriveDecoder[LV]
+  implicit val LVEncoder: Encoder[LV] = deriveEncoder[LV]
+
+  implicit val DayCalendarDecoder: Decoder[DayCalendar] = deriveDecoder[DayCalendar]
+  implicit val DayCalendarEncoder: Encoder[DayCalendar] = deriveEncoder[DayCalendar]
+
+  implicit val IssueDefDecoder: Decoder[IssueDef] = deriveDecoder[IssueDef]
+  implicit val IssueDefEncoder: Encoder[IssueDef] = deriveEncoder[IssueDef]
+
+  implicit val TimeControlIntervalDecoder: Decoder[TimeControlInterval] = deriveDecoder[TimeControlInterval]
+  implicit val TimeControlIntervalEncoder: Encoder[TimeControlInterval] = deriveEncoder[TimeControlInterval]
+
+  implicit val FestStoriesDecoder: Decoder[FestStories] = deriveDecoder[FestStories]
+  implicit val FestStoriesEncoder: Encoder[FestStories] = deriveEncoder[FestStories]
+
+  implicit val FestKaraokeDecoder: Decoder[FestKaraoke] = deriveDecoder[FestKaraoke]
+  implicit val FestKaraokeEncoder: Encoder[FestKaraoke] = deriveEncoder[FestKaraoke]
+
+  implicit val FestSaunaDecoder: Decoder[FestSauna] = deriveDecoder[FestSauna]
+  implicit val FestSaunaEncoder: Encoder[FestSauna] = deriveEncoder[FestSauna]
+
+  implicit val MarkDecoder: Decoder[Mark] = deriveDecoder[Mark]
+  implicit val MarkEncoder: Encoder[Mark] = deriveEncoder[Mark]
+
+
+
+
 
   def codecRegistry: CodecRegistry = fromRegistries(fromProviders(
     classOf[Material],

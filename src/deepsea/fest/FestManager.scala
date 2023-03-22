@@ -1,14 +1,18 @@
 package deepsea.fest
 
 import akka.actor.Actor
-import deepsea.database.DBManager
+import deepsea.database.{DBManager, MongoCodecs}
 import deepsea.fest.FestManager._
 import deepsea.fest.classes.{BestPlayer, Mark, TeamWon}
+import deepsea.files.FileManager.{TreeFile, treeFilesCollection}
 import deepsea.files.classes.FileAttachment
-import play.api.libs.json.{Json, OWrites}
-
+import io.circe.syntax.EncoderOps
+import org.mongodb.scala.MongoCollection
+import io.circe.parser.decode
 import java.util.Date
 import scala.collection.mutable.ListBuffer
+import scala.concurrent.Await
+import scala.concurrent.duration.{Duration, SECONDS}
 
 object FestManager{
 
@@ -34,78 +38,76 @@ object FestManager{
   case class DeleteFestSauna(time: String)
 
   case class FestStories(url: String, thumb: String, date: Long)
-  implicit val writesFestStories: OWrites[FestStories] = Json.writes[FestStories]
 
   case class FestKaraoke(users: String, song: String, date: Long)
-  implicit val writesFestKaraoke: OWrites[FestKaraoke] = Json.writes[FestKaraoke]
 
   case class FestSauna(kind: String, users: String, time: String)
-  implicit val writesFestSauna: OWrites[FestSauna] = Json.writes[FestSauna]
 }
-class FestManager extends Actor{
+class FestManager extends Actor with MongoCodecs{
   override def receive: Receive = {
 
-    case GetMarks() => sender() ! Json.toJson(getFestMarks)
+    case GetMarks() => sender() ! getFestMarks.asJson.noSpaces
     case SetMarks(marksValue) =>
-      Json.parse(marksValue).asOpt[ListBuffer[Mark]] match {
-        case Some(marks) =>
+      decode[List[Mark]](marksValue) match {
+        case Right(marks) =>
           updateMarks(marks)
-          sender() ! Json.toJson("success")
-        case _ =>
-          sender() ! Json.toJson("error")
+          sender() ! ("success").asJson.noSpaces
+        case Left(value) =>
+          sender() ! ("error").asJson.noSpaces
       }
 
-    case GetTeamsWon() => sender() ! Json.toJson(getTeamsWon)
-    case SetTeamsWon(teams) =>
-      Json.parse(teams).asOpt[ListBuffer[TeamWon]] match {
-        case Some(teams) =>
-          updateTeamsWon(teams)
-          sender() ! Json.toJson("success")
-        case _ =>
-          sender() ! Json.toJson("error")
-      }
 
-    case GetBestPlayers() => sender() ! Json.toJson(getBestPlayers)
-    case SetBestPlayer(player) =>
-      Json.parse(player).asOpt[BestPlayer] match {
-        case Some(player) =>
-          updateBestPlayer(player)
-          sender() ! Json.toJson("success")
-        case _ =>
-          sender() ! Json.toJson("error")
-      }
-
-    case GetFestStories() =>
-      sender() ! Json.toJson(getFestStories)
-    case SetFestStories(url, thumb) =>
-      setFestStories(url, thumb)
-      sender() ! Json.toJson("success")
-    case DeleteFestStories(url) =>
-      deleteFestStories(url)
-      sender() ! Json.toJson("success")
-
-    case GetFestKaraoke() =>
-      sender() ! Json.toJson(getFestKaraoke)
-    case SetFestKaraoke(users, song) =>
-      setFestKaraoke(users, song)
-      sender() ! Json.toJson("success")
-    case DeleteFestKaraoke(date) =>
-      deleteFestKaraoke(date.toLongOption.getOrElse(0))
-      sender() ! Json.toJson("success")
-
-    case GetFestSauna() =>
-      sender() ! Json.toJson(getFestSauna)
-    case SetFestSauna(kind, users, time) =>
-      setFestSauna(kind, users, time)
-      sender() ! Json.toJson("success")
-    case DeleteFestSauna(time) =>
-      deleteFestSauna(time)
-      sender() ! Json.toJson("success")
+//    case GetTeamsWon() => sender() ! Json.toJson(getTeamsWon)
+//    case SetTeamsWon(teams) =>
+//      Json.parse(teams).asOpt[ListBuffer[TeamWon]] match {
+//        case Some(teams) =>
+//          updateTeamsWon(teams)
+//          sender() ! Json.toJson("success")
+//        case _ =>
+//          sender() ! Json.toJson("error")
+//      }
+//
+//    case GetBestPlayers() => sender() ! Json.toJson(getBestPlayers)
+//    case SetBestPlayer(player) =>
+//      Json.parse(player).asOpt[BestPlayer] match {
+//        case Some(player) =>
+//          updateBestPlayer(player)
+//          sender() ! Json.toJson("success")
+//        case _ =>
+//          sender() ! Json.toJson("error")
+//      }
+//
+//    case GetFestStories() =>
+//      sender() ! Json.toJson(getFestStories)
+//    case SetFestStories(url, thumb) =>
+//      setFestStories(url, thumb)
+//      sender() ! Json.toJson("success")
+//    case DeleteFestStories(url) =>
+//      deleteFestStories(url)
+//      sender() ! Json.toJson("success")
+//
+//    case GetFestKaraoke() =>
+//      sender() ! Json.toJson(getFestKaraoke)
+//    case SetFestKaraoke(users, song) =>
+//      setFestKaraoke(users, song)
+//      sender() ! Json.toJson("success")
+//    case DeleteFestKaraoke(date) =>
+//      deleteFestKaraoke(date.toLongOption.getOrElse(0))
+//      sender() ! Json.toJson("success")
+//
+//    case GetFestSauna() =>
+//      sender() ! Json.toJson(getFestSauna)
+//    case SetFestSauna(kind, users, time) =>
+//      setFestSauna(kind, users, time)
+//      sender() ! Json.toJson("success")
+//    case DeleteFestSauna(time) =>
+//      deleteFestSauna(time)
+//      sender() ! Json.toJson("success")
 
     case _ => None
   }
 
-  def updateMarks(marks: ListBuffer[Mark]): Unit ={
+  def updateMarks(marks: List[Mark]): Unit ={
     val current = getFestMarks
     DBManager.GetPGConnection() match {
       case Some(c) =>

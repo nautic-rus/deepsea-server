@@ -45,7 +45,7 @@ object DBManager extends MongoCodecs {
   configPG.setJdbcUrl("jdbc:postgresql://192.168.1.26/deepsea")
   configPG.setUsername("deepsea")
   configPG.setPassword("Ship1234")
-  configPG.setMaximumPoolSize(10)
+  configPG.setMaximumPoolSize(3)
   val dsPG = new HikariDataSource(configPG)
 
 //  private val configNextCloud = new HikariConfig()
@@ -61,7 +61,7 @@ object DBManager extends MongoCodecs {
   configNextCloud.setJdbcUrl("jdbc:postgresql://cloud.nautic-rus.com:5570/nextcloud_database")
   configNextCloud.setUsername("oc_nextcloud")
   configNextCloud.setPassword("cab5a0e8b5db655ec2d8ce46efd22cea3f5b137ee450deb3")
-  configNextCloud.setMaximumPoolSize(2)
+  configNextCloud.setMaximumPoolSize(5)
   var dsNextCloud = new HikariDataSource(configNextCloud)
 
   val configFireBase = new HikariConfig()

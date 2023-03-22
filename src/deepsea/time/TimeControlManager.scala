@@ -9,7 +9,6 @@ import deepsea.files.FileManager.{TreeDirectory, treeFileDirectoriesCollection}
 import deepsea.materials.MaterialManager.{MaterialNode, MaterialNodeHistory}
 import deepsea.time.TimeControlManager.{AddSpyWatch, AddUserWatch, GetSpyWatches, GetTime, GetUserTimeControl, GetUserWatches, SpyWatch, TimeControlInterval, UserWatch}
 import org.mongodb.scala.MongoCollection
-import play.api.libs.json.{Json, OWrites, __}
 import io.circe.parser.decode
 import io.circe.syntax.EncoderOps
 import org.mongodb.scala.model.Filters._
@@ -31,12 +30,11 @@ object TimeControlManager {
   case class SpyWatch(user: String, var activity: Long, images: List[String], active: String, activeIndex: Int)
 
   case class TimeControlInterval(userId: String, startTime: Long, endTime: Long, startDate: Long, endDate: Long, addDoor: Int = -1, closeDoor: Int = -1)
-  implicit val writesTimeControlInterval: OWrites[TimeControlInterval] = Json.writes[TimeControlInterval]
 }
 class TimeControlManager extends Actor with MongoCodecs{
   val length = 100
   override def receive: Receive = {
-    case GetUserTimeControl(user) => sender() ! Json.toJson(getUserTimeControl(user))
+    case GetUserTimeControl(user) => sender() ! (getUserTimeControl(user)).asJson.noSpaces
     case AddUserWatch(json) =>
       addUserWatch(json)
       sender() ! "success".asJson.noSpaces
