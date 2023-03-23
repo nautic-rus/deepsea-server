@@ -2,7 +2,7 @@ package deepsea.time
 
 import deepsea.database.DBManager
 import deepsea.database.DBManager.RsIterator
-import deepsea.time.PlanHoursManager.{AllocatedHour, ConsumedHour, PlanHour}
+import deepsea.time.PlanHoursManager.{AllocatedHour, ConsumedHour, PlanHour, PlannedHours}
 
 import java.util.{Calendar, Date}
 
@@ -196,7 +196,8 @@ trait PlanHoursHelper {
         val endDateValue = new Date(endYear, endMonth, endDay)
 
         val userFilter = s"(user_id = $userId or $userId = 0)"
-        val dateFilter = s"((month >= $startMonth and month <= $endMonth and year >= $startYear and year <= $endYear) or $available)"
+        //val dateFilter = s"((month >= $startMonth and month <= $endMonth and year >= $startYear and year <= $endYear) or $available)"
+        val dateFilter = s"((month = $startMonth) or $available)"
         val query = s"select * from hours_template_user where $userFilter and $dateFilter"
         val s = c.createStatement()
         val planHours = RsIterator(s.executeQuery(query)).map(rs => {
@@ -214,7 +215,8 @@ trait PlanHoursHelper {
         }).toList
         s.close()
         c.close()
-        planHours.filter(p => available || (startDateValue.getTime <= new Date(p.year, p.month, p.day).getTime && new Date(p.year, p.month, p.day).getTime < endDateValue.getTime)).sortBy(_.id)
+        //planHours.filter(p => available || (startDateValue.getTime <= new Date(p.year, p.month, p.day).getTime && new Date(p.year, p.month, p.day).getTime < endDateValue.getTime)).sortBy(_.id)
+        planHours.sortBy(_.id)
       case _ => List.empty[PlanHour]
     }
   }
@@ -243,6 +245,20 @@ trait PlanHoursHelper {
         c.close()
         planHours.sortBy(_.id)
       case _ => List.empty[PlanHour]
+    }
+  }
+  def getPlannedHours: List[PlannedHours] ={
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val query = s"select * from hours_template_user where task_id != 0"
+        val s = c.createStatement()
+        val planHours = RsIterator(s.executeQuery(query)).map(rs => {
+          Option(rs.getInt("task_id")).getOrElse(0)
+        }).toList
+        s.close()
+        c.close()
+        planHours.groupBy(x => x).map(x => PlannedHours(x._1, x._2.length)).toList
+      case _ => List.empty[PlannedHours]
     }
   }
   def getDayHours(userId: Int, day: Int, month: Int, year: Int): List[PlanHour] ={

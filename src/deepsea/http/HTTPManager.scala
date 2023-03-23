@@ -9,7 +9,7 @@ import akka.http.scaladsl.model.Multipart.BodyPart
 import akka.http.scaladsl.model.{HttpEntity, HttpRequest, Multipart, RemoteAddress}
 import akka.http.scaladsl.server.Directives.{path, _}
 import akka.http.scaladsl.server.directives.DebuggingDirectives
-import akka.http.scaladsl.server.{Route, StandardRoute}
+import akka.http.scaladsl.server.{ExceptionHandler, Route, StandardRoute}
 import akka.pattern.ask
 import akka.stream.scaladsl.{FileIO, Sink}
 import akka.util.Timeout
@@ -18,6 +18,7 @@ import deepsea.App
 import deepsea.actors.ActorManager
 import deepsea.actors.ActorStartupManager.HTTPManagerStarted
 import deepsea.auth.AuthManager.{DeleteAdminRight, DeleteRole, DeleteUser, EditAdminRight, EditRole, EditUser, EditUsersProject, GetAdminRightDetails, GetAdminRights, GetDepartmentDetails, GetDepartments, GetPages, GetRightDetails, GetRights, GetRoleDetails, GetRoleRights, GetRoles, GetUserDetails, GetUserVisibleProjects, GetUsers, GetUsersProject, JoinUsersProjects, Login, SaveRoleForAll, SendLogPass, ShareRights, StartRight, StartRole, StartUser, UpdateEmail, UpdateRocketLogin}
+import deepsea.database.DBManager
 import deepsea.fest.FestManager.{DeleteFestKaraoke, DeleteFestSauna, DeleteFestStories, GetBestPlayers, GetFestKaraoke, GetFestSauna, GetFestStories, GetMarks, GetTeamsWon, SetBestPlayer, SetFestKaraoke, SetFestSauna, SetFestStories, SetMarks, SetTeamsWon}
 import deepsea.files.FileManager.{CreateDocumentCloudDirectory, CreateFile, CreateMaterialCloudDirectory, GetCloudFiles, GetDocumentFiles, GetFileFromCloud, GetPdSpList}
 import deepsea.files.classes.FileAttachment
@@ -28,7 +29,7 @@ import deepsea.mobile.MobileManager.{GetDrawingInfo, GetDrawings}
 import deepsea.osm.OsmManager.{AddPLS, GetPLS}
 import deepsea.rocket.RocketChatManager.SendNotification
 import deepsea.time.LicenseManager.GetForanLicenses
-import deepsea.time.PlanHoursManager.{DeleteUserTask, GetUserPlanHours, PlanUserTask}
+import deepsea.time.PlanHoursManager.{DeleteUserTask, GetPlannedHours, GetUserPlanHours, PlanUserTask}
 import deepsea.time.TimeAndWeatherManager.GetTimeAndWeather
 import deepsea.time.TimeControlManager.{AddSpyWatch, AddUserWatch, GetSpyWatches, GetTime, GetUserTimeControl, GetUserWatches}
 import org.apache.log4j.{LogManager, Logger}
@@ -38,6 +39,7 @@ import java.io.{File, FileInputStream, InputStream}
 import java.util.{Date, UUID}
 import java.util.concurrent.TimeUnit
 import scala.concurrent.{Await, ExecutionContextExecutor, Future}
+import scala.util.{Failure, Success}
 
 object HTTPManager {
   case class Response(value: String)
@@ -305,6 +307,9 @@ class HTTPManager extends Actor {
         (get & path("deleteUserTask") & parameter("userId", "taskId", "fromHour")) { (userId, taskId, fromHour) =>
           askFor(ActorManager.planHours, DeleteUserTask(userId, taskId, fromHour))
         },
+        (get & path("plannedHours")) {
+          askFor(ActorManager.planHours, GetPlannedHours())
+        },
 
         (get & path("subscribeForIssue") & parameter("user") & parameter("issue") & parameter("options")) { (user, issue, options) =>
           askFor(ActorManager.issue, SubscribeForNotifications(user, issue, options))
@@ -555,14 +560,13 @@ class HTTPManager extends Actor {
         (get & path("lockPlanHours") & parameter("issue_id") & parameter("state")) { (issue_id, state) =>
           askFor(ActorManager.issue, LockPlanHours(issue_id, state))
         },
+
       )
     }
-
   }
-
   def askFor(actor: ActorRef, command: Any, long: Boolean = false): Route = {
-    try {
-      Await.result(actor ? command, timeout.duration) match {
+    onComplete(actor.ask(command)) {
+      case Success(value) => value match {
         case response: JsValue => complete(HttpEntity(response.toString()))
         case response: Array[Byte] => complete(HttpEntity(response))
         case response: String => complete(HttpEntity(response))
@@ -571,9 +575,7 @@ class HTTPManager extends Actor {
         case response: File => getFromFile(response)
         case _ => complete(HttpEntity(Json.toJson("Error: Wrong response from actor.").toString()))
       }
-    }
-    catch {
-      case _: Throwable => complete(HttpEntity(Json.toJson("Error: No response from actor in timeout.").toString()))
+      case Failure(exception) => complete(HttpEntity(exception.toString))
     }
   }
 

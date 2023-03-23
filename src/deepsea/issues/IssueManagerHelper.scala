@@ -35,7 +35,7 @@ trait IssueManagerHelper extends MongoCodecs {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        var query = s"select *, (select closing_status from issue_types where type_name = i.issue_type) from issue i, issue_stages ist where removed = 0 and ist.stage_name = i.period and ist.id_project = (select id from issue_projects ip where ip.name = i.project) and (assigned_to = '${user.login}' or started_by = '${user.login}' or responsible = '${user.login}'"
+        var query = s"select *, (select closing_status from issue_types where type_name = i.issue_type) from issue i where removed = 0 and (assigned_to = '${user.login}' or started_by = '${user.login}' or responsible = '${user.login}'"
         if (user.permissions.contains("view_department_tasks")){
           var groups = user.groups.map(x => "'" + x + "'").mkString("(", ",", ")")
           if (user.groups.isEmpty){
@@ -157,7 +157,7 @@ trait IssueManagerHelper extends MongoCodecs {
               case value: String => value
               case _ => ""
             }
-            contract_due_date = rs.getLong("stage_date") match {
+            contract_due_date = rs.getLong("contract_due_date") match {
               case value: Long => value
               case _ => 0
             }
@@ -187,7 +187,8 @@ trait IssueManagerHelper extends MongoCodecs {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val query = s"select * from issue, issue_stages ist where removed = 0 and issue_type = 'QNA' and ist.stage_name = i.period and ist.id_project = (select id from issue_projects ip where ip.name = i.project)";
+        val query = s"select * from issue where removed = 0 and issue_type = 'QNA'"
+        //val query = s"select * from issue, issue_stages ist where removed = 0 and issue_type = 'QNA' and ist.stage_name = i.period and ist.id_project = (select id from issue_projects ip where ip.name = i.project)";
         val rs = s.executeQuery(query)
         while (rs.next()){
           issues += new Issue(
@@ -292,7 +293,7 @@ trait IssueManagerHelper extends MongoCodecs {
               case value: String => value
               case _ => ""
             }
-            contract_due_date = rs.getLong("stage_date") match {
+            contract_due_date = rs.getLong("contract_due_date") match {
               case value: Long => value
               case _ => 0
             }
@@ -311,7 +312,7 @@ trait IssueManagerHelper extends MongoCodecs {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val query = s"select * , (select closing_status from issue_types where type_name = i.issue_type) from issue i, issue_stages ist where $id=id and removed = 0 and ist.stage_name = i.period and ist.id_project = (select id from issue_projects ip where ip.name = i.project)"
+        val query = s"select *, (select closing_status from issue_types where type_name = i.issue_type) from issue i where $id = id and removed = 0"
         val rs = s.executeQuery(query)
         while (rs.next()){
           issue = Option(new Issue(
@@ -426,7 +427,7 @@ trait IssueManagerHelper extends MongoCodecs {
               case value: String => value
               case _ => ""
             }
-            contract_due_date = rs.getLong("stage_date") match {
+            contract_due_date = rs.getLong("contract_due_date") match {
               case value: Long => value
               case _ => 0
             }

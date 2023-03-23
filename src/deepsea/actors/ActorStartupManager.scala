@@ -31,7 +31,7 @@ class ActorStartupManager extends Actor{
     case Start() =>
       ActorManager.dataBase = system.actorOf(Props[DatabaseManager])
     case DatabaseManagerStarted() =>
-      ActorManager.httpServer = system.actorOf(RoundRobinPool(1).props(Props(classOf[HTTPManager])))
+      ActorManager.httpServer = system.actorOf(RoundRobinPool(3).props(Props(classOf[HTTPManager])))
 //      val http = Props(classOf[HTTPManager])
 //      val supervisor = BackoffSupervisor.props(
 //        BackoffOpts.onFailure(http, "http", 3.seconds, 10.seconds, 0.2),

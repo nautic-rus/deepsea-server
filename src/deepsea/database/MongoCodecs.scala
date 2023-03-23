@@ -8,7 +8,7 @@ import deepsea.issues.IssueManager.{DailyTask, DayCalendar, IdName, IssueDef, Is
 import deepsea.materials.MaterialManager.{Material, MaterialHistory, MaterialNode, MaterialNodeHistory, MaterialTranslation, ProjectName, WCNumberName, WeightControl}
 import deepsea.mobile.MobileManager.{Drawing, DrawingInfo, OrizInfo}
 import deepsea.osm.OsmManager.{LatLng, OSMUser, ParkingLocationSheet}
-import deepsea.time.PlanHoursManager.PlanHour
+import deepsea.time.PlanHoursManager.{PlanHour, PlannedHours}
 import deepsea.time.TimeControlManager.{SpyWatch, TimeControlInterval, UserWatch}
 import io.circe.generic.semiauto.{deriveCodec, deriveDecoder, deriveEncoder}
 import io.circe.{Decoder, Encoder}
@@ -138,6 +138,9 @@ trait MongoCodecs {
 
   implicit val MarkDecoder: Decoder[Mark] = deriveDecoder[Mark]
   implicit val MarkEncoder: Encoder[Mark] = deriveEncoder[Mark]
+
+  implicit val PlannedHoursDecoder: Decoder[PlannedHours] = deriveDecoder[PlannedHours]
+  implicit val PlannedHoursEncoder: Encoder[PlannedHours] = deriveEncoder[PlannedHours]
 
 
 

@@ -45,7 +45,7 @@ object DBManager extends MongoCodecs {
   configPG.setJdbcUrl("jdbc:postgresql://192.168.1.26/deepsea")
   configPG.setUsername("deepsea")
   configPG.setPassword("Ship1234")
-  configPG.setMaximumPoolSize(3)
+  configPG.setMaximumPoolSize(25)
   val dsPG = new HikariDataSource(configPG)
 
 //  private val configNextCloud = new HikariConfig()
@@ -92,5 +92,11 @@ object DBManager extends MongoCodecs {
   }
   def GetFireBaseConnection(): Option[Connection] = {
     Option(dsFireBase.getConnection)
+  }
+  def check(): String ={
+    val dsPgStatus = "dsPg " + dsPG.getHikariPoolMXBean.getActiveConnections
+    val dsFireBaseStatus = "dsFireBase " + dsFireBase.getHikariPoolMXBean.getActiveConnections
+    val dsNextCloudStatus = "dsNextCloud " + dsNextCloud.getHikariPoolMXBean.getActiveConnections
+    List(dsPgStatus, dsFireBaseStatus, dsNextCloudStatus).mkString(",")
   }
 }

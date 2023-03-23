@@ -6,7 +6,7 @@ import deepsea.auth.AuthManagerHelper
 import deepsea.database.MongoCodecs
 import deepsea.issues.IssueManagerHelper
 import deepsea.issues.classes.Issue
-import deepsea.time.PlanHoursManager.{AssignPlanHoursToUsers, ConsumedHour, DeleteUserTask, FillConsumed, GetUserPlanHours, InitPlanHours, PlanAlreadyPlannedIssues, PlanHour, PlanUserTask, SpecialDay}
+import deepsea.time.PlanHoursManager.{AssignPlanHoursToUsers, ConsumedHour, DeleteUserTask, FillConsumed, GetPlannedHours, GetUserPlanHours, InitPlanHours, PlanAlreadyPlannedIssues, PlanHour, PlanUserTask, SpecialDay}
 import io.circe.syntax.EncoderOps
 
 import java.util.{Calendar, Date}
@@ -21,13 +21,15 @@ object PlanHoursManager{
   case class AllocatedHour(id: Int, taskId: Int)
   case class SpecialDay(day: Int, month: Int, year: Int, kind: String)
   case class InitPlanHours()
-  case class AssignPlanHoursToUsers()
+  case class AssignPlanHoursToUsers(id: Int)
   case class GetUserPlanHours(userId: String, startDate: String, available: String)
   case class PlanUserTask(userId: String, taskId: String, fromHour: String, amountOfHours: String, allowMove: String)
   case class DeleteUserTask(userId: String, taskId: String, fromHour: String)
   case class ConsumedHour(id: Int, hour_id: Int, user_id: Int, date_inserted: Long, task_id: Int, comment: String)
   case class PlanAlreadyPlannedIssues()
   case class FillConsumed()
+  case class GetPlannedHours()
+  case class PlannedHours(taskId: Int, hours: Int)
 }
 class PlanHoursManager extends Actor with PlanHoursHelper with AuthManagerHelper with IssueManagerHelper with MongoCodecs{
   val specialDays: List[SpecialDay] = List(
@@ -50,7 +52,7 @@ class PlanHoursManager extends Actor with PlanHoursHelper with AuthManagerHelper
   override def preStart(): Unit = {
     //getUserPlanHours(0)
     //self ! InitPlanHours()
-    //self ! AssignPlanHoursToUsers()
+    //self ! AssignPlanHoursToUsers(193)
     //self ! PlanAlreadyPlannedIssues()
     //self ! FillConsumed()
   }
@@ -94,9 +96,9 @@ class PlanHoursManager extends Actor with PlanHoursHelper with AuthManagerHelper
 
       }
       val q = 0
-    case AssignPlanHoursToUsers() =>
+    case AssignPlanHoursToUsers(id) =>
       val planHours = getTemplatePlanHours
-      getUsers.toList.filter(_.visibility.contains("c")).foreach(user => {
+      getUsers.filter(_.id == id).foreach(user => {
         addUserPlanHours(planHours, user.id)
       })
       val q = 0
@@ -193,6 +195,8 @@ class PlanHoursManager extends Actor with PlanHoursHelper with AuthManagerHelper
         }
       })
       val q = 0
+    case GetPlannedHours() =>
+      sender() ! getPlannedHours.asJson.noSpaces
     case _ => None
   }
 }
