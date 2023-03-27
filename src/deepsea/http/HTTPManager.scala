@@ -185,8 +185,8 @@ class HTTPManager extends Actor {
         (post & path("updateIssue") & parameter("user") & parameter("message") & entity(as[String])) { (user, message, issue) =>
           askFor(ActorManager.issue, UpdateIssue(user, message, issue))
         },
-        (get & path("assignIssue") & parameter("id") & parameter("user") & parameter("startDate") & parameter("dueDate") & parameter("overtime") & parameter("action") & parameter("author")) { (id, user, startDate, dueDate, overtime, action, author) =>
-          askFor(ActorManager.issue, AssignIssue(id, user, startDate, dueDate, overtime, action, author))
+        (get & path("assignIssue") & parameter("id") & parameter("user") & parameter("startDate") & parameter("dueDate") & parameter("overtime") & parameter("action") & parameter("author") & parameter("hidden")) { (id, user, startDate, dueDate, overtime, action, author, hidden) =>
+          askFor(ActorManager.issue, AssignIssue(id, user, startDate, dueDate, overtime, action, author, hidden))
         },
         (get & path("changeResponsible") & parameter("id") & parameter("user") & parameter("author") & parameter("action")) { (id, user, author, action) =>
           askFor(ActorManager.issue, ChangeResponsible(id, user, author, action))

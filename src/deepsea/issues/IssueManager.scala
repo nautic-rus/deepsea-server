@@ -58,7 +58,7 @@ object IssueManager{
   case class SetIssueStatus(id: String, user: String)
   case class SetIssueMessage(id: String, message: String)
   case class AddIssueMessage(id: String, message: IssueMessage)
-  case class AssignIssue(id: String, user: String, start_date: String, due_date: String, overtime: String, action: String, author: String)
+  case class AssignIssue(id: String, user: String, start_date: String, due_date: String, overtime: String, action: String, author: String, hidden: String = "0")
   case class ChangeResponsible(id: String, user: String, author: String, action: String)
   case class SendToApproval(id: String, users: String, filesToApproval: String, textToApproval: String, taskStatus: String, taskStatusApproval: String, taskTypeApproval: String, taskRevision: String)
   case class SetIssueViewed(id: String, user: String)
@@ -279,13 +279,15 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
         case Some(issue) => Json.toJson(issue)
         case _ => "issue not found"
       })
-    case AssignIssue(_id, user, _start_date, _due_date, overtime, action, author) =>
+    case AssignIssue(_id, user, _start_date, _due_date, overtime, action, author, hidden) =>
       val id: Int = _id.toIntOption.getOrElse(0)
       val start_date: Long = _start_date.toLongOption.getOrElse(0)
       val due_date: Long = _due_date.toLongOption.getOrElse(0)
-      assignIssue(id, user, start_date, due_date, overtime, action, author)
+      assignIssue(id, user, start_date, due_date, overtime, action, author, hidden.toIntOption.getOrElse(0) == 1)
       val issue = getIssueDetails(id).get
-      ActorManager.rocket ! SendNotification(user, s"Вам была назначена задача " + s"<${App.HTTPServer.Url}/?taskId=${id}|${(issue.doc_number + " " + issue.name).trim}>")
+      if (hidden != "1"){
+        ActorManager.rocket ! SendNotification(user, s"Вам была назначена задача " + s"<${App.HTTPServer.Url}/?taskId=${id}|${(issue.doc_number + " " + issue.name).trim}>")
+      }
       sender() ! Json.toJson("success")
     case ChangeResponsible(_id, user, author, action) =>
       val id = Try(_id.toInt).getOrElse(0)
@@ -651,9 +653,11 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
       case _ => sender() ! Json.toJson("error")
     }
   }
-  def assignIssue(id: Int, user: String, start_date: Long, due_date: Long, overtime: String, action: String, author: String): Unit ={
+  def assignIssue(id: Int, user: String, start_date: Long, due_date: Long, overtime: String, action: String, author: String, hidden: Boolean): Unit ={
     val date = new Date().getTime
-    updateHistory(new IssueHistory(id, author, "assign", "", user, date, "assign"))
+    if (!hidden){
+      updateHistory(new IssueHistory(id, author, "assign", "", user, date, "assign"))
+    }
     val query = s"update issue set assigned_to = '$user', active_action = '$action', start_date = $start_date, due_date = $due_date, overtime = '$overtime' where id = $id"
     DBManager.GetPGConnection() match {
       case Some(c) =>
