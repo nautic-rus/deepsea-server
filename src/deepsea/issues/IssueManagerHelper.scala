@@ -35,14 +35,17 @@ trait IssueManagerHelper extends MongoCodecs {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        var query = s"select *, (select closing_status from issue_types where type_name = i.issue_type) from issue i where removed = 0 and (assigned_to = '${user.login}' or started_by = '${user.login}' or responsible = '${user.login}'"
-        if (user.permissions.contains("view_department_tasks")){
-          var groups = user.groups.map(x => "'" + x + "'").mkString("(", ",", ")")
-          if (user.groups.isEmpty){
-            groups = "('')"
-          }
-          query += s" or i.issue_type in ${groups}"
-        }
+        //var query = s"select *, (select closing_status from issue_types where type_name = i.issue_type) from issue i where removed = 0"
+        var query = Source.fromResource("queries/issues.sql").mkString
+        val filterUsers = s" and (assigned_to = '${user.login}' or started_by = '${user.login}' or responsible = '${user.login}'"
+        query += filterUsers
+//        if (user.permissions.contains("view_department_tasks")){
+//          var groups = user.groups.map(x => "'" + x + "'").mkString("(", ",", ")")
+//          if (user.groups.isEmpty){
+//            groups = "('')"
+//          }
+//          query += s" or i.issue_type in ${groups}"
+//        }
         if (user.permissions.contains("view_all_tasks")){
           query += s" or (id > 0)"
         }
@@ -157,9 +160,12 @@ trait IssueManagerHelper extends MongoCodecs {
               case value: String => value
               case _ => ""
             }
-            contract_due_date = rs.getLong("contract_due_date") match {
+            contract_due_date = rs.getLong("stage_date") match {
               case value: Long => value
-              case _ => 0
+              case _ => rs.getLong("contract_due_date") match {
+                case value: Long => value
+                case _ => 0
+              }
             }
             plan_hours = rs.getDouble("plan_hours") match {
               case value: Double => value
@@ -312,7 +318,9 @@ trait IssueManagerHelper extends MongoCodecs {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val query = s"select *, (select closing_status from issue_types where type_name = i.issue_type) from issue i where $id = id and removed = 0"
+        //val query = s"select *, (select closing_status from issue_types where type_name = i.issue_type) from issue i where $id = id and removed = 0"
+        var query = Source.fromResource("queries/issues.sql").mkString
+        query += s" and id = $id"
         val rs = s.executeQuery(query)
         while (rs.next()){
           issue = Option(new Issue(
@@ -427,9 +435,12 @@ trait IssueManagerHelper extends MongoCodecs {
               case value: String => value
               case _ => ""
             }
-            contract_due_date = rs.getLong("contract_due_date") match {
+            contract_due_date = rs.getLong("stage_date") match {
               case value: Long => value
-              case _ => 0
+              case _ => rs.getLong("contract_due_date") match {
+                case value: Long => value
+                case _ => 0
+              }
             }
             plan_hours = rs.getDouble("plan_hours") match {
               case value: Double => value

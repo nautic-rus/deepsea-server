@@ -197,11 +197,17 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
             }
           }
           else{
+            val name = if ((issue.doc_number + " " + issue.name).trim != ""){
+              (issue.doc_number + " " + issue.name).trim
+            }
+            else{
+              "Без названия"
+            }
             if (issue.assigned_to != ""){
-              ActorManager.rocket ! SendNotification(issue.assigned_to, s"Вам была назначена задача " + s"<${App.HTTPServer.Url}/?taskId=${result}|${(issue.doc_number + " " + issue.name).trim}>")
+              ActorManager.rocket ! SendNotification(issue.assigned_to, s"Вам была назначена задача " + s"<${App.HTTPServer.Url}/?taskId=${result}|$name>")
             }
             if (issue.responsible != ""){
-              ActorManager.rocket ! SendNotification(issue.responsible, s"Вы были назначены ответственным к задаче " + s"<${App.HTTPServer.Url}/?taskId=${result}|${(issue.doc_number + " " + issue.name).trim}>")
+              ActorManager.rocket ! SendNotification(issue.responsible, s"Вы были назначены ответственным к задаче " + s"<${App.HTTPServer.Url}/?taskId=${result}|$name>")
             }
           }
           sender() ! Json.toJson(result)
@@ -231,10 +237,16 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
           val details = getIssueDetails(issue.id)
           details match {
             case Some(update) =>
+              val name = if ((issue.doc_number + " " + issue.name).trim != ""){
+                (issue.doc_number + " " + issue.name).trim
+              }
+              else{
+                "No name (Без названия)"
+              }
               if (issue.issue_type == "QNA"){
                 val q = '"'
-                val rocket = s"Изменилась информация в задаче " + s"<${App.HTTPServer.Url}/qna?taskId=${issue.id}|${(issue.doc_number + " " + issue.name).trim}>"
-                val email = s"Changed information for a question " + s"<a href=$q${App.HTTPServer.Url}/qna?taskId=${issue.id}$q>${(issue.doc_number + " " + issue.name).trim}</a>"
+                val rocket = s"Изменилась информация в задаче " + s"<${App.HTTPServer.Url}/qna?taskId=${issue.id}|$name>"
+                val email = s"Changed information for a question " + s"<a href=$q${App.HTTPServer.Url}/qna?taskId=${issue.id}$q>$name</a>"
                 notifySubscribers(issue.id, email, rocket)
                 getUser(issue.assigned_to) match {
                   case Some(value) =>
@@ -251,17 +263,17 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
               }
               else if (updateMessage.contains("status")){
                 List(update.assigned_to, update.responsible, update.started_by).filter(_ != user).distinct.foreach(u => {
-                  ActorManager.rocket ! SendNotification(u, s"Изменился статус на '${update.status}' у задачи " + s"<${App.HTTPServer.Url}/?taskId=${issue.id}|${(issue.doc_number + " " + issue.name).trim}>")
+                  ActorManager.rocket ! SendNotification(u, s"Изменился статус на '${update.status}' у задачи " + s"<${App.HTTPServer.Url}/?taskId=${issue.id}|$name>")
                 })
               }
               else if (updateMessage.contains("edit")){
                 List(update.assigned_to, update.responsible, update.started_by).filter(_ != user).distinct.foreach(u => {
-                  ActorManager.rocket ! SendNotification(u, s"Изменилась информация в задаче " + s"<${App.HTTPServer.Url}/?taskId=${issue.id}|${(issue.doc_number + " " + issue.name).trim}>")
+                  ActorManager.rocket ! SendNotification(u, s"Изменилась информация в задаче " + s"<${App.HTTPServer.Url}/?taskId=${issue.id}|$name>")
                 })
               }
               else {
                 List(update.assigned_to, update.responsible, update.started_by).filter(_ != user).distinct.foreach(u => {
-                  ActorManager.rocket ! SendNotification(u, s"Что-то поменялось в задаче " + s"<${App.HTTPServer.Url}/?taskId=${issue.id}|${(issue.doc_number + " " + issue.name).trim}>")
+                  ActorManager.rocket ! SendNotification(u, s"Что-то поменялось в задаче " + s"<${App.HTTPServer.Url}/?taskId=${issue.id}|$name>")
                 })
               }
             case _ => None
@@ -285,8 +297,14 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
       val due_date: Long = _due_date.toLongOption.getOrElse(0)
       assignIssue(id, user, start_date, due_date, overtime, action, author, hidden.toIntOption.getOrElse(0) == 1)
       val issue = getIssueDetails(id).get
+      val name = if ((issue.doc_number + " " + issue.name).trim != ""){
+        (issue.doc_number + " " + issue.name).trim
+      }
+      else{
+        "No name (Без названия)"
+      }
       if (hidden != "1"){
-        ActorManager.rocket ! SendNotification(user, s"Вам была назначена задача " + s"<${App.HTTPServer.Url}/?taskId=${id}|${(issue.doc_number + " " + issue.name).trim}>")
+        ActorManager.rocket ! SendNotification(user, s"Вам была назначена задача " + s"<${App.HTTPServer.Url}/?taskId=${id}|$name>")
       }
       sender() ! Json.toJson("success")
     case ChangeResponsible(_id, user, author, action) =>

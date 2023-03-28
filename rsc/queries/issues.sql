@@ -1,8 +1,8 @@
 select
-    *
+    *,
+    (select closing_status from issue_types where type_name = i.issue_type) as closing_status,
+    (select stage_date from issue_stages istages where istages.stage_name = i.period and id_project in (select id from issue_projects ip where ip.name = i.project)) as stage_date
 from
-    issue i, issue_stages ist
+    issue i
 where
-    removed = 0 and
-    issue_type = 'QNA' and
-    ist.stage_name = i.period and ist.id_project = (select id from issue_projects ip where ip.name = i.project)
+    removed = 0
