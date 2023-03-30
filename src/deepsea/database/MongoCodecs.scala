@@ -2,7 +2,7 @@ package deepsea.database
 
 import deepsea.auth.AuthManager.{AdminRight, Department, Page, RightUser, Role, User}
 import deepsea.fest.FestManager.{FestKaraoke, FestSauna, FestStories}
-import deepsea.fest.classes.Mark
+import deepsea.fest.classes.{BestPlayer, Mark, TeamWon}
 import deepsea.files.FileManager.{DocumentDirectories, TreeDirectory, TreeFile, TreeFileHistory}
 import deepsea.issues.IssueManager.{DailyTask, DayCalendar, IdName, IssueDef, IssueProject, LV, MessageReaction}
 import deepsea.materials.MaterialManager.{Material, MaterialHistory, MaterialNode, MaterialNodeHistory, MaterialTranslation, ProjectName, WCNumberName, WeightControl}
@@ -139,6 +139,14 @@ trait MongoCodecs {
   implicit val MarkDecoder: Decoder[Mark] = deriveDecoder[Mark]
   implicit val MarkEncoder: Encoder[Mark] = deriveEncoder[Mark]
 
+  implicit val TeamWonDecoder: Decoder[TeamWon] = deriveDecoder[TeamWon]
+  implicit val TeamWonEncoder: Encoder[TeamWon] = deriveEncoder[TeamWon]
+
+  implicit val BestPlayerDecoder: Decoder[BestPlayer] = deriveDecoder[BestPlayer]
+  implicit val BestPlayerEncoder: Encoder[BestPlayer] = deriveEncoder[BestPlayer]
+
+
+
   implicit val PlannedHoursDecoder: Decoder[PlannedHours] = deriveDecoder[PlannedHours]
   implicit val PlannedHoursEncoder: Encoder[PlannedHours] = deriveEncoder[PlannedHours]
 
@@ -170,6 +178,11 @@ trait MongoCodecs {
     classOf[User],
     classOf[AdminRight],
     classOf[PlanHour],
-    classOf[Department]
+    classOf[Department],
+    classOf[FestStories],
+    classOf[FestKaraoke],
+    classOf[FestSauna],
+    classOf[Mark],
+    classOf[TeamWon],
   ), DEFAULT_CODEC_REGISTRY)
 }

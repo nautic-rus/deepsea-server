@@ -404,87 +404,87 @@ class HTTPManager extends Actor {
         },
 
         //FEST
-        //      (post & path("createFestFileUrl") & entity(as[Multipart.FormData])) { (formData) =>
-        //        var fileName = ""
-        //        var fileUrl = ""
-        //        val date = new Date().getTime
-        //        val done: Future[Done] = formData.parts.mapAsync(1) {
-        //          case b: BodyPart if b.name == "file" =>
-        //            fileName = b.filename.get
-        //            var pathId = UUID.randomUUID().toString.substring(0, 8)
-        //            var file = new File(App.Cloud.Directory + "/" + pathId)
-        //            while (file.exists()) {
-        //              pathId = UUID.randomUUID().toString.substring(0, 8)
-        //              file = new File(App.Cloud.Directory + "/" + pathId)
-        //            }
-        //            file.mkdir()
-        //            file = new File(App.Cloud.Directory + "/" + pathId + "/" + fileName)
-        //            fileUrl = App.Cloud.FestUrl + "/" + pathId + "/" + fileName
-        //            b.entity.dataBytes.runWith(FileIO.toPath(file.toPath))
-        //            Future.successful(Done)
-        //          case _ => Future.successful(Done)
-        //        }.runWith(Sink.ignore)
-        //        onSuccess(done) { _ =>
-        //          complete(HttpEntity(Json.toJson(new FileAttachment(fileName, fileUrl, date, "fest")).toString()))
-        //        }
-        //      },
-        //      (get & path("festStories")) {
-        //        askFor(ActorManager.fest, GetFestStories())
-        //      },
-        //      (get & path("setFestStories") & parameter("url") & parameter("thumb")) { (url, thumb) =>
-        //        askFor(ActorManager.fest, SetFestStories(url, thumb))
-        //      },
-        //      (get & path("deleteFestStories") & parameter("url")) { (url) =>
-        //        askFor(ActorManager.fest, DeleteFestStories(url))
-        //      },
-        //
-        //      (get & path("festKaraoke")) {
-        //        askFor(ActorManager.fest, GetFestKaraoke())
-        //      },
-        //      (get & path("setFestKaraoke") & parameter("users") & parameter("song")) { (users, song) =>
-        //        askFor(ActorManager.fest, SetFestKaraoke(users, song))
-        //      },
-        //      (get & path("deleteFestKaraoke") & parameter("time")) { (time) =>
-        //        askFor(ActorManager.fest, DeleteFestKaraoke(time))
-        //      },
-        //
-        //      (get & path("festSauna")) {
-        //        askFor(ActorManager.fest, GetFestSauna())
-        //      },
-        //      (get & path("setFestSauna") & parameter("kind") & parameter("users") & parameter("time")) { (kind, users, time) =>
-        //        askFor(ActorManager.fest, SetFestSauna(kind, users, time))
-        //      },
-        //      (get & path("deleteFestSauna") & parameter("time")) { (time) =>
-        //        askFor(ActorManager.fest, DeleteFestSauna(time))
-        //      },
-        //
-        //      (get & path("teamsWon")) {
-        //        askFor(ActorManager.fest, GetTeamsWon())
-        //      },
-        //      (post & path("setTeamsWon") & entity(as[String])) { (teamsWon) =>
-        //        askFor(ActorManager.fest, SetTeamsWon(teamsWon))
-        //      },
+        (post & path("createFestFileUrl") & entity(as[Multipart.FormData])) { (formData) =>
+          var fileName = ""
+          var fileUrl = ""
+          val date = new Date().getTime
+          val done: Future[Done] = formData.parts.mapAsync(1) {
+            case b: BodyPart if b.name == "file" =>
+              fileName = b.filename.get
+              var pathId = UUID.randomUUID().toString.substring(0, 8)
+              var file = new File(App.Cloud.Directory + "/" + pathId)
+              while (file.exists()) {
+                pathId = UUID.randomUUID().toString.substring(0, 8)
+                file = new File(App.Cloud.Directory + "/" + pathId)
+              }
+              file.mkdir()
+              file = new File(App.Cloud.Directory + "/" + pathId + "/" + fileName)
+              fileUrl = App.Cloud.FestUrl + "/" + pathId + "/" + fileName
+              b.entity.dataBytes.runWith(FileIO.toPath(file.toPath))
+              Future.successful(Done)
+            case _ => Future.successful(Done)
+          }.runWith(Sink.ignore)
+          onSuccess(done) { _ =>
+            complete(HttpEntity(Json.toJson(new FileAttachment(fileName, fileUrl, date, "fest")).toString()))
+          }
+        },
+        (get & path("festStories")) {
+          askFor(ActorManager.fest, GetFestStories())
+        },
+        (get & path("setFestStories") & parameter("url") & parameter("thumb")) { (url, thumb) =>
+          askFor(ActorManager.fest, SetFestStories(url, thumb))
+        },
+        (get & path("deleteFestStories") & parameter("url")) { (url) =>
+          askFor(ActorManager.fest, DeleteFestStories(url))
+        },
 
-        //      (get & path("marks")) {
-        //        askFor(ActorManager.fest, GetMarks())
-        //      },
-        //      (post & path("setMarks") & entity(as[String])) { (marks) =>
-        //        askFor(ActorManager.fest, SetMarks(marks))
-        //      },
-        //
-        //      (get & path("marks")) {
-        //        askFor(ActorManager.fest, GetMarks())
-        //      },
-        //      (post & path("setMarks") & entity(as[String])) { (marks) =>
-        //        askFor(ActorManager.fest, SetMarks(marks))
-        //      },
-        //
-        //      (get & path("bestPlayers")) {
-        //        askFor(ActorManager.fest, GetBestPlayers())
-        //      },
-        //      (post & path("setBestPlayer") & entity(as[String])) { (bestPlayer) =>
-        //        askFor(ActorManager.fest, SetBestPlayer(bestPlayer))
-        //      },
+        (get & path("festKaraoke")) {
+          askFor(ActorManager.fest, GetFestKaraoke())
+        },
+        (get & path("setFestKaraoke") & parameter("users") & parameter("song")) { (users, song) =>
+          askFor(ActorManager.fest, SetFestKaraoke(users, song))
+        },
+        (get & path("deleteFestKaraoke") & parameter("time")) { (time) =>
+          askFor(ActorManager.fest, DeleteFestKaraoke(time))
+        },
+
+        (get & path("festSauna")) {
+          askFor(ActorManager.fest, GetFestSauna())
+        },
+        (get & path("setFestSauna") & parameter("kind") & parameter("users") & parameter("time")) { (kind, users, time) =>
+          askFor(ActorManager.fest, SetFestSauna(kind, users, time))
+        },
+        (get & path("deleteFestSauna") & parameter("time")) { (time) =>
+          askFor(ActorManager.fest, DeleteFestSauna(time))
+        },
+
+        (get & path("teamsWon")) {
+          askFor(ActorManager.fest, GetTeamsWon())
+        },
+        (post & path("setTeamsWon") & entity(as[String])) { (teamsWon) =>
+          askFor(ActorManager.fest, SetTeamsWon(teamsWon))
+        },
+
+        (get & path("marks")) {
+          askFor(ActorManager.fest, GetMarks())
+        },
+        (post & path("setMarks") & entity(as[String])) { (marks) =>
+          askFor(ActorManager.fest, SetMarks(marks))
+        },
+
+        (get & path("marks")) {
+          askFor(ActorManager.fest, GetMarks())
+        },
+        (post & path("setMarks") & entity(as[String])) { (marks) =>
+          askFor(ActorManager.fest, SetMarks(marks))
+        },
+
+        (get & path("bestPlayers")) {
+          askFor(ActorManager.fest, GetBestPlayers())
+        },
+        (post & path("setBestPlayer") & entity(as[String])) { (bestPlayer) =>
+          askFor(ActorManager.fest, SetBestPlayer(bestPlayer))
+        },
         (get & path("sendNotificationToUser") & parameter("user") & parameter("message")) { (user, message) =>
           askFor(ActorManager.rocket, SendNotification(user, message))
         },

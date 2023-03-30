@@ -57,53 +57,48 @@ class FestManager extends Actor with MongoCodecs{
       }
 
 
-//    case GetTeamsWon() => sender() ! Json.toJson(getTeamsWon)
-//    case SetTeamsWon(teams) =>
-//      Json.parse(teams).asOpt[ListBuffer[TeamWon]] match {
-//        case Some(teams) =>
-//          updateTeamsWon(teams)
-//          sender() ! Json.toJson("success")
-//        case _ =>
-//          sender() ! Json.toJson("error")
-//      }
-//
-//    case GetBestPlayers() => sender() ! Json.toJson(getBestPlayers)
-//    case SetBestPlayer(player) =>
-//      Json.parse(player).asOpt[BestPlayer] match {
-//        case Some(player) =>
-//          updateBestPlayer(player)
-//          sender() ! Json.toJson("success")
-//        case _ =>
-//          sender() ! Json.toJson("error")
-//      }
-//
-//    case GetFestStories() =>
-//      sender() ! Json.toJson(getFestStories)
-//    case SetFestStories(url, thumb) =>
-//      setFestStories(url, thumb)
-//      sender() ! Json.toJson("success")
-//    case DeleteFestStories(url) =>
-//      deleteFestStories(url)
-//      sender() ! Json.toJson("success")
-//
-//    case GetFestKaraoke() =>
-//      sender() ! Json.toJson(getFestKaraoke)
-//    case SetFestKaraoke(users, song) =>
-//      setFestKaraoke(users, song)
-//      sender() ! Json.toJson("success")
-//    case DeleteFestKaraoke(date) =>
-//      deleteFestKaraoke(date.toLongOption.getOrElse(0))
-//      sender() ! Json.toJson("success")
-//
-//    case GetFestSauna() =>
-//      sender() ! Json.toJson(getFestSauna)
-//    case SetFestSauna(kind, users, time) =>
-//      setFestSauna(kind, users, time)
-//      sender() ! Json.toJson("success")
-//    case DeleteFestSauna(time) =>
-//      deleteFestSauna(time)
-//      sender() ! Json.toJson("success")
-
+    case GetTeamsWon() => sender() ! getTeamsWon.asJson.noSpaces
+    case SetTeamsWon(teamsValue) =>
+      decode[List[TeamWon]](teamsValue) match {
+        case Right(teams) =>
+          updateTeamsWon(teams)
+          sender() ! ("success").asJson.noSpaces
+        case Left(value) =>
+          sender() ! ("error").asJson.noSpaces
+      }
+    case GetBestPlayers() => sender() ! getBestPlayers.asJson.noSpaces
+    case SetBestPlayer(bestPlayerValue) =>
+      decode[BestPlayer](bestPlayerValue) match {
+        case Right(player) =>
+          updateBestPlayer(player)
+          sender() ! ("success").asJson.noSpaces
+        case Left(value) =>
+          sender() ! ("error").asJson.noSpaces
+      }
+    case GetFestStories() =>
+      sender() ! getFestStories.asJson.noSpaces
+    case SetFestStories(url, thumb) =>
+      setFestStories(url, thumb)
+      sender() ! "success".asJson.noSpaces
+    case DeleteFestStories(url) =>
+      deleteFestStories(url)
+      sender() ! "success".asJson.noSpaces
+    case GetFestKaraoke() =>
+      sender() ! "success".asJson.noSpaces
+    case SetFestKaraoke(users, song) =>
+      setFestKaraoke(users, song)
+      sender() ! "success".asJson.noSpaces
+    case DeleteFestKaraoke(date) =>
+      deleteFestKaraoke(date.toLongOption.getOrElse(0))
+      sender() ! "success".asJson.noSpaces
+    case GetFestSauna() =>
+      sender() ! getFestSauna.asJson.noSpaces
+    case SetFestSauna(kind, users, time) =>
+      setFestSauna(kind, users, time)
+      sender() ! "success".asJson.noSpaces
+    case DeleteFestSauna(time) =>
+      deleteFestSauna(time)
+      sender() ! "success".asJson.noSpaces
     case _ => None
   }
 
@@ -157,7 +152,7 @@ class FestManager extends Actor with MongoCodecs{
     }
     res
   }
-  def updateTeamsWon(teams: ListBuffer[TeamWon]): Unit ={
+  def updateTeamsWon(teams: List[TeamWon]): Unit ={
     val current = getTeamsWon
     DBManager.GetPGConnection() match {
       case Some(c) =>
