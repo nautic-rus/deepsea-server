@@ -48,6 +48,14 @@ object DBManager extends MongoCodecs {
   configPG.setMaximumPoolSize(25)
   val dsPG = new HikariDataSource(configPG)
 
+  private val configPGFest = new HikariConfig()
+  configPGFest.setDriverClassName("org.postgresql.Driver")
+  configPGFest.setJdbcUrl("jdbc:postgresql://192.168.1.26/nautic_fest")
+  configPGFest.setUsername("deepsea")
+  configPGFest.setPassword("Ship1234")
+  configPGFest.setMaximumPoolSize(5)
+  val dsPGFest = new HikariDataSource(configPGFest)
+
 //  private val configNextCloud = new HikariConfig()
 //  configNextCloud.setDriverClassName("org.postgresql.Driver")
 //  configNextCloud.setJdbcUrl("jdbc:postgresql://localhost:1155/nextcloud_database")
@@ -80,6 +88,9 @@ object DBManager extends MongoCodecs {
   }
   def GetPGConnection(): Option[Connection] = {
     Option(dsPG.getConnection)
+  }
+  def GetPGFestConnection(): Option[Connection] = {
+    Option(dsPGFest.getConnection)
   }
   def GetMongoConnection(): Option[MongoDatabase] = {
     Option(mongoClient.getDatabase("3degdatabase").withCodecRegistry(codecRegistry))

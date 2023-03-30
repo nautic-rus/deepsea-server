@@ -84,7 +84,7 @@ class FestManager extends Actor with MongoCodecs{
       deleteFestStories(url)
       sender() ! "success".asJson.noSpaces
     case GetFestKaraoke() =>
-      sender() ! "success".asJson.noSpaces
+      sender() ! getFestKaraoke.asJson.noSpaces
     case SetFestKaraoke(users, song) =>
       setFestKaraoke(users, song)
       sender() ! "success".asJson.noSpaces
@@ -104,7 +104,7 @@ class FestManager extends Actor with MongoCodecs{
 
   def updateMarks(marks: List[Mark]): Unit ={
     val current = getFestMarks
-    DBManager.GetPGConnection() match {
+    DBManager.GetPGFestConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         marks.foreach(mark => {
@@ -122,7 +122,7 @@ class FestManager extends Actor with MongoCodecs{
   }
   def getFestMarks: ListBuffer[Mark] ={
     val res = ListBuffer.empty[Mark]
-    DBManager.GetPGConnection() match {
+    DBManager.GetPGFestConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from fest_marks")
@@ -138,7 +138,7 @@ class FestManager extends Actor with MongoCodecs{
   }
   def getTeamsWon: ListBuffer[TeamWon] ={
     val res = ListBuffer.empty[TeamWon]
-    DBManager.GetPGConnection() match {
+    DBManager.GetPGFestConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from fest_teams_won")
@@ -154,7 +154,7 @@ class FestManager extends Actor with MongoCodecs{
   }
   def updateTeamsWon(teams: List[TeamWon]): Unit ={
     val current = getTeamsWon
-    DBManager.GetPGConnection() match {
+    DBManager.GetPGFestConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         teams.foreach(team => {
@@ -172,7 +172,7 @@ class FestManager extends Actor with MongoCodecs{
   }
   def getBestPlayers: ListBuffer[BestPlayer] ={
     val res = ListBuffer.empty[BestPlayer]
-    DBManager.GetPGConnection() match {
+    DBManager.GetPGFestConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from fest_best_players")
@@ -188,7 +188,7 @@ class FestManager extends Actor with MongoCodecs{
   }
   def updateBestPlayer(player: BestPlayer): Unit ={
     val current = getBestPlayers
-    DBManager.GetPGConnection() match {
+    DBManager.GetPGFestConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         if (current.exists(x => x.disc == player.disc)){
@@ -205,7 +205,7 @@ class FestManager extends Actor with MongoCodecs{
 
   def getFestStories: ListBuffer[FestStories] ={
     val res = ListBuffer.empty[FestStories]
-    DBManager.GetPGConnection() match {
+    DBManager.GetPGFestConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from fest_stories")
@@ -224,7 +224,7 @@ class FestManager extends Actor with MongoCodecs{
     res
   }
   def setFestStories(url: String, thumb: String): Unit ={
-    DBManager.GetPGConnection() match {
+    DBManager.GetPGFestConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val date = new Date().getTime
@@ -234,7 +234,7 @@ class FestManager extends Actor with MongoCodecs{
     }
   }
   def deleteFestStories(url: String): Unit ={
-    DBManager.GetPGConnection() match {
+    DBManager.GetPGFestConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val date = new Date().getTime
@@ -246,7 +246,7 @@ class FestManager extends Actor with MongoCodecs{
 
   def getFestKaraoke: ListBuffer[FestKaraoke] ={
     val res = ListBuffer.empty[FestKaraoke]
-    DBManager.GetPGConnection() match {
+    DBManager.GetPGFestConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from fest_karaoke")
@@ -265,7 +265,7 @@ class FestManager extends Actor with MongoCodecs{
     res
   }
   def setFestKaraoke(users: String, song: String): Unit ={
-    DBManager.GetPGConnection() match {
+    DBManager.GetPGFestConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val date = new Date().getTime
@@ -276,7 +276,7 @@ class FestManager extends Actor with MongoCodecs{
     }
   }
   def deleteFestKaraoke(date: Long): Unit ={
-    DBManager.GetPGConnection() match {
+    DBManager.GetPGFestConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         s.execute(s"delete from fest_karaoke where date = ${date}")
@@ -288,7 +288,7 @@ class FestManager extends Actor with MongoCodecs{
 
   def getFestSauna: ListBuffer[FestSauna] ={
     val res = ListBuffer.empty[FestSauna]
-    DBManager.GetPGConnection() match {
+    DBManager.GetPGFestConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from fest_sauna")
@@ -307,7 +307,7 @@ class FestManager extends Actor with MongoCodecs{
     res
   }
   def setFestSauna(kind: String, users: String, time: String): Unit ={
-    DBManager.GetPGConnection() match {
+    DBManager.GetPGFestConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val date = new Date().getTime
@@ -318,7 +318,7 @@ class FestManager extends Actor with MongoCodecs{
     }
   }
   def deleteFestSauna(time: String): Unit ={
-    DBManager.GetPGConnection() match {
+    DBManager.GetPGFestConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         s.execute(s"delete from fest_sauna where time = ${time}")
