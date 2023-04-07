@@ -66,7 +66,10 @@ object MaterialManager{
                        id: String = UUID.randomUUID().toString,
                        translations: List[MaterialTranslation] = List.empty[MaterialTranslation],
                        itt: Int = 0,
-                       approved: Int = 0) {
+                       approved: Int = 0,
+                       tp620: Option[Int] = Option(0),
+                       certRS: Option[Int] = Option(0),
+                       density: Option[Double] = Option(0)) {
     def name(lang: String = "en"): String = {
       translations.find(_.lang == lang) match {
         case Some(translation) => translation.name

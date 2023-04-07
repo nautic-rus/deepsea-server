@@ -1,6 +1,7 @@
 package deepsea.files
 
 import akka.http.scaladsl.model.Uri.Path
+import com.sun.mail.iap.ByteArray
 import deepsea.App
 import deepsea.database.DBManager.RsIterator
 import deepsea.database.{DBManager, DatabaseManager}
@@ -10,9 +11,11 @@ import deepsea.issues.IssueManagerHelper
 import deepsea.materials.MaterialManagerHelper
 import org.aarboard.nextcloud.api.NextcloudConnector
 import org.apache.http.client.utils.URIUtils
+import org.mongodb.scala.Observable
+import org.mongodb.scala.gridfs.GridFSBucket
 import play.api.libs.json.Json
 
-import java.io.{BufferedInputStream, File, FileOutputStream, FileWriter}
+import java.io.{BufferedInputStream, File, FileOutputStream, FileWriter, InputStream}
 import java.net.{URL, URLEncoder}
 import java.nio.charset.Charset
 import java.nio.file.{Files, StandardCopyOption}
@@ -229,6 +232,14 @@ trait FileManagerHelper extends IssueManagerHelper with MaterialManagerHelper{
           case _ => s"ERROR: There is no material with code $code"
         }
       case _ => s"ERROR: There is no defined cloud path for project $project"
+    }
+  }
+  def addFileToMongo(fileName: String, stream: InputStream): Unit ={
+    DBManager.GetMongoFilesConnection() match {
+      case Some(mongo) =>
+        val gridFSBucket = GridFSBucket(mongo)
+        gridFSBucket.uploadFromObservable(fileName, stream.)
+      case _ => None
     }
   }
 }

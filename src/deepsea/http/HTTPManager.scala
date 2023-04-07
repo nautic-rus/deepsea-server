@@ -20,7 +20,7 @@ import deepsea.actors.ActorStartupManager.HTTPManagerStarted
 import deepsea.auth.AuthManager.{DeleteAdminRight, DeleteRole, DeleteUser, EditAdminRight, EditRole, EditUser, EditUsersProject, GetAdminRightDetails, GetAdminRights, GetDepartmentDetails, GetDepartments, GetPages, GetRightDetails, GetRights, GetRoleDetails, GetRoleRights, GetRoles, GetUserDetails, GetUserVisibleProjects, GetUsers, GetUsersProject, JoinUsersProjects, Login, SaveRoleForAll, SendLogPass, ShareRights, StartRight, StartRole, StartUser, UpdateEmail, UpdateRocketLogin}
 import deepsea.database.DBManager
 import deepsea.fest.FestManager.{DeleteFestKaraoke, DeleteFestSauna, DeleteFestStories, GetBestPlayers, GetFestKaraoke, GetFestSauna, GetFestStories, GetMarks, GetTeamsWon, SetBestPlayer, SetFestKaraoke, SetFestSauna, SetFestStories, SetMarks, SetTeamsWon}
-import deepsea.files.FileManager.{CreateDocumentCloudDirectory, CreateFile, CreateMaterialCloudDirectory, GetCloudFiles, GetDocumentFiles, GetFileFromCloud, GetPdSpList}
+import deepsea.files.FileManager.{CreateDocumentCloudDirectory, CreateFile, CreateMaterialCloudDirectory, GetCloudFiles, GetDocumentFiles, GetFileFromCloud, GetPdSpList, UploadFileToMongo}
 import deepsea.files.classes.FileAttachment
 import deepsea.http.HTTPManager.server
 import deepsea.issues.IssueManager._
@@ -36,6 +36,8 @@ import org.apache.log4j.{LogManager, Logger}
 import play.api.libs.json.{JsValue, Json}
 
 import java.io.{File, FileInputStream, InputStream}
+import java.nio.ByteBuffer
+import java.nio.file.Files
 import java.util.{Date, UUID}
 import java.util.concurrent.TimeUnit
 import scala.concurrent.{Await, ExecutionContextExecutor, Future}
@@ -377,6 +379,23 @@ class HTTPManager extends Actor {
           }.runWith(Sink.ignore)
           onSuccess(done) { _ =>
             askFor(ActorManager.files, CreateFile(fileName, fileStream, filePath, login, password), long = true)
+          }
+        },
+        (post & path("uploadFile") & entity(as[Multipart.FormData])) { (formData) =>
+          var fileName = ""
+          var fileStream: ByteBuffer = null
+          val done: Future[Done] = formData.parts.mapAsync(1) {
+            case b: BodyPart if b.name == "file" =>
+              val file = File.createTempFile("upload", "tmp")
+              b.entity.dataBytes.runWith(FileIO.toPath(file.toPath))
+              fileName = b.filename.get
+              fileStream = ByteBuffer.wrap(Files.readAllBytes(file.toPath))
+              file.delete()
+              Future.successful(Done)
+            case _ => Future.successful(Done)
+          }.runWith(Sink.ignore)
+          onSuccess(done) { _ =>
+            askFor(ActorManager.files, UploadFileToMongo(fileName, fileStream))
           }
         },
         (get & path("files" / Segment / Segment)) { (path, name) =>

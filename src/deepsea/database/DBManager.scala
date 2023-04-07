@@ -98,6 +98,9 @@ object DBManager extends MongoCodecs {
   def GetMongoCacheConnection(): Option[MongoDatabase] = {
     Option(mongoClient.getDatabase("cache").withCodecRegistry(codecRegistry))
   }
+  def GetMongoFilesConnection(): Option[MongoDatabase] = {
+    Option(mongoClient.getDatabase("files").withCodecRegistry(codecRegistry))
+  }
   def GetNextCloudConnection(): Option[Connection] = {
     Option(dsNextCloud.getConnection)
   }

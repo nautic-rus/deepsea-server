@@ -47,7 +47,7 @@ trait IssueManagerHelper extends MongoCodecs {
 //          query += s" or i.issue_type in ${groups}"
 //        }
         if (user.permissions.contains("view_all_tasks")){
-          query += s" or (id < -100)"
+          query += s" or (id > -100)"
         }
         query += s" or (i.department in (select name from issue_departments id where id.manager like '%${user.login}%'))"
         query += s" or (i.project in (select name from issue_projects ip where ip.managers like '%${user.login}%'))"
