@@ -196,16 +196,31 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
   }
 
   def startUser(user: User): String = {
+    var userId = user.id;
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val q = '"'
-        val query = s"insert into users (id, login, password, name, surname, birthday, email, phone, tcid, avatar, profession, visibility, gender, avatar_full, department, rocket_login, visible_projects, ${q}group${q}, projects) " +
-          s"values (default, '${user.login}', '${user.password}', '${user.name}', '${user.surname}', '${user.birthday}', '${user.email}', '${user.phone}', ${user.tcid}, '${user.avatar}', '${user.profession}', '${user.visibility}', '${user.gender}', '${user.avatar_full}', '${user.department}', '${user.rocket_login}', '${user.visible_projects.mkString(",")}','${user.groups.mkString(",")}')" +
+        val query = s"insert into users (id, login, password, name, surname, birthday, email, phone, tcid, avatar, profession, visibility, gender, avatar_full, department, rocket_login, visible_projects, ${q}group${q}) " +
+          s"values (default, '${user.login}', '${user.password}', '${user.name}', '${user.surname}', '${user.birthday}', '${user.email}', '${user.phone}', ${user.tcid}, '${user.avatar}', '${user.profession}', '${user.visibility}', '${user.gender}', '${user.avatar_full}', '${user.department}', '${user.rocket_login}', '${user.visible_projects.mkString(",")}', '${user.groups.mkString(",")}')" +
           s" returning id"
         val rs = s.executeQuery(query);
+        while (rs.next()) {
+          userId = rs.getInt("id");
+        }
+
         if (user.permissions.nonEmpty) {
-          user.permissions.foreach(role => s.execute(s"insert into user_rights (user_id, rights) values ('${rs.getInt("id")}', '$role')"))
+          user.permissions.foreach(role => s.execute(s"insert into user_rights (user_id, rights) values ('$userId', '$role')"))
+        }
+        if (user.visible_projects.nonEmpty) {
+          s.execute(s"delete from users_visibility_projects where user_id = '$userId'");
+          val projects: List[IssueManager.IssueProject] = getIssueProjects.toList;
+          user.visible_projects.foreach(uProject => {
+            projects.filter(x => x.name == uProject).map(project => {
+              val queryProject = s"insert into users_visibility_projects (user_id, project_id) values ('$userId', '${project.id}')";
+              s.execute(queryProject);
+            })
+          })
         }
         rs.close()
         s.close()
