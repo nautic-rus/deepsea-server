@@ -55,6 +55,7 @@ object IssueManager{
   case class GetIssueDepartments()
   case class GetIssueMessages(id: String)
   case class GetIssueDetails(id: String)
+  case class GetIssueDetailsByDocNumber(docNumber: String)
   case class SetIssueStatus(id: String, user: String)
   case class SetIssueMessage(id: String, message: String)
   case class AddIssueMessage(id: String, message: IssueMessage)
@@ -290,6 +291,11 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
       sender() ! (getIssueDetails(Try(_id.toInt).getOrElse(0)) match {
         case Some(issue) => Json.toJson(issue)
         case _ => "issue not found"
+      })
+    case GetIssueDetailsByDocNumber(docNumber) =>
+      sender() ! (getIssueDetails(docNumber) match {
+        case Some(issue) => Json.toJson(issue)
+        case _ => "issue not found".asJson.noSpaces
       })
     case AssignIssue(_id, user, _start_date, _due_date, overtime, action, author, hidden) =>
       val id: Int = _id.toIntOption.getOrElse(0)

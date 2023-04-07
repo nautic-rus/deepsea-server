@@ -473,6 +473,167 @@ trait IssueManagerHelper extends MongoCodecs {
     }
     issue
   }
+  def getIssueDetails(docNumber: String): Option[Issue] ={
+    var issue: Option[Issue] = Option.empty[Issue]
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        //val query = s"select *, (select closing_status from issue_types where type_name = i.issue_type) from issue i where $id = id and removed = 0"
+        var query = Source.fromResource("queries/issues.sql").mkString
+        query += s" and doc_number = '$docNumber'"
+        val rs = s.executeQuery(query)
+        while (rs.next()){
+          issue = Option(new Issue(
+            rs.getInt("id") match {
+              case value: Int => value
+              case _ => 0
+            },
+            rs.getString("status") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getString("project") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getString("department") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getString("started_by") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getLong("started_date") match {
+              case value: Long => value
+              case _ => 0
+            },
+            rs.getString("issue_type") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getString("issue_name") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getString("details") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getString("assigned_to") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getLong("due_date") match {
+              case value: Long => value
+              case _ => 0
+            },
+          ){
+            action =  rs.getString("active_action") match {
+              case value: String => value
+              case _ => ""
+            }
+            actions = getIssueActions(action, issue_type)
+            priority =  rs.getString("priority") match {
+              case value: String => value
+              case _ => ""
+            }
+            last_update = rs.getLong("last_update") match {
+              case value: Long => value
+              case _ => 0
+            }
+            doc_number =  rs.getString("doc_number") match {
+              case value: String => value
+              case _ => ""
+            }
+            responsible =  rs.getString("responsible") match {
+              case value: String => value
+              case _ => ""
+            }
+            overtime =  rs.getString("overtime") match {
+              case value: String => value
+              case _ => ""
+            }
+            start_date = rs.getLong("start_date") match {
+              case value: Long => value
+              case _ => 0
+            }
+            period = rs.getString("period") match {
+              case value: String => value
+              case _ => ""
+            }
+            messages = getIssueMessages(id)
+            file_attachments = getIssueFileAttachments(id)
+            parent_id = rs.getInt("parent_id") match {
+              case value: Int => value
+              case _ => 0
+            }
+            history = getIssueHistory(id)
+            child_issues = getChildIssues(id)
+            combined_issues = getCombinedIssues(id)
+            closing_status = rs.getString("closing_status") match {
+              case value: String => value
+              case _ => ""
+            }
+            delivered_date = rs.getLong("delivered_date") match {
+              case value: Long => value
+              case _ => 0
+            }
+            first_send_date = rs.getLong("first_send_date") match {
+              case value: Long => value
+              case _ => 0
+            }
+            revision = rs.getString("revision") match {
+              case value: String => value
+              case _ => ""
+            }
+            issue_comment = rs.getString("issue_comment") match {
+              case value: String => value
+              case _ => ""
+            }
+            ready = rs.getString("ready") match {
+              case value: String => value
+              case _ => ""
+            }
+            contract_due_date = rs.getLong("stage_date") match {
+              case value: Long => value
+              case _ => rs.getLong("contract_due_date") match {
+                case value: Long => value
+                case _ => 0
+              }
+            }
+            plan_hours = rs.getDouble("plan_hours") match {
+              case value: Double => value
+              case _ => 0
+            }
+            plan_hours_locked = rs.getInt("plan_hours_locked") match {
+              case value: Int => value
+              case _ => 0
+            }
+            assistant = rs.getString("assistant") match {
+              case value: String => value
+              case _ => ""
+            }
+            revision_files = getRevisionFiles(id)
+            cloud_files = if (issue_type == "RKD") getCloudFiles(project, doc_number, department) else List.empty[FileAttachment]
+            //cloud_files = List.empty[FileAttachment]
+            archive_revision_files = getRemovedRevisionFiles(id)
+            labor = getIssueLabor(id)
+            checks = getIssueChecks(id)
+            subscribers = getIssueSubscribers(id).map(_.user)
+            reason_of_changes = Option(rs.getString("reason_of_changes")).getOrElse("")
+            modification_of_existing = Option(rs.getInt("modification_of_existing")).getOrElse(0)
+            modification_description = Option(rs.getString("modification_description")).getOrElse("")
+          })
+        }
+        rs.close()
+        s.close()
+        c.close()
+      case _ => None
+    }
+    issue
+  }
+
   def getIssueLabor(issue_id: Int): Double ={
     var res: Double = 0
     DBManager.GetPGConnection() match {

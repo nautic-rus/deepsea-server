@@ -202,6 +202,9 @@ class HTTPManager extends Actor {
         (get & path("issueDetails") & parameter("id")) { (id) =>
           askFor(ActorManager.issue, GetIssueDetails(id))
         },
+        (get & path("issueDetails") & parameter("docNumber")) { (docNumber) =>
+          askFor(ActorManager.issue, GetIssueDetailsByDocNumber(docNumber))
+        },
         (get & path("setIssueViewed") & parameter("id") & parameter("user")) { (id, user) =>
           askFor(ActorManager.issue, SetIssueViewed(id, user))
         },
