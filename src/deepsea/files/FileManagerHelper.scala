@@ -238,7 +238,7 @@ trait FileManagerHelper extends IssueManagerHelper with MaterialManagerHelper{
     DBManager.GetMongoFilesConnection() match {
       case Some(mongo) =>
         val gridFSBucket = GridFSBucket(mongo)
-        gridFSBucket.uploadFromObservable(fileName, stream.)
+        //gridFSBucket.uploadFromObservable(fileName, stream.)
       case _ => None
     }
   }
