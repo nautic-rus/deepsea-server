@@ -136,7 +136,9 @@ object AuthManager extends MongoCodecs {
   case class Department(
                          id: Int,
                          name: String,
-                         manager: String
+                         manager: String,
+                         visible_documents: Int,
+                         visible_man_hours: Int
                        )
 
   case class GetDepartments()

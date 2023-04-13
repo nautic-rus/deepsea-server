@@ -647,12 +647,14 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
           res += Department(
             rs.getInt("id"),
             rs.getString("name"),
-            rs.getString("manager")
+            rs.getString("manager"),
+            rs.getInt("visible_documents"),
+            rs.getInt("visible_man_hours"),
           )
         }
-        rs.close();
-        s.close();
-        c.close();
+        rs.close()
+        s.close()
+        c.close()
         res.toList
       case _ => List.empty[Department]
     }
@@ -668,7 +670,9 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
           department = Option(Department(
             rs.getInt("id"),
             rs.getString("name"),
-            rs.getString("manager")
+            rs.getString("manager"),
+            rs.getInt("visible_documents"),
+            rs.getInt("visible_man_hours"),
           ))
         }
         rs.close()
