@@ -1504,6 +1504,22 @@ trait IssueManagerHelper extends MongoCodecs {
   def notifyDocUpload(taskId: Int): String ={
     getIssueDetails(taskId) match {
       case Some(issue) =>
+        val projects = getIssueProjects
+        val department = issue.department match {
+          case "Hull" => "hull-esp"
+          case "System" => "pipe-esp"
+          case "Devices" => "devices-esp"
+          case "Trays" => "trays"
+          case "Cables" => "cables"
+          case "Electric" => "electric-esp"
+          case "Accommodation" => "accommodation-esp"
+        }
+        val project = projects.find(x => x.name == issue.project) match {
+          case Some(value) => value.foran
+          case _ => issue.project
+        }
+        val url = App.HTTPServer.Url + "/" + department + "?issueId=" + issue.id + "&foranProject=" + project + "&docNumber=" + issue.doc_number + "&department=" + issue.department
+
         DBManager.GetPGConnection() match {
           case Some(c) =>
             val s = c.createStatement()
@@ -1512,7 +1528,7 @@ trait IssueManagerHelper extends MongoCodecs {
             val emails = rsIter.map(rs => {
               rs.getString("email")
             })
-            val url = App.HTTPServer.Url + "/?taskId=" + issue.id
+            //val url = App.HTTPServer.Url + "/?taskId=" + issue.id
             val text = Source.fromResource("messages/newDoc.html").mkString
               .replace("&docNumber", issue.doc_number)
               .replace("&project", issue.project)
@@ -1522,7 +1538,7 @@ trait IssueManagerHelper extends MongoCodecs {
               .replace("&revision", issue.revision)
               .replace("&url", url)
             emails.foreach(email => {
-              ActorManager.mail ! Mail("Nautic Rus", email, "Nautic Rus: new documents has been added", text)
+              ActorManager.mail ! Mail("Nautic Rus", email, "New documents has been added", text)
             })
             rsIter.rs.close()
             s.close()

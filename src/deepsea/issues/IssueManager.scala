@@ -423,7 +423,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     case SubscribeForNotifications(user, issue, options) =>
       sender() ! subscribeForIssueNotifications(user, issue.toIntOption.getOrElse(0), options).asJson.noSpaces
     case NotifyDocUpload(taskId) =>
-      sender() ! notifyDocUpload(taskId.toIntOption.getOrElse(0))
+      sender() ! notifyDocUpload(taskId.toIntOption.getOrElse(0)).asJson.noSpaces
     case SetPlanHours(issue_id, user, hours) =>
       val date = new Date().getTime
 //      updateHistory(new IssueHistory(issue_id.toIntOption.getOrElse(0), user, "plan_hours", "", hours, date, "plan_hours"))
