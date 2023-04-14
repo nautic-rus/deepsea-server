@@ -11,6 +11,7 @@ import deepsea.files.FileManagerHelper
 import deepsea.files.classes.FileAttachment
 import deepsea.issues.IssueManager.{DailyTask, GroupFolder, IssueProject, Subscriber}
 import deepsea.issues.classes.{ChildIssue, Issue, IssueAction, IssueCheck, IssueHistory, IssueMessage, IssuePeriod, SfiCode}
+import deepsea.mail.MailManager
 import deepsea.mail.MailManager.Mail
 import deepsea.materials.MaterialManager.ProjectName
 import deepsea.rocket.RocketChatManager.{SendMessage, SendNotification}
@@ -1500,6 +1501,38 @@ trait IssueManagerHelper extends MongoCodecs {
     }
     res.toList
   }
+  def notifyDocUpload(taskId: Int): String ={
+    getIssueDetails(taskId) match {
+      case Some(issue) =>
+        DBManager.GetPGConnection() match {
+          case Some(c) =>
+            val s = c.createStatement()
+            val q = Source.fromResource("queries/userNotificationsByProject.sql").mkString.replace("&project", issue.project)
+            val rsIter = RsIterator(s.executeQuery(q))
+            val emails = rsIter.map(rs => {
+              rs.getString("email")
+            })
+            val url = App.HTTPServer.Url + "/?taskId=" + issue.id
+            val text = Source.fromResource("messages/newDoc.html").mkString
+              .replace("&docNumber", issue.doc_number)
+              .replace("&project", issue.project)
+              .replace("&name", issue.name)
+              .replace("&type", issue.issue_type)
+              .replace("&department", issue.department)
+              .replace("&revision", issue.revision)
+              .replace("&url", url)
+            emails.foreach(email => {
+              ActorManager.mail ! Mail("Nautic Rus", email, "A new document has been added", text)
+            })
+            rsIter.rs.close()
+            s.close()
+            c.close()
+          case _ =>
+        }
+      case _ => None
+    }
+    "success"
+  }
   def updateIssueLabor(issue_id: Int, labor: Double): Unit ={
     DBManager.GetPGConnection() match {
       case Some(c) =>
@@ -1553,9 +1586,9 @@ trait IssueManagerHelper extends MongoCodecs {
             Option(rs.getString("pdsp")).getOrElse(""),
             Option(rs.getString("rkd")).getOrElse(""),
             Option(rs.getString("foran")).getOrElse(""),
-            Option(rs.getString("factory")).getOrElse(""),
             Option(rs.getString("managers")).getOrElse(""),
-            Option(rs.getString("status")).getOrElse("")
+            Option(rs.getString("status")).getOrElse(""),
+            Option(rs.getString("factory")).getOrElse(""),
           )
         }
         rs.close()

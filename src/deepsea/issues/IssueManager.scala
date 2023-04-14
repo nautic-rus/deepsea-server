@@ -94,8 +94,10 @@ object IssueManager{
   case class CombineIssues(firstIssue: String, secondIssue: String, user: String)
   case class GetProjectNames()
   case class SubscribeForNotifications(user: String, issue: String, options: String)
+  case class NotifyDocUpload(taskId: String)
   case class SetPlanHours(issue_id: String, user: String, hours: String)
   case class LockPlanHours(issue_id: String, state: String)
+  case class UserEmail(name: String, surname: String, email: String)
 
   case class IssueDef(id: String, issueTypes: List[String], issueProjects: List[String])
 
@@ -112,7 +114,7 @@ object IssueManager{
 
   case class GroupFolder(id: Int, name: String)
   case class DailyTask(issueId: Int, date: Long, dateCreated: Long, userLogin: String, project: String, details: String, time: Double, id: Int)
-  case class IssueProject(id: Int, name: String, pdsp: String, rkd: String, foran: String, factory: String, managers: String, status: String)
+  case class IssueProject(id: Int, name: String, pdsp: String, rkd: String, foran: String, managers: String, status: String, factory: String)
 }
 class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with FileManagerHelper with AuthManagerHelper{
   implicit val timeout: Timeout = Timeout(30, TimeUnit.SECONDS)
@@ -420,6 +422,8 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
       sender() ! getProjectNames.asJson.noSpaces
     case SubscribeForNotifications(user, issue, options) =>
       sender() ! subscribeForIssueNotifications(user, issue.toIntOption.getOrElse(0), options).asJson.noSpaces
+    case NotifyDocUpload(taskId) =>
+      sender() ! notifyDocUpload(taskId.toIntOption.getOrElse(0))
     case SetPlanHours(issue_id, user, hours) =>
       val date = new Date().getTime
 //      updateHistory(new IssueHistory(issue_id.toIntOption.getOrElse(0), user, "plan_hours", "", hours, date, "plan_hours"))
