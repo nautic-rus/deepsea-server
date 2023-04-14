@@ -1522,7 +1522,7 @@ trait IssueManagerHelper extends MongoCodecs {
               .replace("&revision", issue.revision)
               .replace("&url", url)
             emails.foreach(email => {
-              ActorManager.mail ! Mail("Nautic Rus", email, "A new document has been added", text)
+              ActorManager.mail ! Mail("Nautic Rus", email, "Nautic Rus: new documents has been added", text)
             })
             rsIter.rs.close()
             s.close()

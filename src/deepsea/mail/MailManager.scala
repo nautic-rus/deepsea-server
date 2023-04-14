@@ -23,7 +23,7 @@ class MailManager extends Actor{
       val mail = EmailBuilder.startingBlank()
         .from("Nautic Rus", "noreply@nautic-rus.com")
         .to(mailInfo.toUser, mailInfo.toMail)
-        .withSubject("Nautic Rus Notification")
+        .withSubject(mailInfo.subject)
         .withHTMLText(mailInfo.message)
         .buildEmail()
 
