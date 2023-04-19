@@ -42,7 +42,7 @@ object MaterialManager{
   case class GetMaterialsCode(project: String, code: String)
   case class UpdateMaterial(material: String, user: String, remove: String = "0")
   case class GetMaterialNodes(project: String)
-  case class UpdateMaterialNode(project: String, data: String, label: String, user: String, remove: String = "0")
+  case class UpdateMaterialNode(project: String, data: String, label: String, label_ru: String, user: String, remove: String = "0")
   case class GetWeightControl()
   case class GetWCDrawings()
   case class GetWCZones()
@@ -85,7 +85,7 @@ object MaterialManager{
   }
   case class ProjectName(id: String, rkd: String, pdsp: String, foran: String, cloud: String, cloudRkd: String)
   case class MaterialTranslation(lang: String, name: String, description: String)
-  case class MaterialNode(project: String, label: String, data: String, user: String, date: Long)
+  case class MaterialNode(project: String, label: String, label_ru: String, data: String, user: String, date: Long)
   case class MaterialNodeHistory(node: MaterialNode, user: String, date: Long = new Date().getTime)
 
   case class WeightControl(docNumber: String, docName: String, zoneNumber: String, moveElement: String, zoneName: String, mount: Int, side: Int, weight: Double, x: Double, y: Double, z: Double, user: String, date: Long, project: String, var removedDate: Long, var removedUser: String)
@@ -147,8 +147,8 @@ class MaterialManager extends Actor with MongoCodecs{
           }
         case _ => List.empty[MaterialNode]
       }
-    case UpdateMaterialNode(project, data, label, user, remove) =>
-      val node = MaterialNode(project, label, data, user, new Date().getTime)
+    case UpdateMaterialNode(project, data, label, label_ru, user, remove) =>
+      val node = MaterialNode(project, label, label_ru, data, user, new Date().getTime)
       DBManager.GetMongoConnection() match {
         case Some(mongo) =>
           val nodes: MongoCollection[MaterialNode] = mongo.getCollection(collectionNodes)

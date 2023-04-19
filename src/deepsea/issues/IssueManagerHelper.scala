@@ -1508,17 +1508,18 @@ trait IssueManagerHelper extends MongoCodecs {
         val department = issue.department match {
           case "Hull" => "hull-esp"
           case "System" => "pipe-esp"
-          case "Devices" => "devices-esp"
+          case "Devices" => "device-esp"
           case "Trays" => "trays"
           case "Cables" => "cables"
           case "Electric" => "electric-esp"
           case "Accommodation" => "accommodation-esp"
+          case "Design" => "design-esp"
         }
         val project = projects.find(x => x.name == issue.project) match {
           case Some(value) => value.foran
           case _ => issue.project
         }
-        val url = App.HTTPServer.Url + "/" + department + "?issueId=" + issue.id + "&foranProject=" + project + "&docNumber=" + issue.doc_number + "&department=" + issue.department
+        val url = App.HTTPServer.Url + "/" + department + "?issueId=" + issue.id + "&foranProject=" + project + "&docNumber=" + issue.doc_number + "&department=" + issue.department + "&nc=1"
 
         DBManager.GetPGConnection() match {
           case Some(c) =>

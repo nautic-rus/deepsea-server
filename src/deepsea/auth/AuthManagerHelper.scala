@@ -358,10 +358,10 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement();
-        val query = s"select user_id from users_visibility_projects where project_id = '$id'";
+        val query = s"select user_id from users_visibility_projects where project_id = '$id'"
         val rs = s.executeQuery(query);
         while (rs.next()) {
-          res.append(rs.getInt("user_id"));
+          res.append(rs.getInt("user_id"))
         }
         rs.close()
         s.close()
@@ -376,8 +376,8 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement();
-        val query = s"select uvp.user_id, ip.name from users_visibility_projects uvp, issue_projects ip where uvp.project_id = ip.id";
-        val rs = s.executeQuery(query);
+        val query = s"select uvp.user_id, ip.name from users_visibility_projects uvp, issue_projects ip where uvp.project_id = ip.id"
+        val rs = s.executeQuery(query)
         while (rs.next()) {
           res += (UserProject(
             rs.getString("user_id"),
@@ -448,25 +448,25 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement();
-        val query = s"delete from rights where name = '$name'";
-        s.execute(query);
-        s.close();
-        c.close();
-        "success";
-      case _ => "error";
+        val query = s"delete from rights where name = '$name'"
+        s.execute(query)
+        s.close()
+        c.close()
+        "success"
+      case _ => "error"
     }
   }
 
   def editAdminRight(right: AdminRight, name: String): String = {
     DBManager.GetPGConnection() match {
       case Some(c) =>
-        val s = c.createStatement();
-        val query = s"update rights set name = '${right.name}' where name = '$name'";
-        s.execute(query);
-        s.close();
-        c.close();
-        "success";
-      case _ => "error";
+        val s = c.createStatement()
+        val query = s"update rights set name = '${right.name}' where name = '$name'"
+        s.execute(query)
+        s.close()
+        c.close()
+        "success"
+      case _ => "error"
     }
 
   }
