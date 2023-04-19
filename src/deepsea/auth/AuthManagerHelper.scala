@@ -14,16 +14,18 @@ import scala.io.Source
 trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
   def getUser(login: String): Option[User] = {
     val usersProjects = getUsersProjects
-    val rights = getRights
+    val userRights = getRights
+    val roles = getRoles
     DBManager.GetPGConnection() match {
       case Some(c) =>
         var res = Option.empty[User]
         val s = c.createStatement()
         val rs = s.executeQuery(s"select * from users where login = '$login' and removed = 0")
         while (rs.next()) {
-          val id = Option(rs.getInt("id")).getOrElse(0);
+          val userId = Option(rs.getInt("id")).getOrElse(0)
+          val groups = rs.getString("group").split(",").toList
           res = Option(User(
-            id,
+            userId,
             rs.getString("login"),
             rs.getString("password"),
             rs.getString("name"),
@@ -39,11 +41,14 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
             rs.getString("rocket_login"),
             rs.getString("gender"),
             rs.getString("visibility"),
-            usersProjects.filter(_.user_id == id.toString).map(x => x.project_name),
+            usersProjects.filter(_.user_id == userId.toString).map(x => x.project_name),
             rs.getString("visible_pages").split(",").toList,
             rs.getString("shared_access").split(",").toList,
-            rs.getString("group").split(",").toList,
-            rights.filter(_.userId == id).map(_.role),
+            groups,
+            roles.find(x => groups.contains(x)) match {
+              case Some(role) => role.rights
+              case _ => userRights.filter(_.userId == userId).map(_.role)
+            },
             "",
             rs.getInt("id_department")
           ))
@@ -69,16 +74,18 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
 
   def getUsers: List[User] = {
     val res = ListBuffer.empty[User]
-    val rights = getRights
+    val userRights = getRights
     val usersProjects = getUsersProjects
+    val roles = getRoles
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement();
-        val rs = s.executeQuery(s"select * from users where removed = 0 order by id");
+        val rs = s.executeQuery(s"select * from users where removed = 0 order by id")
         while (rs.next()) {
-          val id = Option(rs.getInt("id")).getOrElse(0);
+          val userId = Option(rs.getInt("id")).getOrElse(0)
+          val groups = rs.getString("group").split(",").toList
           res += User(
-            id,
+            userId,
             rs.getString("login"),
             rs.getString("password"),
             rs.getString("name"),
@@ -95,12 +102,15 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
             rs.getString("gender"),
             rs.getString("visibility"),
             usersProjects.filter(x => {
-              x.user_id.equals(id.toString)
+              x.user_id.equals(userId.toString)
             }).map(x => x.project_name),
             rs.getString("visible_pages").split(",").toList,
             rs.getString("shared_access").split(",").toList,
             rs.getString("group").split(",").toList,
-            rights.filter(_.userId == id).toList.map(_.role),
+            roles.find(x => groups.contains(x)) match {
+              case Some(role) => role.rights
+              case _ => userRights.filter(_.userId == userId).map(_.role)
+            },
             "",
             rs.getInt("id_department")
           )
@@ -156,12 +166,14 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
     var user: Option[User] = Option.empty[User]
     val usersProjects = getUsersProjects
     val userRights = getRights
+    val roles = getRoles
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val rs = s.executeQuery(s"select * from users where id = '$id'");
+        val rs = s.executeQuery(s"select * from users where id = '$id'")
         while (rs.next()) {
-          val userId = Option(rs.getInt("id")).getOrElse(0);
+          val userId = Option(rs.getInt("id")).getOrElse(0)
+          val groups = rs.getString("group").split(",").toList
           user = Option(User(
             userId,
             rs.getString("login"),
@@ -182,8 +194,11 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
             usersProjects.filter(_.user_id == id).map(x => x.project_name),
             rs.getString("visible_pages").split(",").toList,
             rs.getString("shared_access").split(",").toList,
-            rs.getString("group").split(",").toList,
-            userRights.filter(_.userId == userId).toList.map(_.role),
+            groups,
+            roles.find(x => groups.contains(x)) match {
+              case Some(role) => role.rights
+              case _ => userRights.filter(_.userId == userId).toList.map(_.role)
+            },
             "",
             rs.getInt("id_department")))
         }
@@ -561,23 +576,30 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         var id_users = ListBuffer.empty[String]
-        val s = c.createStatement();
+        val s = c.createStatement()
         val q = '"'
-        val query = s"select id from users where ${q}group${q} like '%' || '${name}' || '%'"
-        val rs = s.executeQuery(query);
+        val query = s"select id from users where ${q}group$q like '%$name%'"
+        val rs = s.executeQuery(query)
         while (rs.next()) {
-          id_users += (
-            rs.getString("id")
-            )
+          id_users += rs.getString("id")
         }
+        val roles = getRoles
         id_users.foreach(id => {
-          ""
+          s.execute(s"delete from user_rights where user_id = '$id'")
+          roles.find(_.name == name) match {
+            case Some(role) =>
+              role.rights.filter(x => x != "").foreach(rights => {
+                val query = s"insert into user_rights (user_id, rights) values ('$id', '$rights')";
+                s.execute(query)
+              })
+            case _ => None
+          }
         })
         rs.close();
         s.close();
         c.close();
         "success"
-      case _ => "error";
+      case _ => "error"
     }
   }
 
