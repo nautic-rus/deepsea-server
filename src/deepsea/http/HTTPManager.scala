@@ -29,7 +29,7 @@ import deepsea.mobile.MobileManager.{GetDrawingInfo, GetDrawings}
 import deepsea.osm.OsmManager.{AddPLS, GetPLS}
 import deepsea.rocket.RocketChatManager.SendNotification
 import deepsea.time.LicenseManager.GetForanLicenses
-import deepsea.time.PlanHoursManager.{DeleteUserTask, GetPlannedHours, GetUserPlanHours, PlanUserTask}
+import deepsea.time.PlanHoursManager.{ConsumePlanHours, DeleteUserTask, GetConsumedHours, GetPlannedHours, GetUserPlanHours, PlanUserTask}
 import deepsea.time.TimeAndWeatherManager.GetTimeAndWeather
 import deepsea.time.TimeControlManager.{AddSpyWatch, AddUserWatch, GetSpyWatches, GetTime, GetUserTimeControl, GetUserWatches}
 import org.apache.log4j.{LogManager, Logger}
@@ -315,6 +315,13 @@ class HTTPManager extends Actor {
         (get & path("plannedHours")) {
           askFor(ActorManager.planHours, GetPlannedHours())
         },
+        (post & path("consumePlanHours") & entity(as[String]) & parameter("userId", "taskId", "details")) { (planHours, userId, taskId, details) =>
+          askFor(ActorManager.planHours, ConsumePlanHours(planHours, userId, taskId, details))
+        },
+        (get & path("consumed") & parameter("userId")) { (userId) =>
+          askFor(ActorManager.planHours, GetConsumedHours(userId))
+        },
+
 
         (get & path("subscribeForIssue") & parameter("user") & parameter("issue") & parameter("options")) { (user, issue, options) =>
           askFor(ActorManager.issue, SubscribeForNotifications(user, issue, options))

@@ -6,13 +6,13 @@ import deepsea.auth.AuthManagerHelper
 import deepsea.database.MongoCodecs
 import deepsea.issues.IssueManagerHelper
 import deepsea.issues.classes.Issue
-import deepsea.time.PlanHoursManager.{AssignPlanHoursToUsers, ConsumedHour, DeleteUserTask, FillConsumed, GetPlannedHours, GetUserPlanHours, InitPlanHours, PlanAlreadyPlannedIssues, PlanHour, PlanUserTask, SpecialDay}
+import deepsea.time.PlanHoursManager.{AssignPlanHoursToUsers, ConsumePlanHours, ConsumedHour, DeleteUserTask, FillConsumed, GetConsumedHours, GetPlannedHours, GetUserPlanHours, InitPlanHours, PlanAlreadyPlannedIssues, PlanHour, PlanUserTask, SpecialDay}
 import io.circe.syntax.EncoderOps
 
 import java.util.{Calendar, Date}
 import scala.collection.mutable.ListBuffer
 
-object PlanHoursManager{
+object PlanHoursManager extends MongoCodecs {
   case class PlanHour(day: Int, month: Int, year: Int, hour_type: Int, day_type: Int, day_of_week: Int, user: Int = 0, id: Int = 0, task_id: Int = 0){
     def isFree: Boolean = {
       hour_type == 1 && task_id == 0
@@ -29,7 +29,9 @@ object PlanHoursManager{
   case class PlanAlreadyPlannedIssues()
   case class FillConsumed()
   case class GetPlannedHours()
+  case class GetConsumedHours(userId: String)
   case class PlannedHours(taskId: Int, hours: Int)
+  case class ConsumePlanHours(planHoursValue: String, userId: String, taskId: String, details: String)
 }
 class PlanHoursManager extends Actor with PlanHoursHelper with AuthManagerHelper with IssueManagerHelper with MongoCodecs{
   val specialDays: List[SpecialDay] = List(
@@ -184,7 +186,7 @@ class PlanHoursManager extends Actor with PlanHoursHelper with AuthManagerHelper
                   -10
                 }
                 if (free.nonEmpty){
-                  consumeHours(free.take(if (amount > free.length) free.length else amount), taskId, t.details)
+                  consumeHours(free.take(if (amount > free.length) free.length else amount), u.id, t.issueId, t.details)
                 }
                 if (free.isEmpty){
                   userFull += Tuple4(d, m, y, u.id)
@@ -197,6 +199,11 @@ class PlanHoursManager extends Actor with PlanHoursHelper with AuthManagerHelper
       val q = 0
     case GetPlannedHours() =>
       sender() ! getPlannedHours.asJson.noSpaces
+    case GetConsumedHours(userId) =>
+      sender() ! getConsumedHours(userId.toIntOption.getOrElse(0)).asJson.noSpaces
+    case ConsumePlanHours(planHoursValue, userId, taskId, details) =>
+      consumePlanHours(planHoursValue, userId, taskId, details)
+      sender() ! "success".asJson.noSpaces
     case _ => None
   }
 }

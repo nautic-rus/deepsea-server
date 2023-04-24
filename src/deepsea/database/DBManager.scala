@@ -16,7 +16,7 @@ object DBManager extends MongoCodecs {
 
   private val configOracle = new HikariConfig()
   private val oracleConnections = ListBuffer.empty[OracleConnection]
-  private val mongoClient: MongoClient = MongoClient("mongodb://192.168.1.26")
+  private val mongoClient: MongoClient = MongoClient("mongodb://192.168.1.36")
 
 //  JSch.setConfig("StrictHostKeyChecking", "no")
 //  val nextcloudSSH = new JSch()

@@ -103,7 +103,7 @@ class DatabaseManager extends Actor{
     configFireBase.setPassword("STMEGA21")
     dsFireBase = new HikariDataSource(configFireBase)
 
-    mongoClient = MongoClient("mongodb://192.168.1.26")
+    mongoClient = MongoClient("mongodb://192.168.1.36")
 
     ActorManager.startup ! DatabaseManagerStarted()
   }

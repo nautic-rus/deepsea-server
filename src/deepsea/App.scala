@@ -1,13 +1,14 @@
 package deepsea
 
 import deepsea.actors.ActorManager
+import deepsea.http.HTTPManager
 
 import scala.io.StdIn.readLine
 
 object App {
   object HTTPServer{
     val Host = "192.168.1.28"
-    val Host1 = "192.168.1.151"
+    val Host1 = "192.168.1.122"
     val Port = 1112
     val Url = "https://deep-sea.ru"
     val RestUrl = "https://deep-sea.ru/rest"
@@ -27,7 +28,11 @@ object App {
   def main(args: Array[String]): Unit = {
     org.apache.log4j.BasicConfigurator.configure()
     ActorManager.init()
-    while (readLine() != "q") {}
+    var line = readLine()
+    while (line.contains("q")) {
+      println(HTTPManager.check())
+      line = readLine()
+    }
     ActorManager.terminate()
   }
 }

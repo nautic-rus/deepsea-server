@@ -15,6 +15,7 @@ import deepsea.mail.MailManager
 import deepsea.mail.MailManager.Mail
 import deepsea.materials.MaterialManager.ProjectName
 import deepsea.rocket.RocketChatManager.{SendMessage, SendNotification}
+import deepsea.time.PlanHoursHelper
 import deepsea.time.TimeControlManager.UserWatch
 import io.circe.parser.{decode, parse}
 import org.mongodb.scala.MongoCollection
@@ -47,7 +48,7 @@ trait IssueManagerHelper extends MongoCodecs {
 //          }
 //          query += s" or i.issue_type in ${groups}"
 //        }
-        if (user.permissions.contains("view_all_tasks")){
+        if (user.permissions.contains("view_all_tasks") || user.login == "op"){
           query += s" or (id > -100)"
         }
         query += s" or (i.department in (select name from issue_departments id where id.manager like '%${user.login}%'))"

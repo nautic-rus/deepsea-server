@@ -2,9 +2,13 @@ package deepsea.time
 
 import deepsea.database.DBManager
 import deepsea.database.DBManager.RsIterator
+import deepsea.issues.IssueManager.IssueProject
 import deepsea.time.PlanHoursManager.{AllocatedHour, ConsumedHour, PlanHour, PlannedHours}
+import io.circe.parser.decode
+import io.circe.syntax.EncoderOps
 
 import java.util.{Calendar, Date}
+import scala.collection.mutable.ListBuffer
 
 trait PlanHoursHelper {
   def fillHours(day: Int, month: Int, year: Int, dayType: Int, dayOfWeek: Int, user: Int): List[PlanHour] = {
@@ -105,7 +109,7 @@ trait PlanHoursHelper {
         c.setAutoCommit(false)
         val s = c.createStatement()
         taskHours.foreach(h => {
-          val query = s"update hours_template_user set task_id = ${taskId} where id = ${h.id}"
+          val query = s"update hours_template_user set task_id = $taskId where id = ${h.id}"
           s.execute(query)
         })
         s.close()
@@ -184,19 +188,9 @@ trait PlanHoursHelper {
         else{
           calendar.add(Calendar.DATE, -4)
         }
-        val startDay = calendar.get(Calendar.DATE)
         val startMonth = calendar.get(Calendar.MONTH)
-        val startYear = calendar.get(Calendar.YEAR)
-        val startDateValue = new Date(startYear, startMonth, startDay)
-
-        calendar.add(Calendar.DATE, amount)
-        val endDay = calendar.get(Calendar.DATE)
-        val endMonth = calendar.get(Calendar.MONTH)
-        val endYear = calendar.get(Calendar.YEAR)
-        val endDateValue = new Date(endYear, endMonth, endDay)
 
         val userFilter = s"(user_id = $userId or $userId = 0)"
-        //val dateFilter = s"((month >= $startMonth and month <= $endMonth and year >= $startYear and year <= $endYear) or $available)"
         val dateFilter = s"((month = $startMonth) or $available)"
         val query = s"select * from hours_template_user where $userFilter and $dateFilter"
         val s = c.createStatement()
@@ -215,7 +209,6 @@ trait PlanHoursHelper {
         }).toList
         s.close()
         c.close()
-        //planHours.filter(p => available || (startDateValue.getTime <= new Date(p.year, p.month, p.day).getTime && new Date(p.year, p.month, p.day).getTime < endDateValue.getTime)).sortBy(_.id)
         planHours.sortBy(_.id)
       case _ => List.empty[PlanHour]
     }
@@ -288,7 +281,7 @@ trait PlanHoursHelper {
   def getConsumedHours(userId: Int): List[ConsumedHour] ={
     DBManager.GetPGConnection() match {
       case Some(c) =>
-        val query = s"select * from hours_consumed where user_id = $userId"
+        val query = s"select * from hours_consumed where user_id = $userId or $userId = 0"
         val s = c.createStatement()
         val consumedHours = RsIterator(s.executeQuery(query)).map(rs => {
           ConsumedHour(
@@ -306,7 +299,7 @@ trait PlanHoursHelper {
       case _ => List.empty[ConsumedHour]
     }
   }
-  def consumeHours(consumed: List[PlanHour], taskId: Int, details: String): Unit = {
+  def consumeHours(consumed: List[PlanHour], userId: Int, taskId: Int, details: String): Unit = {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
@@ -319,8 +312,16 @@ trait PlanHoursHelper {
         c.close()
       case _ =>
     }
+    reduceTaskPlannedHours(userId, taskId, consumed.length)
+    setTaskWithMove(userId, taskId, consumed.minBy(_.id).id, consumed.length)
   }
-
+  def consumePlanHours(jsonValue: String, userId: String, taskId: String, details: String): Unit ={
+    decode[List[PlanHour]](jsonValue) match {
+      case Right(planHours) =>
+        consumeHours(planHours, userId.toIntOption.getOrElse(0), taskId.toIntOption.getOrElse(0), details)
+      case _ =>
+    }
+  }
   def getTaskHours(taskId: Int): List[PlanHour] ={
     DBManager.GetPGConnection() match {
       case Some(c) =>
@@ -390,5 +391,41 @@ trait PlanHoursHelper {
       case _ =>
     }
   }
-
+  def reduceTaskPlannedHours(userId: Int, taskId: Int, amount: Int): Unit ={
+    val plannedHours = getUserPlanHours(userId, available = true)
+    val hoursToRemove = plannedHours.filter(_.task_id == taskId).takeRight(amount)
+    if (hoursToRemove.nonEmpty){
+      val idsToRemove = hoursToRemove.map(_.id).mkString(",")
+      DBManager.GetPGConnection() match {
+        case Some(c) =>
+          val s = c.createStatement()
+          val query = s"update hours_template_user set task_id = 0 where id in ($idsToRemove)"
+          s.execute(query)
+          s.close()
+          c.close()
+        case _ =>
+      }
+      val firstHour = hoursToRemove.head
+      foldTasksLeft(userId, firstHour.id)
+    }
+  }
+  def foldTasksLeft(userId: Int, fromHourId: Int): Unit ={
+    val plannedHours = getUserPlanHours(userId, available = true)
+    val plannedTasks = plannedHours.filter(_.id >= fromHourId).filter(_.task_id != 0)
+    val plannedTasksIds = plannedTasks.map(_.id).mkString(",")
+    if (plannedTasksIds.nonEmpty){
+      DBManager.GetPGConnection() match {
+        case Some(c) =>
+          val s = c.createStatement()
+          val query = s"update hours_template_user set task_id = 0 where id in ($plannedTasksIds)"
+          s.execute(query)
+          s.close()
+          c.close()
+        case _ =>
+      }
+      plannedTasks.sortBy(_.id).groupBy(_.task_id).foreach(gr => {
+        setTaskWithoutMove(userId, gr._1, fromHourId, gr._2.length)
+      })
+    }
+  }
 }
