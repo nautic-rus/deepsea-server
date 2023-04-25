@@ -20,6 +20,7 @@ import play.api.libs.json.{JsValue, Json}
 
 import java.io.{File, FileOutputStream, InputStream}
 import java.nio.ByteBuffer
+import java.nio.file.Path
 import java.util.Date
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
@@ -48,7 +49,9 @@ object FileManager{
 
   case class DocumentDirectories(project: String, department: String, directories: List[String])
 
-  case class UploadFileToMongo(fileName: String, stream: ByteBuffer)
+  case class UploadFileToMongo(fileName: String, path: Path, user: String)
+  case class GetFileFromMongo(id: String, name: String)
+  case class MongoFile(bytes: Array[Byte], fileName: String, user: String)
 
   val treeFilesCollection = "tree-files"
   val treeFilesHistoryCollection: String = treeFilesCollection + "-history"
@@ -88,9 +91,10 @@ class FileManager extends Actor with MongoCodecs with MaterialManagerHelper with
       sender() ! Json.toJson(getCloudFiles(id.toIntOption.getOrElse(0)))
     case GetCloudFiles(filter) =>
       sender() ! Json.toJson(getCloudFiles(filter))
-    case UploadFileToMongo(fileName, stream) =>
-
-      sender() ! "success"
+    case UploadFileToMongo(fileName, path, user) =>
+      sender() ! addFileToMongo(fileName, path, user)
+    case GetFileFromMongo(id, fileName) =>
+      sender() ! getFileFromMongo(id, fileName)
     case _ => None
   }
 

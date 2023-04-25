@@ -1,29 +1,29 @@
 package deepsea.files
 
-import akka.http.scaladsl.model.Uri.Path
+import akka.http.scaladsl.server.directives.ContentTypeResolver
 import com.sun.mail.iap.ByteArray
 import deepsea.App
 import deepsea.database.DBManager.RsIterator
 import deepsea.database.{DBManager, DatabaseManager}
-import deepsea.files.FileManager.{CloudFile, DocumentDirectories}
+import deepsea.files.FileManager.MongoFile
 import deepsea.files.classes.FileAttachment
 import deepsea.issues.IssueManagerHelper
 import deepsea.materials.MaterialManagerHelper
 import org.aarboard.nextcloud.api.NextcloudConnector
-import org.apache.http.client.utils.URIUtils
-import org.mongodb.scala.Observable
-import org.mongodb.scala.gridfs.GridFSBucket
-import play.api.libs.json.Json
+import org.bson.types.ObjectId
+import org.mongodb.scala.{Document, Observable, ObservableFuture, bson}
+import org.mongodb.scala.gridfs.{GridFSBucket, GridFSDownloadOptions, GridFSUploadOptions}
+import org.mongodb.scala.model.Filters.equal
 
-import java.io.{BufferedInputStream, File, FileOutputStream, FileWriter, InputStream}
+import java.io.{BufferedInputStream, ByteArrayOutputStream, File, FileInputStream, FileOutputStream, FileWriter, InputStream}
 import java.net.{URL, URLEncoder}
-import java.nio.charset.Charset
-import java.nio.file.{Files, StandardCopyOption}
+import java.nio.ByteBuffer
+import java.nio.file.{Files, Path, StandardCopyOption}
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
 import scala.concurrent.duration.{Duration, SECONDS, pairIntToDuration, pairLongToDuration}
 
-trait FileManagerHelper extends IssueManagerHelper with MaterialManagerHelper{
+trait FileManagerHelper extends IssueManagerHelper with MaterialManagerHelper {
   val sp: String = File.pathSeparator
   val spCloud: String = "/"
 
@@ -234,12 +234,28 @@ trait FileManagerHelper extends IssueManagerHelper with MaterialManagerHelper{
       case _ => s"ERROR: There is no defined cloud path for project $project"
     }
   }
-  def addFileToMongo(fileName: String, stream: InputStream): Unit ={
+  def addFileToMongo(fileName: String, path: Path, user: String): String ={
     DBManager.GetMongoFilesConnection() match {
       case Some(mongo) =>
         val gridFSBucket = GridFSBucket(mongo)
-        //gridFSBucket.uploadFromObservable(fileName, stream.)
-      case _ => None
+        val gridFSOptions = new GridFSUploadOptions()
+        gridFSOptions.metadata(Document("user" -> user))
+        val res = Await.result(gridFSBucket.uploadFromObservable(fileName, Observable(Seq(ByteBuffer.wrap(Files.readAllBytes(path)))), gridFSOptions).head(), Duration(60, SECONDS))
+        App.HTTPServer.RestUrl + "/" + res.toString + "/" + fileName
+      case _ => ""
+    }
+  }
+  def getFileFromMongo(id: String, fileName: String): File ={
+    DBManager.GetMongoFilesConnection() match {
+      case Some(mongo) =>
+        val gridFSBucket = GridFSBucket(mongo)
+        val doc = Await.result(gridFSBucket.find(equal("_id", new ObjectId(id))).toFuture(), Duration(60, SECONDS))
+        val res = Await.result(gridFSBucket.downloadToObservable(new ObjectId(id)).toFuture(), Duration(60, SECONDS))
+        val temp = File.createTempFile(fileName, fileName)
+        val fileStream = new FileOutputStream(temp)
+        res.foreach(r => fileStream.write(r.array()))
+        temp
+      case _ => File.createTempFile("", fileName)
     }
   }
 }

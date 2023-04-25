@@ -5,10 +5,11 @@ import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.{Actor, ActorRef}
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.HttpEntity.{ChunkStreamPart, Chunked}
 import akka.http.scaladsl.model.Multipart.BodyPart
-import akka.http.scaladsl.model.{HttpEntity, HttpRequest, Multipart, RemoteAddress}
+import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives.{path, _}
-import akka.http.scaladsl.server.directives.DebuggingDirectives
+import akka.http.scaladsl.server.directives.ContentTypeResolver
 import akka.http.scaladsl.server.{ExceptionHandler, Route, StandardRoute}
 import akka.pattern.ask
 import akka.stream.scaladsl.{FileIO, Sink}
@@ -20,7 +21,7 @@ import deepsea.actors.ActorStartupManager.HTTPManagerStarted
 import deepsea.auth.AuthManager.{DeleteAdminRight, DeleteRole, DeleteUser, EditAdminRight, EditRole, EditUser, EditUsersProject, GetAdminRightDetails, GetAdminRights, GetDepartmentDetails, GetDepartments, GetPages, GetRightDetails, GetRights, GetRoleDetails, GetRoleRights, GetRoles, GetUserDetails, GetUserVisibleProjects, GetUsers, GetUsersProject, JoinUsersProjects, Login, SaveRoleForAll, SendLogPass, ShareRights, StartRight, StartRole, StartUser, UpdateEmail, UpdateRocketLogin}
 import deepsea.database.DBManager
 import deepsea.fest.FestManager.{DeleteFestKaraoke, DeleteFestSauna, DeleteFestStories, GetBestPlayers, GetFestKaraoke, GetFestSauna, GetFestStories, GetMarks, GetTeamsWon, SetBestPlayer, SetFestKaraoke, SetFestSauna, SetFestStories, SetMarks, SetTeamsWon}
-import deepsea.files.FileManager.{CreateDocumentCloudDirectory, CreateFile, CreateMaterialCloudDirectory, GetCloudFiles, GetDocumentFiles, GetFileFromCloud, GetPdSpList, UploadFileToMongo}
+import deepsea.files.FileManager.{CreateDocumentCloudDirectory, CreateFile, CreateMaterialCloudDirectory, GetCloudFiles, GetDocumentFiles, GetFileFromCloud, GetFileFromMongo, GetPdSpList, MongoFile, UploadFileToMongo}
 import deepsea.files.classes.FileAttachment
 import deepsea.http.HTTPManager.server
 import deepsea.issues.IssueManager._
@@ -37,10 +38,11 @@ import play.api.libs.json.{JsValue, Json}
 
 import java.io.{File, FileInputStream, InputStream}
 import java.nio.ByteBuffer
-import java.nio.file.Files
+import java.nio.file.{Files, Path}
 import java.util.{Date, UUID}
 import java.util.concurrent.TimeUnit
 import scala.concurrent.{Await, ExecutionContextExecutor, Future}
+import scala.io.Source
 import scala.util.{Failure, Success}
 
 object HTTPManager {
@@ -395,22 +397,24 @@ class HTTPManager extends Actor {
             askFor(ActorManager.files, CreateFile(fileName, fileStream, filePath, login, password), long = true)
           }
         },
-        (post & path("uploadFile") & entity(as[Multipart.FormData])) { (formData) =>
+        (post & path("uploadFile") & entity(as[Multipart.FormData]) & parameter("user")) { (formData, user) =>
           var fileName = ""
-          var fileStream: ByteBuffer = null
+          var filePath = Path.of("")
           val done: Future[Done] = formData.parts.mapAsync(1) {
             case b: BodyPart if b.name == "file" =>
               val file = File.createTempFile("upload", "tmp")
+              filePath = file.toPath
               b.entity.dataBytes.runWith(FileIO.toPath(file.toPath))
               fileName = b.filename.get
-              fileStream = ByteBuffer.wrap(Files.readAllBytes(file.toPath))
-              file.delete()
               Future.successful(Done)
             case _ => Future.successful(Done)
           }.runWith(Sink.ignore)
           onSuccess(done) { _ =>
-            askFor(ActorManager.files, UploadFileToMongo(fileName, fileStream))
+            askFor(ActorManager.files, UploadFileToMongo(fileName, filePath, user))
           }
+        },
+        (get & path("file" / Segment / Segment)) { (id, name) =>
+          askFor(ActorManager.files, GetFileFromMongo(id, name))
         },
         (get & path("files" / Segment / Segment)) { (path, name) =>
           getFromFile(App.Cloud.Directory + "/" + path + "/" + name)
@@ -606,6 +610,11 @@ class HTTPManager extends Actor {
         case response: io.circe.Json => complete(HttpEntity(response.noSpaces))
         case response: HttpEntity.Strict => complete(response)
         case response: File => getFromFile(response)
+        case response: MongoFile =>
+          val resolver = ContentTypeResolver.Default
+
+          val contentType: ContentType = resolver.resolve(response.fileName).asInstanceOf[ContentType]
+          complete(HttpEntity(contentType, response.bytes))
         case _ => complete(HttpEntity(Json.toJson("Error: Wrong response from actor.").toString()))
       }
       case Failure(exception) => complete(HttpEntity(exception.toString))
