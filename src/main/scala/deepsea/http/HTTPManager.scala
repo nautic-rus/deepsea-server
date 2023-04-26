@@ -437,7 +437,7 @@ class HTTPManager extends Actor {
           askFor(ActorManager.materials, GetMaterialNodes(project))
         },
         (get & path("updateMaterialNode") & parameter("project") & parameter("data") & parameter("label") & parameter("user") & parameter("remove")) { (project, data, label, user, remove) =>
-          askFor(ActorManager.materials, UpdateMaterialNode(project, data, label, user, remove))
+          askFor(ActorManager.materials, UpdateMaterialNode(project, data, label, label, user, remove))
         },
 
         //FEST
