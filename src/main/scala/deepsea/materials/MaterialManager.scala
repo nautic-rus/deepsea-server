@@ -153,10 +153,10 @@ class MaterialManager extends Actor with MongoCodecs{
         case Some(mongo) =>
           val nodes: MongoCollection[MaterialNode] = mongo.getCollection(collectionNodes)
           val nodesHistory: MongoCollection[MaterialNodeHistory] = mongo.getCollection(collectionNodesHistory)
-          Await.result(nodes.find(and(equal("data", node.data), equal("project", node.project))).first().toFuture(), Duration(30, SECONDS)) match {
+          Await.result(nodes.find(and(equal("data", node.data), equal("project", project))).first().toFuture(), Duration(30, SECONDS)) match {
             case oldValue: MaterialNode =>
               Await.result(nodesHistory.insertOne(MaterialNodeHistory(oldValue, user)).toFuture(), Duration(30, SECONDS))
-              Await.result(nodes.deleteOne(and(equal("data", node.data), equal("project", node.project))).toFuture(), Duration(30, SECONDS))
+              Await.result(nodes.deleteOne(and(equal("data", node.data), equal("project", project))).toFuture(), Duration(30, SECONDS))
             case _ =>
           }
           if (remove == "0"){
