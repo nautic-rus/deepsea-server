@@ -118,6 +118,24 @@ trait PlanHoursHelper {
       case _ =>
     }
   }
+  def setTaskWithMove(userId: Int, taskId: Int, consumed: List[PlanHour], amountOfHours: Int): Unit ={
+    val userPlanHours = getUserPlanHours(userId, available = true)
+    val taskHours = consumed.map(h => AllocatedHour(h.id, h.task_id))
+    moveHoursRight(taskHours, userPlanHours)
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        c.setAutoCommit(false)
+        val s = c.createStatement()
+        taskHours.foreach(h => {
+          val query = s"update hours_template_user set task_id = $taskId where id = ${h.id}"
+          s.execute(query)
+        })
+        s.close()
+        c.commit()
+        c.close()
+      case _ =>
+    }
+  }
   def setUserPlanUpdate(userId: Int): Unit ={
     DBManager.GetPGConnection() match {
       case Some(c) =>
@@ -313,7 +331,7 @@ trait PlanHoursHelper {
       case _ =>
     }
     reduceTaskPlannedHours(userId, taskId, consumed.length)
-    setTaskWithMove(userId, taskId, consumed.minBy(_.id).id, consumed.length)
+    setTaskWithMove(userId, taskId, consumed.sortBy(_.id), consumed.length)
   }
   def consumePlanHours(jsonValue: String, userId: String, taskId: String, details: String): Unit ={
     decode[List[PlanHour]](jsonValue) match {
