@@ -446,4 +446,27 @@ trait PlanHoursHelper {
       })
     }
   }
+
+  def consumeTodayHours(): Unit = {
+    val today = Calendar.getInstance()
+    val day = today.get(Calendar.DAY_OF_MONTH)
+    val month = today.get(Calendar.MONTH)
+    val year = today.get(Calendar.YEAR)
+    val planHours = getUserPlanHours(0, available = true)
+    val consumed = getConsumedHours(0)
+    val todayPlanHours = planHours.filter(x => x.day == day && x.month == month && x.year == year).filter(_.task_id != 0)
+    val notConsumedTodayPlanHours = todayPlanHours.filter(x => !consumed.map(_.hour_id).contains(x.id))
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        notConsumedTodayPlanHours.foreach(h => {
+          val date = new Date().getTime
+          val query = s"insert into hours_consumed (id, hour_id, user_id, date_inserted, task_id, comment) values (default, ${h.id}, ${h.user}, $date, ${h.task_id}, 'DAILY AUTO HOURS CONSUMPTION')"
+          s.execute(query)
+        })
+        s.close()
+        c.close()
+      case _ =>
+    }
+  }
 }

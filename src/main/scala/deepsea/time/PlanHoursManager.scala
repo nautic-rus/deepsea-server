@@ -1,16 +1,18 @@
 package deepsea.time
 
-import akka.actor.Actor
+import akka.actor.{Actor, ActorSystem}
 import deepsea.auth.AuthManager.User
 import deepsea.auth.AuthManagerHelper
 import deepsea.database.MongoCodecs
 import deepsea.issues.IssueManagerHelper
 import deepsea.issues.classes.Issue
-import deepsea.time.PlanHoursManager.{AssignPlanHoursToUsers, ConsumePlanHours, ConsumedHour, DeleteUserTask, FillConsumed, GetConsumedHours, GetPlannedHours, GetUserPlanHours, InitPlanHours, PlanAlreadyPlannedIssues, PlanHour, PlanUserTask, SpecialDay}
+import deepsea.time.PlanHoursManager.{AssignPlanHoursToUsers, ConsumePlanHours, ConsumeTodayPlanHours, DeleteUserTask, FillConsumed, GetConsumedHours, GetPlannedHours, GetUserPlanHours, InitPlanHours, PlanAlreadyPlannedIssues, PlanHour, PlanUserTask, SpecialDay}
 import io.circe.syntax.EncoderOps
 
 import java.util.{Calendar, Date}
 import scala.collection.mutable.ListBuffer
+import scala.concurrent.ExecutionContextExecutor
+import scala.concurrent.duration.DurationInt
 
 object PlanHoursManager extends MongoCodecs {
   case class PlanHour(day: Int, month: Int, year: Int, hour_type: Int, day_type: Int, day_of_week: Int, user: Int = 0, id: Int = 0, task_id: Int = 0){
@@ -32,6 +34,7 @@ object PlanHoursManager extends MongoCodecs {
   case class GetConsumedHours(userId: String)
   case class PlannedHours(taskId: Int, hours: Int)
   case class ConsumePlanHours(planHoursValue: String, userId: String, taskId: String, details: String)
+  case class ConsumeTodayPlanHours()
 }
 class PlanHoursManager extends Actor with PlanHoursHelper with AuthManagerHelper with IssueManagerHelper with MongoCodecs{
   val specialDays: List[SpecialDay] = List(
@@ -51,7 +54,11 @@ class PlanHoursManager extends Actor with PlanHoursHelper with AuthManagerHelper
     SpecialDay(3, 11, 2023, "short"),
     SpecialDay(6, 11, 2023, "weekend"),
   )
+  implicit val system: ActorSystem = ActorSystem()
+  implicit val executionContext: ExecutionContextExecutor = system.dispatcher
+  val executor: ExecutionContextExecutor = system.dispatcher
   override def preStart(): Unit = {
+    system.scheduler.scheduleWithFixedDelay(0.seconds, 60.minutes, self, ConsumeTodayPlanHours())
     //getUserPlanHours(0)
     //self ! InitPlanHours()
     //self ! AssignPlanHoursToUsers(193)
@@ -204,6 +211,10 @@ class PlanHoursManager extends Actor with PlanHoursHelper with AuthManagerHelper
     case ConsumePlanHours(planHoursValue, userId, taskId, details) =>
       consumePlanHours(planHoursValue, userId, taskId, details)
       sender() ! "success".asJson.noSpaces
+    case ConsumeTodayPlanHours() =>
+      if (Calendar.getInstance().get(Calendar.HOUR_OF_DAY) == 23){
+        consumeTodayHours()
+      }
     case _ => None
   }
 }
