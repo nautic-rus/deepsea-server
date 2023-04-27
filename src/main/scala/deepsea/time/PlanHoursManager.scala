@@ -61,7 +61,7 @@ class PlanHoursManager extends Actor with PlanHoursHelper with AuthManagerHelper
     system.scheduler.scheduleWithFixedDelay(0.seconds, 60.minutes, self, ConsumeTodayPlanHours())
     //getUserPlanHours(0)
     //self ! InitPlanHours()
-    //self ! AssignPlanHoursToUsers(193)
+    //self ! AssignPlanHoursToUsers(250)
     //self ! PlanAlreadyPlannedIssues()
     //self ! FillConsumed()
   }
