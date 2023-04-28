@@ -264,7 +264,6 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
 //                  case _ => None
 //                }
 //              }
-              val page = if (issue.issue_type == "QNA") "qna" else ""
               if (updateMessage.contains("status")){
                 if (issue.issue_type == "QNA" && issue.status == "Assign responsible"){
                   if (issue.responsible != ""){
@@ -273,18 +272,18 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
                 }
                 else{
                   List(update.assigned_to, update.responsible, update.started_by).filter(_ != user).distinct.foreach(u => {
-                    ActorManager.rocket ! SendNotification(u, s"Изменился статус на '${update.status}' у задачи " + s"<${App.HTTPServer.Url}/$page?taskId=${issue.id}|$name>")
+                    ActorManager.rocket ! SendNotification(u, s"Изменился статус на '${update.status}' у задачи " + s"<${App.HTTPServer.Url}/?taskId=${issue.id}|$name>")
                   })
                 }
               }
               else if (updateMessage.contains("edit")){
                 List(update.assigned_to, update.responsible, update.started_by).filter(_ != user).distinct.foreach(u => {
-                  ActorManager.rocket ! SendNotification(u, s"Изменилась информация в задаче " + s"<${App.HTTPServer.Url}/$page?taskId=${issue.id}|$name>")
+                  ActorManager.rocket ! SendNotification(u, s"Изменилась информация в задаче " + s"<${App.HTTPServer.Url}/?taskId=${issue.id}|$name>")
                 })
               }
               else {
                 List(update.assigned_to, update.responsible, update.started_by).filter(_ != user).distinct.foreach(u => {
-                  ActorManager.rocket ! SendNotification(u, s"Что-то поменялось в задаче " + s"<${App.HTTPServer.Url}/$page?taskId=${issue.id}|$name>")
+                  ActorManager.rocket ! SendNotification(u, s"Что-то поменялось в задаче " + s"<${App.HTTPServer.Url}/?taskId=${issue.id}|$name>")
                 })
               }
             case _ => None
