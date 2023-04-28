@@ -268,7 +268,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
               if (updateMessage.contains("status")){
                 if (issue.issue_type == "QNA" && issue.status == "Assign responsible"){
                   if (issue.responsible != ""){
-                    ActorManager.rocket ! SendNotification(issue.responsible, s"Вы были назначены ответственным к задаче " + s"<${App.HTTPServer.Url}/$page?taskId=${issue.id}|$name>")
+                    ActorManager.rocket ! SendNotification(issue.responsible, s"Вы были назначены ответственным к задаче " + s"<${App.HTTPServer.Url}/?taskId=${issue.id}|$name>")
                   }
                 }
                 else{
