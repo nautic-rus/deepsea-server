@@ -246,37 +246,38 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
               else{
                 "No name (Без названия)"
               }
-              if (issue.issue_type == "QNA"){
-                val q = '"'
-                val rocket = s"Изменилась информация в задаче " + s"<${App.HTTPServer.Url}/qna?taskId=${issue.id}|$name>"
-                val email = s"Changed information for a question " + s"<a href=$q${App.HTTPServer.Url}/qna?taskId=${issue.id}$q>$name</a>"
-                notifySubscribers(issue.id, email, rocket)
-                getUser(issue.assigned_to) match {
-                  case Some(value) =>
-                    ActorManager.rocket ! SendNotification(value.rocket_login, rocket)
-                    ActorManager.mail ! Mail(List(value.name, value.surname).mkString(" "), value.email, "DeepSea Notification", email)
-                  case _ => None
-                }
-                getUser(issue.started_by) match {
-                  case Some(value) =>
-                    ActorManager.rocket ! SendNotification(value.rocket_login, rocket)
-                    ActorManager.mail ! Mail(List(value.name, value.surname).mkString(" "), value.email, "DeepSea Notification", email)
-                  case _ => None
-                }
-              }
-              else if (updateMessage.contains("status")){
+//              if (issue.issue_type == "QNA"){
+//                val q = '"'
+//                val rocket = s"Изменилась информация в задаче " + s"<${App.HTTPServer.Url}/qna?taskId=${issue.id}|$name>"
+//                val email = s"Changed information for a question " + s"<a href=$q${App.HTTPServer.Url}/qna?taskId=${issue.id}$q>$name</a>"
+//                notifySubscribers(issue.id, email, rocket)
+//                getUser(issue.assigned_to) match {
+//                  case Some(value) =>
+//                    ActorManager.rocket ! SendNotification(value.rocket_login, rocket)
+//                    ActorManager.mail ! Mail(List(value.name, value.surname).mkString(" "), value.email, "DeepSea Notification", email)
+//                  case _ => None
+//                }
+//                getUser(issue.started_by) match {
+//                  case Some(value) =>
+//                    ActorManager.rocket ! SendNotification(value.rocket_login, rocket)
+//                    ActorManager.mail ! Mail(List(value.name, value.surname).mkString(" "), value.email, "DeepSea Notification", email)
+//                  case _ => None
+//                }
+//              }
+              val page = if (issue.issue_type == "QNA") "qna" else ""
+              if (updateMessage.contains("status")){
                 List(update.assigned_to, update.responsible, update.started_by).filter(_ != user).distinct.foreach(u => {
-                  ActorManager.rocket ! SendNotification(u, s"Изменился статус на '${update.status}' у задачи " + s"<${App.HTTPServer.Url}/?taskId=${issue.id}|$name>")
+                  ActorManager.rocket ! SendNotification(u, s"Изменился статус на '${update.status}' у задачи " + s"<${App.HTTPServer.Url}/$page?taskId=${issue.id}|$name>")
                 })
               }
               else if (updateMessage.contains("edit")){
                 List(update.assigned_to, update.responsible, update.started_by).filter(_ != user).distinct.foreach(u => {
-                  ActorManager.rocket ! SendNotification(u, s"Изменилась информация в задаче " + s"<${App.HTTPServer.Url}/?taskId=${issue.id}|$name>")
+                  ActorManager.rocket ! SendNotification(u, s"Изменилась информация в задаче " + s"<${App.HTTPServer.Url}/$page?taskId=${issue.id}|$name>")
                 })
               }
               else {
                 List(update.assigned_to, update.responsible, update.started_by).filter(_ != user).distinct.foreach(u => {
-                  ActorManager.rocket ! SendNotification(u, s"Что-то поменялось в задаче " + s"<${App.HTTPServer.Url}/?taskId=${issue.id}|$name>")
+                  ActorManager.rocket ! SendNotification(u, s"Что-то поменялось в задаче " + s"<${App.HTTPServer.Url}/$page?taskId=${issue.id}|$name>")
                 })
               }
             case _ => None
