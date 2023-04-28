@@ -539,21 +539,21 @@ class HTTPManager extends Actor {
           complete(HttpEntity("pong"))
         },
 
-        //      (post & path("grabInfo") & entity(as[String])) { (data) =>
-        //        askFor(ActorManager.timeControl, AddUserWatch(data))
-        //      },
-        //      (post & path("spyWatch") & entity(as[String])) { (data) =>
-        //        askFor(ActorManager.timeControl, AddSpyWatch(data))
-        //      },
-        //      (get & path("spyWatches")) {
-        //        askFor(ActorManager.timeControl, GetSpyWatches())
-        //      },
-        //      (get & path("userWatches")) {
-        //        askFor(ActorManager.timeControl, GetUserWatches())
-        //      },
-        //      (get & path("time")) {
-        //        askFor(ActorManager.timeControl, GetTime())
-        //      },
+        (post & path("grabInfo") & entity(as[String])) { (data) =>
+          askFor(ActorManager.timeControl, AddUserWatch(data))
+        },
+        (post & path("spyWatch") & entity(as[String])) { (data) =>
+          askFor(ActorManager.timeControl, AddSpyWatch(data))
+        },
+        (get & path("spyWatches")) {
+          askFor(ActorManager.timeControl, GetSpyWatches())
+        },
+        (get & path("userWatches")) {
+          askFor(ActorManager.timeControl, GetUserWatches())
+        },
+        (get & path("time")) {
+          askFor(ActorManager.timeControl, GetTime())
+        },
 
         (get & path("dailyTasks")) {
           askFor(ActorManager.issue, GetDailyTasks())
