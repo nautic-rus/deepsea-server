@@ -266,9 +266,16 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
 //              }
               val page = if (issue.issue_type == "QNA") "qna" else ""
               if (updateMessage.contains("status")){
-                List(update.assigned_to, update.responsible, update.started_by).filter(_ != user).distinct.foreach(u => {
-                  ActorManager.rocket ! SendNotification(u, s"Изменился статус на '${update.status}' у задачи " + s"<${App.HTTPServer.Url}/$page?taskId=${issue.id}|$name>")
-                })
+                if (issue.issue_type == "QNA" && issue.status == "Assign responsible"){
+                  if (issue.responsible != ""){
+                    ActorManager.rocket ! SendNotification(issue.responsible, s"Вы были назначены ответственным к задаче " + s"<${App.HTTPServer.Url}/$page?taskId=${issue.id}|$name>")
+                  }
+                }
+                else{
+                  List(update.assigned_to, update.responsible, update.started_by).filter(_ != user).distinct.foreach(u => {
+                    ActorManager.rocket ! SendNotification(u, s"Изменился статус на '${update.status}' у задачи " + s"<${App.HTTPServer.Url}/$page?taskId=${issue.id}|$name>")
+                  })
+                }
               }
               else if (updateMessage.contains("edit")){
                 List(update.assigned_to, update.responsible, update.started_by).filter(_ != user).distinct.foreach(u => {
