@@ -120,7 +120,7 @@ trait PlanHoursHelper {
   }
   def setTaskWithMove(userId: Int, taskId: Int, consumed: List[PlanHour], amountOfHours: Int): Unit ={
     val userPlanHours = getUserPlanHours(userId, available = true)
-    val taskHours = consumed.map(h => AllocatedHour(h.id, h.task_id))
+    val taskHours = userPlanHours.filter(x => consumed.map(_.id).contains(x.id)).map(h => AllocatedHour(h.id, h.task_id))
     moveHoursRight(taskHours, userPlanHours)
     DBManager.GetPGConnection() match {
       case Some(c) =>
