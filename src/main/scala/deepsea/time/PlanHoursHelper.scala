@@ -1,8 +1,10 @@
 package deepsea.time
 
+import deepsea.auth.AuthManagerHelper
 import deepsea.database.DBManager
 import deepsea.database.DBManager.RsIterator
 import deepsea.issues.IssueManager.IssueProject
+import deepsea.issues.IssueManagerHelper
 import deepsea.time.PlanHoursManager.{AllocatedHour, ConsumedHour, PlanHour, PlannedHours}
 import io.circe.parser.decode
 import io.circe.syntax.EncoderOps
@@ -10,7 +12,7 @@ import io.circe.syntax.EncoderOps
 import java.util.{Calendar, Date}
 import scala.collection.mutable.ListBuffer
 
-trait PlanHoursHelper {
+trait PlanHoursHelper extends IssueManagerHelper with AuthManagerHelper{
   def fillHours(day: Int, month: Int, year: Int, dayType: Int, dayOfWeek: Int, user: Int): List[PlanHour] = {
     val hour = PlanHour(day, month, year, 1, dayType, dayOfWeek, user)
     dayType match {
@@ -468,5 +470,12 @@ trait PlanHoursHelper {
         c.close()
       case _ =>
     }
+    todayPlanHours.groupBy(_.task_id).foreach(gr => {
+      getIssueDetails(gr._1) match {
+        case Some(issue) =>
+          setIssueLabor(issue.id, new Date().getTime, gr._2.length, "DAILY AUTO HOURS CONSUMPTION", issue.assigned_to, new Date().getTime, issue.id, issue.project)
+        case _ => None
+      }
+    })
   }
 }
