@@ -470,8 +470,8 @@ trait PlanHoursHelper extends IssueManagerHelper with AuthManagerHelper{
         c.close()
       case _ =>
     }
-    todayPlanHours.groupBy(_.task_id).foreach(gr => {
-      getIssueDetails(gr._1) match {
+    todayPlanHours.groupBy(x => (x.task_id, x.user)).foreach(gr => {
+      getIssueDetails(gr._1._1) match {
         case Some(issue) =>
           setIssueLabor(issue.id, new Date().getTime, gr._2.length, "DAILY AUTO HOURS CONSUMPTION", issue.assigned_to, new Date().getTime, issue.id, issue.project)
         case _ => None
