@@ -58,7 +58,7 @@ class PlanHoursManager extends Actor with PlanHoursHelper with AuthManagerHelper
   implicit val executionContext: ExecutionContextExecutor = system.dispatcher
   val executor: ExecutionContextExecutor = system.dispatcher
   override def preStart(): Unit = {
-    system.scheduler.scheduleWithFixedDelay(0.seconds, 60.minutes, self, ConsumeTodayPlanHours())
+    //system.scheduler.scheduleWithFixedDelay(0.seconds, 60.minutes, self, ConsumeTodayPlanHours())
     //getUserPlanHours(0)
     //self ! InitPlanHours()
     //self ! AssignPlanHoursToUsers(250)
@@ -212,7 +212,10 @@ class PlanHoursManager extends Actor with PlanHoursHelper with AuthManagerHelper
       consumePlanHours(planHoursValue, userId, taskId, details)
       sender() ! "success".asJson.noSpaces
     case ConsumeTodayPlanHours() =>
-      if (Calendar.getInstance().get(Calendar.HOUR_OF_DAY) == 23){
+      val c = Calendar.getInstance()
+      val hour = c.get(Calendar.HOUR_OF_DAY)
+      val minute = c.get(Calendar.MINUTE)
+      if (hour == 23 && minute == 0){
         consumeTodayHours()
       }
     case _ => None

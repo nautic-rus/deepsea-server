@@ -5,7 +5,9 @@ import akka.http.scaladsl.{Http, HttpExt}
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMethods, HttpRequest}
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.util.ByteString
+import deepsea.actors.ActorManager
 import deepsea.database.DBManager
+import deepsea.time.PlanHoursManager.ConsumeTodayPlanHours
 import deepsea.time.TimeAndWeatherManager.{GetTimeAndWeather, SetTimeAndWeather, Weather, writeWeather}
 import play.api.libs.json.{JsArray, Json, OWrites}
 
@@ -34,6 +36,7 @@ class TimeAndWeatherManager extends Actor{
 
   override def preStart(): Unit = {
     system.scheduler.scheduleWithFixedDelay(0.seconds, 5.minutes, self, SetTimeAndWeather())
+    system.scheduler.scheduleWithFixedDelay(0.seconds, 1.minutes, ActorManager.planHours, ConsumeTodayPlanHours())
   }
   override def receive: Receive = {
     case GetTimeAndWeather() =>
