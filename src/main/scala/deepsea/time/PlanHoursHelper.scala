@@ -1,10 +1,12 @@
 package deepsea.time
 
+import deepsea.actors.ActorManager
 import deepsea.auth.AuthManagerHelper
 import deepsea.database.DBManager
 import deepsea.database.DBManager.RsIterator
 import deepsea.issues.IssueManager.IssueProject
 import deepsea.issues.IssueManagerHelper
+import deepsea.mail.MailManager.Mail
 import deepsea.time.PlanHoursManager.{AllocatedHour, ConsumedHour, PlanHour, PlannedHours}
 import io.circe.parser.decode
 import io.circe.syntax.EncoderOps
@@ -454,6 +456,8 @@ trait PlanHoursHelper extends IssueManagerHelper with AuthManagerHelper{
     val day = today.get(Calendar.DAY_OF_MONTH)
     val month = today.get(Calendar.MONTH)
     val year = today.get(Calendar.YEAR)
+    ActorManager.mail ! Mail("Bogdan Isaev", "redeeming.fury@gmail.com", "Hours Consumption Notification", s"Hours Consumption for $day/$month/$year completed.")
+
     val planHours = getUserPlanHours(0, available = true)
     val consumed = getConsumedHours(0)
     val todayPlanHours = planHours.filter(x => x.day == day && x.month == month && x.year == year).filter(_.task_id != 0)

@@ -1,6 +1,7 @@
 package deepsea.time
 
 import akka.actor.{Actor, ActorSystem}
+import deepsea.App
 import deepsea.auth.AuthManager.User
 import deepsea.auth.AuthManagerHelper
 import deepsea.database.MongoCodecs
@@ -215,7 +216,7 @@ class PlanHoursManager extends Actor with PlanHoursHelper with AuthManagerHelper
       val c = Calendar.getInstance()
       val hour = c.get(Calendar.HOUR_OF_DAY)
       val minute = c.get(Calendar.MINUTE)
-      if (hour == 23 && minute == 0){
+      if (hour == 23 && minute == 0 && App.HTTPServer.Host == "192.168.1.28"){
         consumeTodayHours()
       }
     case _ => None
