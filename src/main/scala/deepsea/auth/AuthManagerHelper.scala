@@ -13,201 +13,176 @@ import scala.io.Source
 
 trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
   def getUser(login: String): Option[User] = {
-    val usersProjects = getUsersProjects
-    val userRights = getRights
-    val roles = getRoles
+    var res = Option.empty[User]
+
     DBManager.GetPGConnection() match {
       case Some(c) =>
-        var res = Option.empty[User]
-        val s = c.createStatement()
-        val rs = s.executeQuery(s"select * from users where login = '$login' and removed = 0")
-        while (rs.next()) {
-          val userId = Option(rs.getInt("id")).getOrElse(0)
-          val groups = rs.getString("group").split(",").toList
-          res = Option(User(
-            userId,
-            rs.getString("login"),
-            rs.getString("password"),
-            rs.getString("name"),
-            rs.getString("surname"),
-            rs.getString("profession"),
-            rs.getString("department"),
-            rs.getDate("birthday").toString,
-            rs.getString("email"),
-            rs.getString("phone"),
-            rs.getInt("tcid"),
-            rs.getString("avatar"),
-            rs.getString("avatar_full"),
-            rs.getString("rocket_login"),
-            rs.getString("gender"),
-            rs.getString("visibility"),
-            usersProjects.filter(_.user_id == userId.toString).map(x => x.project_name),
-            rs.getString("visible_pages").split(",").toList,
-            rs.getString("shared_access").split(",").toList,
-            groups,
-            roles.find(x => groups.contains(x.name)) match {
-              case Some(role) => role.rights.filter(_ != "")
-              case _ => userRights.filter(_.userId == userId).map(_.role).filter(_ != "")
-            },
-            "",
-            rs.getInt("id_department")
-          ))
+        try {
+          val usersProjects = getUsersProjects
+          val userRights = getRights
+          val roles = getRoles
+          val s = c.createStatement()
+          val rs = s.executeQuery(s"select * from users where login = '$login' and removed = 0")
+          while (rs.next()) {
+            val userId = Option(rs.getInt("id")).getOrElse(0)
+            val groups = Option(rs.getString("group").split(",").toList).getOrElse(List.empty[String])
+            res = Option(User(
+              userId,
+              Option(rs.getString("login")).getOrElse(""),
+              Option(rs.getString("password")).getOrElse(""),
+              Option(rs.getString("name")).getOrElse(""),
+              Option(rs.getString("surname")).getOrElse(""),
+              Option(rs.getString("profession")).getOrElse(""),
+              Option(rs.getString("department")).getOrElse(""),
+              Option(rs.getDate("birthday").toString).getOrElse(""),
+              Option(rs.getString("email")).getOrElse(""),
+              Option(rs.getString("phone")).getOrElse(""),
+              Option(rs.getInt("tcid")).getOrElse(0),
+              Option(rs.getString("avatar")).getOrElse(""),
+              Option(rs.getString("avatar_full")).getOrElse(""),
+              Option(rs.getString("rocket_login")).getOrElse(""),
+              Option(rs.getString("gender")).getOrElse(""),
+              Option(rs.getString("visibility")).getOrElse(""),
+              usersProjects.filter(_.user_id == userId.toString).map(x => x.project_name),
+              roles.filter(x => groups.contains(x.name)).flatMap(_.pages).distinct,
+              Option(rs.getString("shared_access").split(",").toList).getOrElse(List.empty[String]),
+              groups,
+              roles.find(x => groups.contains(x.name)) match {
+                case Some(role) => role.rights.filter(_ != "")
+                case _ => userRights.filter(_.userId == userId).map(_.role).filter(_ != "")
+              },
+              "",
+              Option(rs.getInt("id_department")).getOrElse(0)
+            ))
+          }
+          rs.close()
+          s.close()
+          c.close()
+          //        if (res.nonEmpty) {
+          //          s = c.createStatement()
+          //          rs = s.executeQuery(s"select rights from user_rights where user_id = ${res.get.id}")
+          //          val permissions = ListBuffer.empty[String]
+          //          while (rs.next()) {
+          //            permissions += rs.getString("rights")
+          //          }
+          //          res.get.permissions = permissions.toList
+          //          rs.close()
+          //          s.close()
+          //        }
+        } catch {
+          case e: Exception => println(e.toString)
         }
-        rs.close()
-        s.close()
-        c.close()
-        //        if (res.nonEmpty) {
-        //          s = c.createStatement()
-        //          rs = s.executeQuery(s"select rights from user_rights where user_id = ${res.get.id}")
-        //          val permissions = ListBuffer.empty[String]
-        //          while (rs.next()) {
-        //            permissions += rs.getString("rights")
-        //          }
-        //          res.get.permissions = permissions.toList
-        //          rs.close()
-        //          s.close()
-        //        }
-        res
-      case _ => Option.empty[User]
+      case _ =>
     }
+    res
   }
 
   def getUsers: List[User] = {
     val res = ListBuffer.empty[User]
-    val userRights = getRights
-    val usersProjects = getUsersProjects
-    val roles = getRoles
     DBManager.GetPGConnection() match {
       case Some(c) =>
-        val s = c.createStatement();
-        val rs = s.executeQuery(s"select * from users where removed = 0 order by id")
-        while (rs.next()) {
-          val userId = Option(rs.getInt("id")).getOrElse(0)
-          val groups = rs.getString("group").split(",").toList
-          res += User(
-            userId,
-            rs.getString("login"),
-            rs.getString("password"),
-            rs.getString("name"),
-            rs.getString("surname"),
-            rs.getString("profession"),
-            rs.getString("department"),
-            rs.getDate("birthday").toString,
-            rs.getString("email"),
-            rs.getString("phone"),
-            rs.getInt("tcid"),
-            rs.getString("avatar"),
-            rs.getString("avatar_full"),
-            rs.getString("rocket_login"),
-            rs.getString("gender"),
-            rs.getString("visibility"),
-            usersProjects.filter(x => {
-              x.user_id.equals(userId.toString)
-            }).map(x => x.project_name),
-            rs.getString("visible_pages").split(",").toList,
-            rs.getString("shared_access").split(",").toList,
-            rs.getString("group").split(",").toList,
-            roles.find(x => groups.contains(x)) match {
-              case Some(role) => role.rights
-              case _ => userRights.filter(_.userId == userId).map(_.role)
-            },
-            "",
-            rs.getInt("id_department")
-          )
+        try {
+          val userRights = getRights
+          val usersProjects = getUsersProjects
+          val roles = getRoles
+          val s = c.createStatement();
+          val rs = s.executeQuery(s"select * from users where removed = 0 order by id")
+          while (rs.next()) {
+            val userId = Option(rs.getInt("id")).getOrElse(0)
+            val groups = Option(rs.getString("group").split(",").toList).getOrElse(List.empty[String])
+            res += User(
+              userId,
+              Option(rs.getString("login")).getOrElse(""),
+              Option(rs.getString("password")).getOrElse(""),
+              Option(rs.getString("name")).getOrElse(""),
+              Option(rs.getString("surname")).getOrElse(""),
+              Option(rs.getString("profession")).getOrElse(""),
+              Option(rs.getString("department")).getOrElse(""),
+              Option(rs.getDate("birthday").toString).getOrElse(""),
+              Option(rs.getString("email")).getOrElse(""),
+              Option(rs.getString("phone")).getOrElse(""),
+              Option(rs.getInt("tcid")).getOrElse(0),
+              Option(rs.getString("avatar")).getOrElse(""),
+              Option(rs.getString("avatar_full")).getOrElse(""),
+              Option(rs.getString("rocket_login")).getOrElse(""),
+              Option(rs.getString("gender")).getOrElse(""),
+              Option(rs.getString("visibility")).getOrElse(""),
+              usersProjects.filter(x => {
+                x.user_id.equals(userId.toString)
+              }).map(x => x.project_name),
+              roles.filter(x => groups.contains(x.name)).flatMap(_.pages).distinct,
+              Option(rs.getString("shared_access").split(",").toList).getOrElse(List.empty[String]),
+              groups,
+              roles.find(x => groups.contains(x)) match {
+                case Some(role) => role.rights
+                case _ => userRights.filter(_.userId == userId).map(_.role)
+              },
+              "",
+              Option(rs.getInt("id_department")).getOrElse(0)
+            )
+          }
+          rs.close()
+          s.close()
+          c.close()
+        } catch {
+          case e: Exception => println(e.toString)
         }
-        rs.close()
-        s.close()
-        c.close()
-      case _ => None
+      case _ =>
     }
     res.toList
   }
 
-  def getRightDetails(id: Int): ListBuffer[String] = {
-    val res = ListBuffer.empty[String];
-    DBManager.GetPGConnection() match {
-      case Some(c) =>
-        val s = c.createStatement();
-        val rs = s.executeQuery(s"select * from user_rights where user_id = $id");
-        while (rs.next()) {
-          res += rs.getString("rights")
-        }
-        rs.close()
-        s.close()
-        c.close()
-        res
-      case _ => ListBuffer.empty[String]
-    }
-  }
-
-  def updateEmail(login: String, email: String): Unit = {
-    DBManager.GetPGConnection() match {
-      case Some(c) =>
-        val s = c.createStatement()
-        s.execute(s"update users set email = '$email' where login = '$login'")
-        s.close()
-        c.close()
-      case _ => None
-    }
-  }
-
-  def updateRocketLogin(login: String, rocket: String): Unit = {
-    DBManager.GetPGConnection() match {
-      case Some(c) =>
-        val s = c.createStatement()
-        s.execute(s"update users set rocket_login = '$rocket' where login = '$login'")
-        s.close()
-        c.close()
-      case _ => None
-    }
-  }
-
   def getUserDetails(id: String): Option[User] = {
     var user: Option[User] = Option.empty[User]
-    val usersProjects = getUsersProjects
-    val userRights = getRights
-    val roles = getRoles
+
     DBManager.GetPGConnection() match {
       case Some(c) =>
-        val s = c.createStatement()
-        val rs = s.executeQuery(s"select * from users where id = '$id'")
-        while (rs.next()) {
-          val userId = Option(rs.getInt("id")).getOrElse(0)
-          val groups = rs.getString("group").split(",").toList
-          user = Option(User(
-            userId,
-            rs.getString("login"),
-            rs.getString("password"),
-            rs.getString("name"),
-            rs.getString("surname"),
-            rs.getString("profession"),
-            rs.getString("department"),
-            rs.getDate("birthday").toString,
-            rs.getString("email"),
-            rs.getString("phone"),
-            rs.getInt("tcid"),
-            rs.getString("avatar"),
-            rs.getString("avatar_full"),
-            rs.getString("rocket_login"),
-            rs.getString("gender"),
-            rs.getString("visibility"),
-            usersProjects.filter(_.user_id == id).map(x => x.project_name),
-            rs.getString("visible_pages").split(",").toList,
-            rs.getString("shared_access").split(",").toList,
-            groups,
-            roles.find(x => groups.contains(x)) match {
-              case Some(role) => role.rights
-              case _ => userRights.filter(_.userId == userId).toList.map(_.role)
-            },
-            "",
-            rs.getInt("id_department")))
+        try {
+          val usersProjects = getUsersProjects
+          val userRights = getRights
+          val roles = getRoles
+          val s = c.createStatement()
+          val rs = s.executeQuery(s"select * from users where id = '$id'")
+          while (rs.next()) {
+            val userId = Option(rs.getInt("id")).getOrElse(0)
+            val groups = Option(rs.getString("group").split(",").toList).getOrElse(List.empty[String])
+            user = Option(User(
+              userId,
+              Option(rs.getString("login")).getOrElse(""),
+              Option(rs.getString("password")).getOrElse(""),
+              Option(rs.getString("name")).getOrElse(""),
+              Option(rs.getString("surname")).getOrElse(""),
+              Option(rs.getString("profession")).getOrElse(""),
+              Option(rs.getString("department")).getOrElse(""),
+              Option(rs.getDate("birthday").toString).getOrElse(""),
+              Option(rs.getString("email")).getOrElse(""),
+              Option(rs.getString("phone")).getOrElse(""),
+              Option(rs.getInt("tcid")).getOrElse(0),
+              Option(rs.getString("avatar")).getOrElse(""),
+              Option(rs.getString("avatar_full")).getOrElse(""),
+              Option(rs.getString("rocket_login")).getOrElse(""),
+              Option(rs.getString("gender")).getOrElse(""),
+              Option(rs.getString("visibility")).getOrElse(""),
+              usersProjects.filter(_.user_id == id).map(x => x.project_name),
+              roles.filter(x => groups.contains(x.name)).flatMap(_.pages).distinct,
+              Option(rs.getString("shared_access").split(",").toList).getOrElse(List.empty[String]),
+              groups,
+              roles.find(x => groups.contains(x)) match {
+                case Some(role) => role.rights
+                case _ => userRights.filter(_.userId == userId).map(_.role)
+              },
+              "",
+              Option(rs.getInt("id_department")).getOrElse(0)))
+          }
+          rs.close()
+          s.close()
+          c.close()
+        } catch {
+          case e: Exception => println(e.toString)
         }
-        rs.close()
-        s.close()
-        c.close()
-        user
-      case _ => Option.empty[User]
+      case _ =>
     }
+    user
   }
 
   def startUser(user: User): String = {
@@ -245,32 +220,6 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
         ActorManager.rocket ! SendNotification(user.rocket_login, messageRocket);
         ActorManager.mail ! Mail(List(user.name, user.surname).mkString(" "), user.email, "DeepSea Notification", messageMail);
         "success"
-      case _ => "error"
-    }
-  }
-
-  def sendLogPass(id: String): String = {
-    DBManager.GetPGConnection() match {
-      case Some(c) =>
-        val s = c.createStatement();
-        val query = s"select * from users where id = $id";
-        val rs = s.executeQuery(query);
-        while (rs.next()) {
-          val login = rs.getString("login");
-          val password = rs.getString("password");
-          val name = rs.getString("name");
-          val surname = rs.getString("surname");
-          val rocket_login = rs.getString("rocket_login");
-          val email = rs.getString("email");
-          val messageRocket: String = s"Ваши данные для входа в DeepSea - Логин: ${login} | Пароль: ${password} | https://deep-sea.ru";
-          val messageMail: String = Source.fromResource("messages/sendLogPass.html").mkString.replaceAll("!login", s"${login}").replaceAll("!password", s"${password}")
-          ActorManager.rocket ! SendNotification(rocket_login, messageRocket);
-          ActorManager.mail ! Mail(List(name, surname).mkString(" "), email, "DeepSea Notification", messageMail);
-        };
-        rs.close()
-        s.close()
-        c.close()
-        "success";
       case _ => "error"
     }
   }
@@ -338,6 +287,74 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
       case _ => "error"
     }
   }
+
+
+  def getRightDetails(id: Int): ListBuffer[String] = {
+    val res = ListBuffer.empty[String];
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement();
+        val rs = s.executeQuery(s"select * from user_rights where user_id = $id");
+        while (rs.next()) {
+          res += rs.getString("rights")
+        }
+        rs.close()
+        s.close()
+        c.close()
+        res
+      case _ => ListBuffer.empty[String]
+    }
+  }
+
+  def updateEmail(login: String, email: String): Unit = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        s.execute(s"update users set email = '$email' where login = '$login'")
+        s.close()
+        c.close()
+      case _ => None
+    }
+  }
+
+  def updateRocketLogin(login: String, rocket: String): Unit = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        s.execute(s"update users set rocket_login = '$rocket' where login = '$login'")
+        s.close()
+        c.close()
+      case _ => None
+    }
+  }
+
+
+  def sendLogPass(id: String): String = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement();
+        val query = s"select * from users where id = $id";
+        val rs = s.executeQuery(query);
+        while (rs.next()) {
+          val login = rs.getString("login");
+          val password = rs.getString("password");
+          val name = rs.getString("name");
+          val surname = rs.getString("surname");
+          val rocket_login = rs.getString("rocket_login");
+          val email = rs.getString("email");
+          val messageRocket: String = s"Ваши данные для входа в DeepSea - Логин: ${login} | Пароль: ${password} | https://deep-sea.ru";
+          val messageMail: String = Source.fromResource("messages/sendLogPass.html").mkString.replaceAll("!login", s"${login}").replaceAll("!password", s"${password}")
+          ActorManager.rocket ! SendNotification(rocket_login, messageRocket);
+          ActorManager.mail ! Mail(List(name, surname).mkString(" "), email, "DeepSea Notification", messageMail);
+        };
+        rs.close()
+        s.close()
+        c.close()
+        "success";
+      case _ => "error"
+    }
+  }
+
 
   def joinUsersProjects(): String = {
     //    DBManager.GetPGConnection() match {
