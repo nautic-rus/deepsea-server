@@ -44,8 +44,8 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
               Option(rs.getString("gender")).getOrElse(""),
               Option(rs.getString("visibility")).getOrElse(""),
               usersProjects.filter(_.user_id == userId.toString).map(x => x.project_name),
-//              roles.filter(x => groups.contains(x.name)).flatMap(_.pages).distinct,
-              Option(rs.getString("visible_pages").split(",").toList).getOrElse(List.empty[String]),
+              roles.filter(x => groups.contains(x.name)).flatMap(_.pages).distinct,
+//              Option(rs.getString("visible_pages").split(",").toList).getOrElse(List.empty[String]),
               Option(rs.getString("shared_access").split(",").toList).getOrElse(List.empty[String]),
               groups,
               roles.find(x => groups.contains(x.name)) match {
@@ -111,8 +111,8 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
               usersProjects.filter(x => {
                 x.user_id.equals(userId.toString)
               }).map(x => x.project_name),
-//              roles.filter(x => groups.contains(x.name)).flatMap(_.pages).distinct,
-              Option(rs.getString("visible_pages").split(",").toList).getOrElse(List.empty[String]),
+              roles.filter(x => groups.contains(x.name)).flatMap(_.pages).distinct,
+//              Option(rs.getString("visible_pages").split(",").toList).getOrElse(List.empty[String]),
               Option(rs.getString("shared_access").split(",").toList).getOrElse(List.empty[String]),
               groups,
               roles.find(x => groups.contains(x)) match {
@@ -166,8 +166,8 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
               Option(rs.getString("gender")).getOrElse(""),
               Option(rs.getString("visibility")).getOrElse(""),
               usersProjects.filter(_.user_id == id).map(x => x.project_name),
-//              roles.filter(x => groups.contains(x.name)).flatMap(_.pages).distinct,
-              Option(rs.getString("visible_pages").split(",").toList).getOrElse(List.empty[String]),
+              roles.filter(x => groups.contains(x.name)).flatMap(_.pages).distinct,
+//              Option(rs.getString("visible_pages").split(",").toList).getOrElse(List.empty[String]),
               Option(rs.getString("shared_access").split(",").toList).getOrElse(List.empty[String]),
               groups,
               roles.find(x => groups.contains(x)) match {
