@@ -1,7 +1,7 @@
 package deepsea.auth
 
 import deepsea.actors.ActorManager
-import deepsea.auth.AuthManager.{AdminRight, Department, Page, RightUser, Role, User, UserProject}
+import deepsea.auth.AuthManager.{AdminRight, Department, Page, RightUser, Role, RolePage, User, UserProject}
 import deepsea.database.{DBManager, MongoCodecs}
 import deepsea.issues.{IssueManager, IssueManagerHelper}
 import deepsea.issues.IssueManager.IssueProject
@@ -56,17 +56,17 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
         rs.close()
         s.close()
         c.close()
-//        if (res.nonEmpty) {
-//          s = c.createStatement()
-//          rs = s.executeQuery(s"select rights from user_rights where user_id = ${res.get.id}")
-//          val permissions = ListBuffer.empty[String]
-//          while (rs.next()) {
-//            permissions += rs.getString("rights")
-//          }
-//          res.get.permissions = permissions.toList
-//          rs.close()
-//          s.close()
-//        }
+        //        if (res.nonEmpty) {
+        //          s = c.createStatement()
+        //          rs = s.executeQuery(s"select rights from user_rights where user_id = ${res.get.id}")
+        //          val permissions = ListBuffer.empty[String]
+        //          while (rs.next()) {
+        //            permissions += rs.getString("rights")
+        //          }
+        //          res.get.permissions = permissions.toList
+        //          rs.close()
+        //          s.close()
+        //        }
         res
       case _ => Option.empty[User]
     }
@@ -340,27 +340,27 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
   }
 
   def joinUsersProjects(): String = {
-//    DBManager.GetPGConnection() match {
-//      case Some(c) =>
-//        val s = c.createStatement();
-//        s.execute("delete from users_visibility_projects");
-//        val users: List[User] = getUsers
-//        val projects: List[IssueProject] = getIssueProjects.toList
-//        users.foreach(user => {
-//          user.visible_projects.foreach(uProject => {
-//            projects.foreach(project => {
-//              if (uProject == project.name) {
-//                val queryProject = s"insert into users_visibility_projects (user_id, project_id) values ('${user.id}', '${project.id}')";
-//                s.execute(queryProject);
-//              }
-//            })
-//          })
-//        })
-//        s.close()
-//        c.close()
-//        "success"
-//      case _ => "error"
-//    }
+    //    DBManager.GetPGConnection() match {
+    //      case Some(c) =>
+    //        val s = c.createStatement();
+    //        s.execute("delete from users_visibility_projects");
+    //        val users: List[User] = getUsers
+    //        val projects: List[IssueProject] = getIssueProjects.toList
+    //        users.foreach(user => {
+    //          user.visible_projects.foreach(uProject => {
+    //            projects.foreach(project => {
+    //              if (uProject == project.name) {
+    //                val queryProject = s"insert into users_visibility_projects (user_id, project_id) values ('${user.id}', '${project.id}')";
+    //                s.execute(queryProject);
+    //              }
+    //            })
+    //          })
+    //        })
+    //        s.close()
+    //        c.close()
+    //        "success"
+    //      case _ => "error"
+    //    }
     "success"
   }
 
@@ -490,42 +490,58 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
     val res = ListBuffer.empty[Role]
     DBManager.GetPGConnection() match {
       case Some(c) =>
-        val s = c.createStatement()
-        val rs = s.executeQuery(s"select * from roles")
-        while (rs.next()) {
-          res += Role(
-            rs.getString("name"),
-            rs.getString("description"),
-            rs.getString("rights").split(",").toList,
-          )
+        try {
+          val rolesPages = getRolesPages()
+          val s = c.createStatement()
+          val rs = s.executeQuery(s"select * from roles")
+          while (rs.next()) {
+            val roleName = Option(rs.getString("name")).getOrElse("")
+            val visiblePages = rolesPages.filter(_.role == roleName).map(_.page)
+
+            res += Role(
+              roleName,
+              Option(rs.getString("description")).getOrElse(""),
+              Option(rs.getString("rights").split(",").toList).getOrElse(List.empty[String]),
+              visiblePages
+            )
+          }
+          rs.close()
+          s.close()
+          c.close()
+        } catch {
+          case e: Exception => println(e.toString)
         }
-        rs.close()
-        s.close()
-        c.close()
-        res.toList
-      case _ => List.empty[Role]
+      case _ =>
     }
+    res.toList
   }
 
   def getRoleDetails(name: String): Option[Role] = {
     var role: Option[Role] = Option.empty[Role]
     DBManager.GetPGConnection() match {
       case Some(c) =>
-        val s = c.createStatement()
-        val rs = s.executeQuery(s"select * from roles where name = '$name'")
-        while (rs.next()) {
-          role = Option(Role(
-            rs.getString("name"),
-            rs.getString("description"),
-            rs.getString("rights").split(",").toList
-          ))
+        try {
+          val rolesPages = getRolesPages()
+          val s = c.createStatement()
+          val rs = s.executeQuery(s"select * from roles where name = '$name'")
+          val visiblePages = rolesPages.filter(_.role == name).map(_.page)
+          while (rs.next()) {
+            role = Option(Role(
+              Option(rs.getString("name")).getOrElse(""),
+              Option(rs.getString("description")).getOrElse(""),
+              Option(rs.getString("rights").split(",").toList).getOrElse(List.empty[String]),
+              visiblePages
+            ))
+          }
+          rs.close()
+          s.close()
+          c.close()
+        } catch {
+          case e: Exception => println(e.toString)
         }
-        rs.close()
-        s.close()
-        c.close()
-        role
       case _ => Option.empty[Role]
     }
+    role
   }
 
   def getRoleRights(name: String): List[String] = {
@@ -617,6 +633,53 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
         "success"
       case _ => "error";
     }
+  }
+
+  def getRolesPages(): List[RolePage] = {
+    val res = ListBuffer.empty[RolePage]
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        try {
+          val s = c.createStatement();
+          val query = "select rvp.role_id as role, p.name as page  from roles_visibility_pages rvp, pages p where rvp.page_id = p.id"
+          val rs = s.executeQuery(query)
+          while (rs.next()) {
+            res += RolePage(
+              Option(rs.getString("role")).getOrElse(""),
+              Option(rs.getString("page")).getOrElse("")
+            )
+          }
+          rs.close()
+          s.close();
+          c.close();
+        } catch {
+          case e: Exception => println(e.toString)
+        }
+      case _ =>
+    }
+    res.toList
+  }
+
+  def getRolePages(name: String): List[String] = {
+    val res = ListBuffer.empty[String]
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        try {
+          val s = c.createStatement()
+          val query = s"select name from pages p, roles_visibility_pages rvp where rvp.role_id = $name and p.id = rvp.page_id"
+          val rs = s.executeQuery(query)
+          while (rs.next()) {
+            res += Option(rs.getString("name")).getOrElse("")
+          }
+          rs.close()
+          s.close();
+          c.close();
+        } catch {
+          case e: Exception => println(e.toString)
+        }
+      case _ =>
+    }
+    res.toList
   }
 
   def getPages: List[Page] = {

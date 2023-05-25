@@ -100,8 +100,14 @@ object AuthManager extends MongoCodecs {
   case class Role(
                    name: String,
                    description: String,
-                   rights: List[String]
+                   rights: List[String],
+                   pages: List[String],
                  )
+
+  case class RolePage(
+                       role: String,
+                       page: String
+                     )
 
   case class GetAdminRights()
 
