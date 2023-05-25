@@ -548,28 +548,37 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
     var rights: List[String] = List.empty[String]
     DBManager.GetPGConnection() match {
       case Some(c) =>
-        val s = c.createStatement();
-        val rs = s.executeQuery(s"select rights from roles where name = '$name'");
-        while (rs.next()) {
-          rights = rs.getString("rights").split(",").toList
+        try {
+          val s = c.createStatement();
+          val rs = s.executeQuery(s"select rights from roles where name = '$name'");
+          while (rs.next()) {
+            rights = rs.getString("rights").split(",").toList
+          }
+          rs.close()
+          s.close()
+          c.close()
+        } catch {
+          case e: Exception => println(e.toString)
         }
-        rs.close()
-        s.close()
-        c.close()
-        rights
-      case _ => List.empty[String]
+      case _ =>
     }
+    rights
   }
 
   def deleteRole(name: String): String = {
     DBManager.GetPGConnection() match {
       case Some(c) =>
-        val s = c.createStatement();
-        val query = s"delete from roles where name = '$name'";
-        s.execute(query);
-        s.close();
-        c.close();
-        "success";
+        try {
+          val s = c.createStatement();
+          s.execute(s"delete from roles where name = '$name'");
+          s.execute(s"delete from roles_visibility_pages where role_id = '$name'");
+          s.close();
+          c.close();
+          "success";
+        } catch {
+          case e: Exception => println(e.toString)
+            "error"
+        }
       case _ => "error";
     }
   }
@@ -577,13 +586,20 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
   def startRole(role: Role): String = {
     DBManager.GetPGConnection() match {
       case Some(c) =>
-        val s = c.createStatement();
-        var line = "";
-        val query = s"insert into roles (name, description, rights) values ('${role.name}', '${role.description}', '${role.rights.mkString(",")}')";
-        s.execute(query);
-        s.close();
-        c.close();
-        "success";
+        try {
+          val s = c.createStatement()
+          s.execute(s"insert into roles (name, description, rights) values ('${role.name}', '${role.description}', '${role.rights.mkString(",")}')")
+          s.execute(s"delete from roles_visibility_pages where role_id = '${role.name}'");
+          role.pages.foreach(page => {
+            s.execute(s"insert into roles_visibility_pages (role_id, page_id) values ('${role.name}', '$page')")
+          })
+          s.close()
+          c.close()
+          "success";
+        } catch {
+          case e: Exception => println(e.toString)
+            "error"
+        }
       case _ => "error";
     }
   }
@@ -623,14 +639,21 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
   def editRole(role: Role, name: String): String = {
     DBManager.GetPGConnection() match {
       case Some(c) =>
-        val s = c.createStatement();
-        val query = s"update roles set name = '${role.name}', description = '${role.description}', rights = '${role.rights.mkString(",")}' where name = '$name'";
-        s.execute(query);
-        //        val queryR = s"update user_rights set rights = '${role.name}' where rights = '$name'";
-        //        s.execute(queryR);
-        s.close();
-        c.close();
-        "success"
+        try {
+          val s = c.createStatement();
+          s.execute(s"update roles set name = '${role.name}', description = '${role.description}', rights = '${role.rights.mkString(",")}' where name = '$name'")
+          s.execute(s"delete from roles_visibility_pages where role_id = '$name'")
+          role.pages.foreach(page => {
+            val q = s"insert into roles_visibility_pages (role_id, page_id) values ('${role.name}', (select id from pages where name = '$page'))"
+            s.execute(q)
+          })
+          s.close();
+          c.close();
+          "success"
+        } catch {
+          case e: Exception => println(e.toString)
+            "error"
+        }
       case _ => "error";
     }
   }
