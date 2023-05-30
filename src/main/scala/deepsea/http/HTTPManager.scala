@@ -323,7 +323,9 @@ class HTTPManager extends Actor {
         (get & path("consumed") & parameter("userId")) { (userId) =>
           askFor(ActorManager.planHours, GetConsumedHours(userId))
         },
-
+        (get & path("savePlanHours") & parameter("userId")) { (userId) =>
+          askFor(ActorManager.planHours, GetConsumedHours(userId))
+        },
 
         (get & path("subscribeForIssue") & parameter("user") & parameter("issue") & parameter("options")) { (user, issue, options) =>
           askFor(ActorManager.issue, SubscribeForNotifications(user, issue, options))

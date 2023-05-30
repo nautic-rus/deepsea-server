@@ -7,7 +7,7 @@ import deepsea.auth.AuthManagerHelper
 import deepsea.database.MongoCodecs
 import deepsea.issues.IssueManagerHelper
 import deepsea.issues.classes.Issue
-import deepsea.time.PlanHoursManager.{AssignPlanHoursToUsers, ConsumePlanHours, ConsumeTodayPlanHours, DeleteUserTask, FillConsumed, GetConsumedHours, GetPlannedHours, GetUserPlanHours, InitPlanHours, PlanAlreadyPlannedIssues, PlanHour, PlanUserTask, SpecialDay}
+import deepsea.time.PlanHoursManager.{AssignPlanHoursToUsers, ConsumePlanHours, ConsumeTodayPlanHours, DeleteUserTask, FillConsumed, GetConsumedHours, GetPlannedHours, GetUserPlanHours, InitPlanHours, PlanAlreadyPlannedIssues, PlanHour, PlanUserTask, SpecialDay, SavePlannedHours}
 import io.circe.syntax.EncoderOps
 
 import java.util.{Calendar, Date}
@@ -33,6 +33,7 @@ object PlanHoursManager extends MongoCodecs {
   case class FillConsumed()
   case class GetPlannedHours()
   case class GetConsumedHours(userId: String)
+  case class SavePlannedHours(userId: String, taskId: String, value: String, plan: String)
   case class PlannedHours(taskId: Int, hours: Int)
   case class ConsumePlanHours(planHoursValue: String, userId: String, taskId: String, details: String)
   case class ConsumeTodayPlanHours()
@@ -212,6 +213,10 @@ class PlanHoursManager extends Actor with PlanHoursHelper with AuthManagerHelper
     case ConsumePlanHours(planHoursValue, userId, taskId, details) =>
       consumePlanHours(planHoursValue, userId, taskId, details)
       sender() ! "success".asJson.noSpaces
+    case SavePlannedHours(userId, taskId, value, plan) =>
+      savePlannedHours(userId.toIntOption.getOrElse(0), taskId.toIntOption.getOrElse(0), value.toIntOption.getOrElse(0), plan.toIntOption.getOrElse(0))
+      sender() ! "success".asJson.noSpaces
+
     case ConsumeTodayPlanHours() =>
       val c = Calendar.getInstance()
       val hour = c.get(Calendar.HOUR_OF_DAY)

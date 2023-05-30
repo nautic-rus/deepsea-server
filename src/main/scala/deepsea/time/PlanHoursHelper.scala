@@ -334,13 +334,26 @@ trait PlanHoursHelper extends IssueManagerHelper with AuthManagerHelper{
         c.close()
       case _ =>
     }
-    reduceTaskPlannedHours(userId, taskId, consumed.length)
+    reduceTaskPlannedHours(userId, taskId, consumed.length, consumed.minBy(_.id).id)
     setTaskWithMove(userId, taskId, consumed.sortBy(_.id), consumed.length)
   }
   def consumePlanHours(jsonValue: String, userId: String, taskId: String, details: String): Unit ={
     decode[List[PlanHour]](jsonValue) match {
       case Right(planHours) =>
         consumeHours(planHours, userId.toIntOption.getOrElse(0), taskId.toIntOption.getOrElse(0), details)
+      case _ =>
+    }
+  }
+
+  def savePlannedHours(userId: Int, taskId: Int, value: Int, plan: Int): Unit = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val date = new Date().getTime
+        val query = s"insert into hours_saved (task_id, value, date, user_id, plan) values ($taskId, $value, $date, $userId, $plan)"
+        s.execute(query)
+        s.close()
+        c.close()
       case _ =>
     }
   }
@@ -413,9 +426,9 @@ trait PlanHoursHelper extends IssueManagerHelper with AuthManagerHelper{
       case _ =>
     }
   }
-  def reduceTaskPlannedHours(userId: Int, taskId: Int, amount: Int): Unit ={
+  def reduceTaskPlannedHours(userId: Int, taskId: Int, amount: Int, left: Int): Unit ={
     val plannedHours = getUserPlanHours(userId, available = true)
-    val hoursToRemove = plannedHours.filter(_.task_id == taskId).takeRight(amount)
+    val hoursToRemove = plannedHours.filter(x => x.task_id == taskId && x.id >= left).takeRight(amount)
     if (hoursToRemove.nonEmpty){
       val idsToRemove = hoursToRemove.map(_.id).mkString(",")
       DBManager.GetPGConnection() match {
