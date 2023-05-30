@@ -494,5 +494,20 @@ trait PlanHoursHelper extends IssueManagerHelper with AuthManagerHelper{
         case _ => None
       }
     })
+
+    val exception = planHours.filter(x => (x.day < day && x.month == month && x.year == year) || x.month < month).filter(_.task_id != 0)
+    val exceptionNotConsumed = exception.filter(x => !consumed.map(_.hour_id).contains(x.id))
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        exceptionNotConsumed.foreach(h => {
+          val date = new Date().getTime
+          val query = s"insert into hours_consumed (id, hour_id, user_id, date_inserted, task_id, comment) values (default, ${h.id}, ${h.user}, $date, ${h.task_id}, 'DAILY AUTO HOURS CONSUMPTION HISTORY EXCEPTION')"
+          s.execute(query)
+        })
+        s.close()
+        c.close()
+      case _ =>
+    }
   }
 }
