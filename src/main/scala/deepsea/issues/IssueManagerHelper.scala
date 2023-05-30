@@ -1631,14 +1631,14 @@ trait IssueManagerHelper extends MongoCodecs {
         val rs = s.executeQuery(s"select * from issue_projects where id = $id")
         while (rs.next()) {
           project = Option(IssueProject(
-            rs.getInt("id"),
-            rs.getString("name"),
-            rs.getString("pdsp"),
-            rs.getString("rkd"),
-            rs.getString("foran"),
-            rs.getString("factory"),
-            rs.getString("managers"),
-            rs.getString("status")
+            Option(rs.getInt("id")).getOrElse(0),
+            Option(rs.getString("name")).getOrElse(""),
+            Option(rs.getString("pdsp")).getOrElse(""),
+            Option(rs.getString("rkd")).getOrElse(""),
+            Option(rs.getString("foran")).getOrElse(""),
+            Option(rs.getString("managers")).getOrElse(""),
+            Option(rs.getString("status")).getOrElse(""),
+            Option(rs.getString("factory")).getOrElse(""),
           ))
         }
         rs.close()
@@ -1666,7 +1666,7 @@ trait IssueManagerHelper extends MongoCodecs {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement();
-        val query = s"update issue_projects set name = '${project.name}', foran = '${project.foran}', rkd = '${project.rkd}', pdsp = '${project.pdsp}', factory = '${project.factory}', managers = '${project.managers}', status = '${project.status}' where id = '$id'";
+        val query = s"update issue_projects set name = '${project.name}', foran = '${project.foran}', rkd = '${project.rkd}', pdsp = '${project.pdsp}', factory = '${project.factory}', managers = '${project.managers}', status = '${project.status}' where id = '$id'"
         s.execute(query);
         s.close();
         c.close();
