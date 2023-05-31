@@ -30,7 +30,7 @@ import deepsea.mobile.MobileManager.{GetDrawingInfo, GetDrawings}
 import deepsea.osm.OsmManager.{AddPLS, GetPLS}
 import deepsea.rocket.RocketChatManager.SendNotification
 import deepsea.time.LicenseManager.GetForanLicenses
-import deepsea.time.PlanHoursManager.{ConsumePlanHours, DeleteUserTask, GetConsumedHours, GetPlannedHours, GetUserPlanHours, PlanUserTask}
+import deepsea.time.PlanHoursManager.{ConsumePlanHours, DeleteUserTask, GetConsumedHours, GetPlannedHours, GetUserPlanHours, PlanUserTask, SavePlannedHours}
 import deepsea.time.TimeAndWeatherManager.GetTimeAndWeather
 import deepsea.time.TimeControlManager.{AddSpyWatch, AddUserWatch, GetSpyWatches, GetTime, GetUserTimeControl, GetUserWatches}
 import org.apache.log4j.{LogManager, Logger}
@@ -323,8 +323,8 @@ class HTTPManager extends Actor {
         (get & path("consumed") & parameter("userId")) { (userId) =>
           askFor(ActorManager.planHours, GetConsumedHours(userId))
         },
-        (get & path("savePlanHours") & parameter("userId")) { (userId) =>
-          askFor(ActorManager.planHours, GetConsumedHours(userId))
+        (get & path("savePlanHours") & parameter("userId", "taskId", "value", "plan")) { (userId, taskId, value, plan) =>
+          askFor(ActorManager.planHours, SavePlannedHours(userId: String, taskId: String, value: String, plan: String))
         },
 
         (get & path("subscribeForIssue") & parameter("user") & parameter("issue") & parameter("options")) { (user, issue, options) =>
