@@ -21,7 +21,7 @@ BEGIN
             logFileName:=LOWER(projName||'_'||projVer||'_'||datestr||'.LOG');
             dumpDir:='NAUTIC_PUMP_DIR';
 
-            h1 := DBMS_DATAPUMP.OPEN('EXPORT','SCHEMA',NULL,'&jobname','11.2');
+            h1 := DBMS_DATAPUMP.OPEN('EXPORT','SCHEMA',NULL,'&jobname','12.2');
             DBMS_DATAPUMP.ADD_FILE(h1,dmpFileName,dumpDir);
             DBMS_DATAPUMP.ADD_FILE(handle => h1, filename => logFileName, directory => dumpDir, filetype => DBMS_DATAPUMP.KU$_FILE_TYPE_LOG_FILE);
             DBMS_DATAPUMP.METADATA_FILTER(h1,'SCHEMA_EXPR','IN ('||''''|| userName ||''''||')');
