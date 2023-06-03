@@ -25,6 +25,7 @@ BEGIN
             DBMS_DATAPUMP.ADD_FILE(h1,dmpFileName,dumpDir);
             DBMS_DATAPUMP.ADD_FILE(handle => h1, filename => logFileName, directory => dumpDir, filetype => DBMS_DATAPUMP.KU$_FILE_TYPE_LOG_FILE);
             DBMS_DATAPUMP.METADATA_FILTER(h1,'SCHEMA_EXPR','IN ('||''''|| userName ||''''||')');
+            DBMS_DATAPUMP.METADATA_FILTER(h1,'EXCLUDE_PATH_LIST','STATISTICS');
             DBMS_DATAPUMP.START_JOB(h1);
 
             job_state := 'UNDEFINED';
