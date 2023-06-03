@@ -52,88 +52,85 @@ class BackupManager extends Actor{
       }
   }
   def backupForan(): Unit ={
-    foranProjects.grouped(4).toList.foreach(projectsGroup => {
-      val configOracle = new HikariConfig()
-      configOracle.setDriverClassName("oracle.jdbc.OracleDriver")
-      configOracle.setJdbcUrl("jdbc:oracle:thin:@192.168.1.12:1521:ORA3DB")
-      configOracle.setUsername("SYS AS SYSDBA")
-      configOracle.setPassword("Whatab0utus")
-      configOracle.setMaximumPoolSize(1)
-      configOracle.setAutoCommit(true)
-      val dsOracle = new HikariDataSource(configOracle)
-      val c = dsOracle.getConnection
-      val s = c.createStatement()
-      val jobName = "NAUTICBACKUP-" + new Date().getTime
-      val q = "'"
-      val query = procedure.replaceAll("&jobname", jobName).replaceAll("&projects", projectsGroup.map(x => q + x + q).mkString(","))
-      s.execute(query)
-      s.execute("BEGIN\n    -- Call\n    SYS.NAUTIC_BACKUP;\n\n    -- Transaction Control\n    COMMIT;\nEND;")
-      s.close()
-      c.close()
+    val configOracle = new HikariConfig()
+    configOracle.setDriverClassName("oracle.jdbc.OracleDriver")
+    configOracle.setJdbcUrl("jdbc:oracle:thin:@192.168.1.12:1521:ORA3DB")
+    configOracle.setUsername("SYS AS SYSDBA")
+    configOracle.setPassword("Whatab0utus")
+    configOracle.setMaximumPoolSize(1)
+    configOracle.setAutoCommit(true)
+    val dsOracle = new HikariDataSource(configOracle)
+    val c = dsOracle.getConnection
+    val s = c.createStatement()
+    val jobName = "NAUTICBACKUP-" + new Date().getTime
+    val q = "'"
+    val query = procedure.replaceAll("&jobname", jobName).replaceAll("&projects", foranProjects.map(x => q + x + q).mkString(","))
+    s.execute(query)
+    s.execute("BEGIN\n    -- Call\n    SYS.NAUTIC_BACKUP;\n\n    -- Transaction Control\n    COMMIT;\nEND;")
+    s.close()
+    c.close()
 
 
-      val cloud = new NextcloudConnector(App.Cloud.Host, true, 443, "admin", "c6bc9d23ab01701263b03e364ca5a32bacda46514c2d299e")
-      val dir = Files.createTempDirectory("download")
-      val sp = File.separator
-      val date = LocalDate.now().toString
-      val remoteDir = "/backups/foran/backup-" + date
-      cloud.createFolder(remoteDir)
+    val cloud = new NextcloudConnector(App.Cloud.Host, true, 443, "admin", "c6bc9d23ab01701263b03e364ca5a32bacda46514c2d299e")
+    val dir = Files.createTempDirectory("download")
+    val sp = File.separator
+    val date = LocalDate.now().toString
+    val remoteDir = "/backups/foran/backup-" + date
+    cloud.createFolder(remoteDir)
 
 
-      val hostname = "192.168.1.30"
-      val username = "backupper"
-      val password = "IsntItEn0ugh"
+    val hostname = "192.168.1.30"
+    val username = "backupper"
+    val password = "IsntItEn0ugh"
 
 
-      val ssh = new SSHClient()
-      ssh.addHostKeyVerifier(new NullHostKeyVerifier())
-      ssh.connect(hostname)
-      ssh.authPassword(username, password)
-      val sftp: SFTPClient = ssh.newSFTPClient()
-      val ls = sftp.ls("/backups/oracle/")
-      val backups = ListBuffer.empty[RemoteResourceInfo]
-      ls.forEach(s => backups += s)
-      val sorted = backups.sortBy(_.getAttributes.getMtime).reverse.filter(_.getName.contains(".fdp")).take(projectsGroup.length)
+    val ssh = new SSHClient()
+    ssh.addHostKeyVerifier(new NullHostKeyVerifier())
+    ssh.connect(hostname)
+    ssh.authPassword(username, password)
+    val sftp: SFTPClient = ssh.newSFTPClient()
+    val ls = sftp.ls("/backups/oracle/")
+    val backups = ListBuffer.empty[RemoteResourceInfo]
+    ls.forEach(s => backups += s)
+    val sorted = backups.sortBy(_.getAttributes.getMtime).reverse.filter(_.getName.contains(".fdp")).take(foranProjects.length)
 
-      sorted.foreach(s => {
-        val tempFile = new File(dir + sp + s.getName)
-        sftp.get(s.getPath, tempFile.getPath)
-        cloud.uploadFile(tempFile, remoteDir + "/" + s.getName)
-      })
-
-      sftp.close()
-      ssh.disconnect()
-
-
-      val hostnameSurf = "192.168.1.15"
-      val usernameSurf = "root"
-      val passwordSurf = "Whatab0utus"
-
-      val sshSurf = new SSHClient()
-      sshSurf.addHostKeyVerifier(new NullHostKeyVerifier())
-      sshSurf.connect(hostnameSurf)
-      sshSurf.authPassword(usernameSurf, passwordSurf)
-      val sftpSurf: SFTPClient = sshSurf.newSFTPClient()
-      val backupsSurf = ListBuffer.empty[RemoteResourceInfo]
-      val remoteSurfDir = "/foran/config/surfaces/"
-      sftpSurf.ls(remoteSurfDir).forEach(l => backupsSurf += l)
-
-      projectsGroup.foreach(p => {
-        backupsSurf.find(_.getName.toLowerCase == p.toLowerCase) match {
-          case Some(surfDir) =>
-            val surfLs = ListBuffer.empty[RemoteResourceInfo]
-            sftpSurf.ls(surfDir.getPath).forEach(l => surfLs += l)
-            surfLs.filter(_.isRegularFile).filter(_.getName.split("\\.").last == "fsf").foreach(s => {
-              val tempFile = new File(dir + sp + s.getName)
-              sftpSurf.get(s.getPath, tempFile.getPath)
-              cloud.uploadFile(tempFile, remoteDir + "/" + s.getName)
-            })
-          case _ =>
-        }
-      })
-      sftpSurf.close()
-      sshSurf.disconnect()
-
+    sorted.foreach(s => {
+      val tempFile = new File(dir + sp + s.getName)
+      sftp.get(s.getPath, tempFile.getPath)
+      cloud.uploadFile(tempFile, remoteDir + "/" + s.getName)
     })
+
+    sftp.close()
+    ssh.disconnect()
+
+
+    val hostnameSurf = "192.168.1.15"
+    val usernameSurf = "root"
+    val passwordSurf = "Whatab0utus"
+
+    val sshSurf = new SSHClient()
+    sshSurf.addHostKeyVerifier(new NullHostKeyVerifier())
+    sshSurf.connect(hostnameSurf)
+    sshSurf.authPassword(usernameSurf, passwordSurf)
+    val sftpSurf: SFTPClient = sshSurf.newSFTPClient()
+    val backupsSurf = ListBuffer.empty[RemoteResourceInfo]
+    val remoteSurfDir = "/foran/config/surfaces/"
+    sftpSurf.ls(remoteSurfDir).forEach(l => backupsSurf += l)
+
+    foranProjects.foreach(p => {
+      backupsSurf.find(_.getName.toLowerCase == p.toLowerCase) match {
+        case Some(surfDir) =>
+          val surfLs = ListBuffer.empty[RemoteResourceInfo]
+          sftpSurf.ls(surfDir.getPath).forEach(l => surfLs += l)
+          surfLs.filter(_.isRegularFile).filter(_.getName.split("\\.").last == "fsf").foreach(s => {
+            val tempFile = new File(dir + sp + s.getName)
+            sftpSurf.get(s.getPath, tempFile.getPath)
+            cloud.uploadFile(tempFile, remoteDir + "/" + s.getName)
+          })
+        case _ =>
+      }
+    })
+    sftpSurf.close()
+    sshSurf.disconnect()
   }
 }
