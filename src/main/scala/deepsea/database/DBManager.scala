@@ -32,7 +32,7 @@ object DBManager extends MongoCodecs {
       configOracle.setJdbcUrl("jdbc:oracle:thin:@192.168.1.12:1521:ORA3DB")
       configOracle.setUsername("C" + project)
       configOracle.setPassword("Whatab0utus")
-      configOracle.setMaximumPoolSize(5)
+      configOracle.setMaximumPoolSize(2)
       oracleConnections += OracleConnection(project, new HikariDataSource(configOracle))
     }
     catch {
