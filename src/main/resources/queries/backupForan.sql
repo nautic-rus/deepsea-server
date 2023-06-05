@@ -20,22 +20,17 @@ BEGIN
             dmpFileName:=LOWER(projName||'_'||projVer||'_'||datestr||'.FDP');
             logFileName:=LOWER(projName||'_'||projVer||'_'||datestr||'.LOG');
             dumpDir:='NAUTIC_PUMP_DIR';
-
-            h1 := DBMS_DATAPUMP.OPEN('EXPORT','SCHEMA',NULL,'&jobname','12.2');
+            h1 := DBMS_DATAPUMP.OPEN('EXPORT','SCHEMA',NULL,'&jobname','10.2.0.3');
+            dbms_datapump.set_parallel(handle => h1, degree => 1);
             DBMS_DATAPUMP.ADD_FILE(h1,dmpFileName,dumpDir);
             DBMS_DATAPUMP.ADD_FILE(handle => h1, filename => logFileName, directory => dumpDir, filetype => DBMS_DATAPUMP.KU$_FILE_TYPE_LOG_FILE);
-            DBMS_DATAPUMP.METADATA_FILTER(h1,'SCHEMA_EXPR','IN ('||''''|| userName ||''''||')');
-            DBMS_DATAPUMP.METADATA_FILTER(h1,'EXCLUDE_PATH_LIST','STATISTICS');
+            dbms_datapump.metadata_filter(handle => h1, name => 'SCHEMA_LIST', value => userName);
+            dbms_datapump.metadata_filter(handle => h1, name => 'EXCLUDE_PATH_EXPR', value => 'LIKE ''GRANT'' ');
+            dbms_datapump.set_parameter(handle => h1, name => 'KEEP_MASTER', value => 0);
+            dbms_datapump.set_parameter(handle => h1, name => 'INCLUDE_METADATA', value=> 1);
+            dbms_datapump.set_parameter(handle => h1, name => 'DATA_ACCESS_METHOD', value => 'AUTOMATIC');
+            dbms_datapump.set_parameter(handle => h1, name => 'ESTIMATE', value => 'BLOCKS');
             DBMS_DATAPUMP.START_JOB(h1);
-
-            job_state := 'UNDEFINED';
-            while (job_state != 'COMPLETED') and (job_state != 'STOPPED') loop
-                    dbms_datapump.get_status(h1,
-                                             dbms_datapump.ku$_status_job_error +
-                                             dbms_datapump.ku$_status_job_status +
-                                             dbms_datapump.ku$_status_wip,-1,job_state,sts);
-                    --js := sts.job_status;
-                end loop;
             dbms_datapump.detach(h1);
         END LOOP;
 END NAUTIC_BACKUP;
