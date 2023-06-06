@@ -1,8 +1,8 @@
 CREATE OR REPLACE PROCEDURE SYS.NAUTIC_BACKUP AS
-    h1 NUMBER;               -- Data Pump job handle
-    job_state VARCHAR2(30);  -- To keep track of job state
-    --js ku$_JobStatus;        -- The job status from get_status
-    sts ku$_Status;          -- The status object returned by get_status
+    h1 NUMBER; -- Data Pump job handle
+    job_state VARCHAR2(30); -- To keep track of job state
+    --js ku$_JobStatus; -- The job status from get_status
+    sts ku$_Status; -- The status object returned by get_status
     datestr VARCHAR2(30);
     userName VARCHAR2(30);
     projName VARCHAR2(30);
@@ -15,12 +15,12 @@ BEGIN
         LOOP
             datestr:=(TO_CHAR (SYSDATE, 'YYYY-MM-DD-HH24-MI-SS'));
             projName:=proj.proj_id;
-            userName:='C'|| projName;
+            userName:='''C'||upper(projName)||'''';
             projVer:=proj.version;
             dmpFileName:=LOWER(projName||'_'||projVer||'_'||datestr||'.FDP');
             logFileName:=LOWER(projName||'_'||projVer||'_'||datestr||'.LOG');
             dumpDir:='NAUTIC_PUMP_DIR';
-            h1 := DBMS_DATAPUMP.OPEN('EXPORT','SCHEMA',NULL,'&jobname','10.2.0.3');
+            h1 := DBMS_DATAPUMP.OPEN('EXPORT','SCHEMA',NULL,'NAUTICBACKUP'||datestr,'10.2.0.3');
             dbms_datapump.set_parallel(handle => h1, degree => 1);
             DBMS_DATAPUMP.ADD_FILE(h1,dmpFileName,dumpDir);
             DBMS_DATAPUMP.ADD_FILE(handle => h1, filename => logFileName, directory => dumpDir, filetype => DBMS_DATAPUMP.KU$_FILE_TYPE_LOG_FILE);
@@ -34,3 +34,4 @@ BEGIN
             dbms_datapump.detach(h1);
         END LOOP;
 END NAUTIC_BACKUP;
+/
