@@ -35,3 +35,4 @@ BEGIN
         END LOOP;
 END NAUTIC_BACKUP;
 /
+commit;

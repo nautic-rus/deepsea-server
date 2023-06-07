@@ -11,7 +11,7 @@ import net.schmizz.sshj.sftp.{RemoteResourceInfo, SFTPClient}
 import net.schmizz.sshj.transport.verification.HostKeyVerifier
 import org.aarboard.nextcloud.api.NextcloudConnector
 
-import java.io.{File, FileOutputStream}
+import java.io.{BufferedInputStream, File, FileInputStream, FileOutputStream}
 import java.nio.file.Files
 import java.security.PublicKey
 import java.time.LocalDate
@@ -52,7 +52,7 @@ class BackupManager extends Actor{
         val complete = new Date().toString
         ActorManager.mail ! Mail("Bogdan Isaev", "redeeming.fury@gmail.com", "Foran Backup Notification", s"Foran Backup started at $start and successfully completed at $complete")
       }
-      if (Calendar.getInstance().get(Calendar.HOUR_OF_DAY) == 4) {
+      if (Calendar.getInstance().get(Calendar.HOUR_OF_DAY) == 3) {
         uploadForanBackup()
       }
   }
@@ -67,11 +67,12 @@ class BackupManager extends Actor{
     val dsOracle = new HikariDataSource(configOracle)
     val c = dsOracle.getConnection
     val s = c.createStatement()
-    val q = "'"
-    val query = procedure.replaceAll("&projects", foranProjects.map(x => q + x + q).mkString(","))
-    s.execute(query)
+    //val q = "'"
+    //val query = procedure.replaceAll("&projects", foranProjects.map(x => q + x + q).mkString(","))
+    //s.execute(query)
     s.execute("BEGIN\n    -- Call\n    SYS.NAUTIC_BACKUP;\n\n    -- Transaction Control\n    COMMIT;\nEND;")
     s.close()
+    //c.commit()
     c.close()
     dsOracle.close()
   }
@@ -108,7 +109,13 @@ class BackupManager extends Actor{
     val zip = new ZipOutputStream(new FileOutputStream(zipDumps))
     dumps.foreach(d => {
       zip.putNextEntry(new ZipEntry(d.getName))
-      zip.write(Files.readAllBytes(d.toPath))
+      val in = new BufferedInputStream(new FileInputStream(d))
+      var b = in.read()
+      while (b > -1) {
+        zip.write(b)
+        b = in.read()
+      }
+      in.close()
     })
     zip.close()
     cloud.uploadFile(zipDumps, remoteDir + "/" + zipDumps.getName)
@@ -150,7 +157,13 @@ class BackupManager extends Actor{
     val zipsurfaces = new ZipOutputStream(new FileOutputStream(surfacesDumps))
     surfaces.foreach(s => {
       zipsurfaces.putNextEntry(new ZipEntry(s.getName))
-      zipsurfaces.write(Files.readAllBytes(s.toPath))
+      val in = new BufferedInputStream(new FileInputStream(s))
+      var b = in.read()
+      while (b > -1) {
+        zipsurfaces.write(b)
+        b = in.read()
+      }
+      in.close()
     })
     zipsurfaces.close()
     cloud.uploadFile(surfacesDumps, remoteDir + "/" + surfacesDumps.getName)
