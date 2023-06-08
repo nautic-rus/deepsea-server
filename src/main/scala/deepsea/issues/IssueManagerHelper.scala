@@ -1511,16 +1511,20 @@ trait IssueManagerHelper extends MongoCodecs {
   def notifyDocUpload(taskId: Int): String ={
     getIssueDetails(taskId) match {
       case Some(issue) =>
+        val hullDocs = List("03070-532-0001")
         val projects = getIssueProjects
-        val department = issue.department match {
-          case "Hull" => "hull-esp"
-          case "System" => "pipe-esp"
-          case "Devices" => "device-esp"
-          case "Trays" => "trays"
-          case "Cables" => "cables"
-          case "Electric" => "electric-esp"
-          case "Accommodation" => "accommodation-esp"
-          case "Design" => "design-esp"
+        val department = hullDocs.find(_ == issue.doc_number) match {
+          case Some(value) => "hull-esp"
+          case _ => issue.department match {
+            case "Hull" => "hull-esp"
+            case "System" => "pipe-esp"
+            case "Devices" => "device-esp"
+            case "Trays" => "trays"
+            case "Cables" => "cables"
+            case "Electric" => "electric-esp"
+            case "Accommodation" => "accommodation-esp"
+            case "Design" => "design-esp"
+          }
         }
         val project = projects.find(x => x.name == issue.project) match {
           case Some(value) => value.foran
