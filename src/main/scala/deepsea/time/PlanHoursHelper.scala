@@ -495,7 +495,7 @@ trait PlanHoursHelper extends IssueManagerHelper with AuthManagerHelper{
       }
     })
 
-    if (month == 4 && day == 30){
+    if (month == 5 && day == 9){
       val exception = planHours.filter(x => (x.day < day && x.month == month && x.year == year) || x.month < month).filter(_.task_id != 0)
       val exceptionNotConsumed = exception.filter(x => !consumed.map(_.hour_id).contains(x.id))
       DBManager.GetPGConnection() match {
