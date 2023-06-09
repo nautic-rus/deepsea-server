@@ -106,7 +106,7 @@ trait PlanHoursHelper extends IssueManagerHelper with AuthManagerHelper{
   }
   def setTaskWithMove(userId: Int, taskId: Int, fromHourId: Int, amountOfHours: Int): Unit ={
     val userPlanHours = getUserPlanHours(userId, available = true)
-    val taskHours = userPlanHours.filter(_.hour_type == 1).filter(_.id >= fromHourId).take(amountOfHours).map(h => AllocatedHour(h.id, h.task_id))
+    val taskHours = userPlanHours.filter(x => x.hour_type == 1 && x.task_id >= 0).filter(_.id >= fromHourId).take(amountOfHours).map(h => AllocatedHour(h.id, h.task_id))
     moveHoursRight(taskHours, userPlanHours)
     DBManager.GetPGConnection() match {
       case Some(c) =>
