@@ -336,8 +336,8 @@ class HTTPManager extends Actor {
         (get & path("updateRocketLogin") & parameter("user") & parameter("rocketLogin")) { (user, rocketLogin) =>
           askFor(ActorManager.auth, (user, UpdateRocketLogin(user, rocketLogin)))
         },
-        (get & path("notifyDocUpload") & parameter("taskId")) { (taskId) =>
-          askFor(ActorManager.issue, NotifyDocUpload(taskId))
+        (get & path("notifyDocUpload") & parameter("taskId") & parameter("kind") & parameter("comment")) { (taskId, kind, comment) =>
+          askFor(ActorManager.issue, NotifyDocUpload(taskId, kind, comment))
         },
 
         //FILE MANAGER COMMANDS

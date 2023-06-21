@@ -2,7 +2,7 @@ package deepsea.issues
 
 import deepsea.App
 import deepsea.actors.ActorManager
-import deepsea.auth.AuthManager.User
+import deepsea.auth.AuthManager.{Department, User}
 import deepsea.auth.AuthManagerHelper
 import deepsea.database.DBManager.RsIterator
 import deepsea.database.{DBManager, DatabaseManager, MongoCodecs}
@@ -23,7 +23,7 @@ import org.mongodb.scala.model.Filters
 import org.mongodb.scala.model.Filters.{and, equal}
 
 import java.nio.file.Files
-import java.util.Date
+import java.util.{Calendar, Date}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
@@ -1508,7 +1508,30 @@ trait IssueManagerHelper extends MongoCodecs {
     }
     res.toList
   }
-  def notifyDocUpload(taskId: Int): String ={
+
+  def getDepartments: List[Department] = {
+    val res = ListBuffer.empty[Department];
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement();
+        val rs = s.executeQuery(s"select * from issue_departments order by id");
+        while (rs.next()) {
+          res += Department(
+            rs.getInt("id"),
+            rs.getString("name"),
+            rs.getString("manager"),
+            rs.getInt("visible_documents"),
+            rs.getInt("visible_man_hours"),
+          )
+        }
+        rs.close()
+        s.close()
+        c.close()
+        res.toList
+      case _ => List.empty[Department]
+    }
+  }
+  def notifyDocUpload(taskId: Int, kind: String, comment: String): String = {
     getIssueDetails(taskId) match {
       case Some(issue) =>
         val hullDocs = List("03070-532-0001")
@@ -1526,31 +1549,60 @@ trait IssueManagerHelper extends MongoCodecs {
             case "Design" => "design-esp"
           }
         }
+        val departments = getDepartments
+        val departmentId = departments.find(_.name == issue.department) match {
+          case Some(value) => value.id
+          case _ => 0
+        }
         val project = projects.find(x => x.name == issue.project) match {
           case Some(value) => value.foran
           case _ => issue.project
         }
+        val projectId = projects.find(x => x.name == issue.project) match {
+          case Some(value) => value.id
+          case _ => 0
+        }
+
         val url = App.HTTPServer.Url + "/" + department + "?issueId=" + issue.id + "&foranProject=" + project + "&docNumber=" + issue.doc_number + "&department=" + issue.department + "&nc=1"
+
 
         DBManager.GetPGConnection() match {
           case Some(c) =>
             val s = c.createStatement()
-            val q = Source.fromResource("queries/userNotificationsByProject.sql").mkString.replace("&project", issue.project)
+            //val q = Source.fromResource("queries/userNotificationsByProject.sql").mkString.replace("&project", issue.project)
+            val q = s"select distinct email from users where id in (select user_id from users_notification where kind = 'document' and method = 'email' and project_id = $projectId and department_id = $departmentId)"
             val rsIter = RsIterator(s.executeQuery(q))
             val emails = rsIter.map(rs => {
               rs.getString("email")
             })
-            //val url = App.HTTPServer.Url + "/?taskId=" + issue.id
-            val text = Source.fromResource("messages/newDoc.html").mkString
+
+            val title = kind match {
+              case "correction" => "В систему добавлено оперативное решение для документа"
+              case _ => "В систему добавлен новый документ (новая ревизия документа)"
+            }
+
+            val today = new Date().getTime
+            val qu = '"'
+            val files = issue.revision_files.filter(x => sameDay(today, x.upload_date)).map(file => {
+              "<div>" +
+              s"<a href=$qu${file.url}$qu>${file.name}</a>" +
+              "</div>"
+            }).mkString
+
+            val text = Source.fromResource("messages/docAdded.html").mkString
+              .replace("&title", title)
               .replace("&docNumber", issue.doc_number)
               .replace("&project", issue.project)
               .replace("&name", issue.name)
               .replace("&type", issue.issue_type)
               .replace("&department", issue.department)
               .replace("&revision", issue.revision)
+              .replace("&comment", comment)
               .replace("&url", url)
+              .replace("&files", files)
+
             emails.foreach(email => {
-              ActorManager.mail ! Mail("Nautic Rus", email, "New documents has been added", text)
+              ActorManager.mail ! Mail("Nautic Rus", email, title, text)
             })
             rsIter.rs.close()
             s.close()
@@ -1560,6 +1612,11 @@ trait IssueManagerHelper extends MongoCodecs {
       case _ => None
     }
     "success"
+  }
+  def sameDay(d1: Long, d2: Long): Boolean = {
+    val date1 = new Date(d1)
+    val date2 = new Date(d2)
+    date1.getYear == date2.getYear && date1.getMonth == date2.getMonth && date1.getDate == date2.getDate
   }
   def updateIssueLabor(issue_id: Int, labor: Double): Unit ={
     DBManager.GetPGConnection() match {

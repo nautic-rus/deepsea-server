@@ -765,29 +765,6 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
     }
   }
 
-  def getDepartments: List[Department] = {
-    val res = ListBuffer.empty[Department];
-    DBManager.GetPGConnection() match {
-      case Some(c) =>
-        val s = c.createStatement();
-        val rs = s.executeQuery(s"select * from issue_departments order by id");
-        while (rs.next()) {
-          res += Department(
-            rs.getInt("id"),
-            rs.getString("name"),
-            rs.getString("manager"),
-            rs.getInt("visible_documents"),
-            rs.getInt("visible_man_hours"),
-          )
-        }
-        rs.close()
-        s.close()
-        c.close()
-        res.toList
-      case _ => List.empty[Department]
-    }
-  }
-
   def getDepartmentDetail(id: String): Option[Department] = {
     var department: Option[Department] = Option.empty[Department]
     DBManager.GetPGConnection() match {

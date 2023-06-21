@@ -94,7 +94,7 @@ object IssueManager{
   case class CombineIssues(firstIssue: String, secondIssue: String, user: String)
   case class GetProjectNames()
   case class SubscribeForNotifications(user: String, issue: String, options: String)
-  case class NotifyDocUpload(taskId: String)
+  case class NotifyDocUpload(taskId: String, kind: String, comment: String)
   case class SetPlanHours(issue_id: String, user: String, hours: String)
   case class LockPlanHours(issue_id: String, state: String)
   case class UserEmail(name: String, surname: String, email: String)
@@ -429,8 +429,8 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
       sender() ! getProjectNames.asJson.noSpaces
     case SubscribeForNotifications(user, issue, options) =>
       sender() ! subscribeForIssueNotifications(user, issue.toIntOption.getOrElse(0), options).asJson.noSpaces
-    case NotifyDocUpload(taskId) =>
-      sender() ! notifyDocUpload(taskId.toIntOption.getOrElse(0)).asJson.noSpaces
+    case NotifyDocUpload(taskId, kind, comment) =>
+      sender() ! notifyDocUpload(taskId.toIntOption.getOrElse(0), kind, comment).asJson.noSpaces
     case SetPlanHours(issue_id, user, hours) =>
       val date = new Date().getTime
 //      updateHistory(new IssueHistory(issue_id.toIntOption.getOrElse(0), user, "plan_hours", "", hours, date, "plan_hours"))
