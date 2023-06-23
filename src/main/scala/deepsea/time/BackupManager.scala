@@ -42,7 +42,7 @@ class BackupManager extends Actor{
   val executor: ExecutionContextExecutor = system.dispatcher
 
   override def preStart(): Unit = {
-    //uploadForanBackup()
+    uploadForanBackup()
     system.scheduler.scheduleWithFixedDelay(0.seconds, 60.minutes, self, BackupForan())
   }
   override def receive: Receive = {
@@ -78,17 +78,13 @@ class BackupManager extends Actor{
     dsOracle.close()
   }
   def uploadForanBackup(): Unit = {
-    val cloud = new NextcloudConnector(App.Cloud.Host, true, 443, "admin", "c6bc9d23ab01701263b03e364ca5a32bacda46514c2d299e")
     val dir = Files.createTempDirectory("download")
     val sp = File.separator
     val date = LocalDate.now().toString
-    val remoteDir = "/backups/foran/backup-" + date
-    cloud.createFolder(remoteDir)
 
     val hostname = "192.168.1.30"
     val username = "backupper"
     val password = "IsntItEn0ugh"
-
     val ssh = new SSHClient()
     ssh.addHostKeyVerifier(new NullHostKeyVerifier())
     ssh.connect(hostname)
@@ -98,13 +94,14 @@ class BackupManager extends Actor{
     val backups = ListBuffer.empty[RemoteResourceInfo]
     ls.forEach(s => backups += s)
     val sorted = backups.sortBy(_.getAttributes.getMtime).reverse.filter(_.getName.contains(".fdp")).take(foranProjects.length)
-
     val dumps = ListBuffer.empty[File]
     sorted.foreach(s => {
       val tempFile = new File(dir + sp + s.getName)
       sftp.get(s.getPath, tempFile.getPath)
       dumps += tempFile
     })
+    sftp.close()
+    ssh.disconnect()
 
     val zipDumps = new File(dir + sp + "dumps.zip")
     val zip = new ZipOutputStream(new FileOutputStream(zipDumps))
@@ -119,16 +116,15 @@ class BackupManager extends Actor{
       in.close()
     })
     zip.close()
+    val cloud = new NextcloudConnector(App.Cloud.Host, true, 443, "admin", "c6bc9d23ab01701263b03e364ca5a32bacda46514c2d299e")
+    val remoteDir = "/backups/foran/backup-" + date
+    cloud.createFolder(remoteDir)
     cloud.uploadFile(zipDumps, remoteDir + "/" + zipDumps.getName)
 
-
-    sftp.close()
-    ssh.disconnect()
 
     val hostnameSurf = "192.168.1.15"
     val usernameSurf = "root"
     val passwordSurf = "Whatab0utus"
-
     val sshSurf = new SSHClient()
     sshSurf.addHostKeyVerifier(new NullHostKeyVerifier())
     sshSurf.connect(hostnameSurf)
@@ -137,9 +133,7 @@ class BackupManager extends Actor{
     val backupsSurf = ListBuffer.empty[RemoteResourceInfo]
     val remoteSurfDir = "/foran/config/surfaces/"
     sftpSurf.ls(remoteSurfDir).forEach(l => backupsSurf += l)
-
     val surfaces = ListBuffer.empty[File]
-
     foranProjects.foreach(p => {
       backupsSurf.find(_.getName.toLowerCase == p.toLowerCase) match {
         case Some(surfDir) =>
@@ -153,6 +147,9 @@ class BackupManager extends Actor{
         case _ =>
       }
     })
+    sftpSurf.close()
+    sshSurf.disconnect()
+
 
     val surfacesDumps = new File(dir + sp + "surfaces.zip")
     val zipsurfaces = new ZipOutputStream(new FileOutputStream(surfacesDumps))
@@ -168,9 +165,6 @@ class BackupManager extends Actor{
     })
     zipsurfaces.close()
     cloud.uploadFile(surfacesDumps, remoteDir + "/" + surfacesDumps.getName)
-
-    sftpSurf.close()
-    sshSurf.disconnect()
 
   }
 }

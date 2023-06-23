@@ -1531,7 +1531,7 @@ trait IssueManagerHelper extends MongoCodecs {
       case _ => List.empty[Department]
     }
   }
-  def notifyDocUpload(taskId: Int, kind: String, comment: String): String = {
+  def notifyDocUpload(taskId: Int, kind: String, comment: String, count: Int): String = {
     getIssueDetails(taskId) match {
       case Some(issue) =>
         val hullDocs = List("03070-532-0001")
@@ -1581,9 +1581,9 @@ trait IssueManagerHelper extends MongoCodecs {
               case _ => "В систему добавлен новый документ (новая ревизия документа)"
             }
 
-            val today = new Date().getTime
+            //val today = new Date().getTime
             val qu = '"'
-            val files = issue.revision_files.filter(x => sameDay(today, x.upload_date)).map(file => {
+            val files = issue.revision_files.sortBy(_.upload_date).reverse.take(count).map(file => {
               "<div>" +
               s"<a href=$qu${file.url}$qu>${file.name}</a>" +
               "</div>"
