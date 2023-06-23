@@ -42,7 +42,7 @@ class BackupManager extends Actor{
   val executor: ExecutionContextExecutor = system.dispatcher
 
   override def preStart(): Unit = {
-    uploadForanBackup()
+    //uploadForanBackup()
     system.scheduler.scheduleWithFixedDelay(0.seconds, 60.minutes, self, BackupForan())
   }
   override def receive: Receive = {
