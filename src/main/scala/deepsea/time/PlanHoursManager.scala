@@ -222,7 +222,7 @@ class PlanHoursManager extends Actor with PlanHoursHelper with AuthManagerHelper
       val hour = c.get(Calendar.HOUR_OF_DAY)
       val minute = c.get(Calendar.MINUTE)
       if (hour == 23 && minute == 0 && App.HTTPServer.Host == "192.168.1.28"){
-        consumeTodayHours()
+        //consumeTodayHours()
       }
     case _ => None
   }
