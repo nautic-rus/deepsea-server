@@ -346,7 +346,7 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
           val rocket_login = rs.getString("rocket_login");
           val email = rs.getString("email");
           val messageRocket: String = s"Ваши данные для входа в DeepSea - Логин: ${login} | Пароль: ${password} | https://deep-sea.ru";
-          val messageMail: String = Source.fromResource("messages/sendLogPass.html").mkString.replaceAll("!login", s"${login}").replaceAll("!password", s"${password}")
+          val messageMail: String = Source.fromResource("messages/sendLogPass.html").mkString.replaceAll("$login", login).replaceAll("$password", password)
           ActorManager.rocket ! SendNotification(rocket_login, messageRocket);
           ActorManager.mail ! Mail(List(name, surname).mkString(" "), email, "DeepSea Notification", messageMail);
         };
