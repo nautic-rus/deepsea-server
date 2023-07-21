@@ -12,10 +12,9 @@ import deepsea.time.PlanHoursManager.ConsumeTodayPlanHours
 import deepsea.time.TimeAndWeatherManager.{CheckMaster, GetTimeAndWeather, SetTimeAndWeather, Weather, writeWeather}
 import play.api.libs.json.{JsArray, Json, OWrites}
 
-import java.time.Duration
 import java.util.{Date, Properties}
+import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContextExecutor}
-import scala.concurrent.duration.{Duration, DurationInt, SECONDS}
 import scala.util.{Failure, Success}
 
 
@@ -111,7 +110,7 @@ class TimeAndWeatherManager extends Actor{
   private def checkHttp(url: String): Boolean = {
     val request = Http().singleRequest(HttpRequest(uri = url))
     try {
-      Await.result(request, Duration(5, SECONDS)) match {
+      Await.result(request, 5.seconds) match {
         case value => (value.status == StatusCodes.OK)
         case _ => false
       }
