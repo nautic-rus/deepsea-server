@@ -2,25 +2,27 @@ package deepsea.time
 
 import akka.actor.{Actor, ActorSystem}
 import akka.http.scaladsl.{Http, HttpExt}
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMethods, HttpRequest}
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMethods, HttpRequest, StatusCodes}
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.util.ByteString
+import com.jcraft.jsch.{ChannelExec, JSch}
 import deepsea.actors.ActorManager
 import deepsea.database.DBManager
 import deepsea.time.PlanHoursManager.ConsumeTodayPlanHours
-import deepsea.time.TimeAndWeatherManager.{GetTimeAndWeather, SetTimeAndWeather, Weather, writeWeather}
+import deepsea.time.TimeAndWeatherManager.{CheckMaster, GetTimeAndWeather, SetTimeAndWeather, Weather, writeWeather}
 import play.api.libs.json.{JsArray, Json, OWrites}
 
 import java.time.Duration
-import java.util.Date
-import scala.concurrent.ExecutionContextExecutor
-import scala.concurrent.duration.DurationInt
+import java.util.{Date, Properties}
+import scala.concurrent.{Await, ExecutionContextExecutor}
+import scala.concurrent.duration.{Duration, DurationInt, SECONDS}
 import scala.util.{Failure, Success}
 
 
 object TimeAndWeatherManager{
   case class GetTimeAndWeather()
   case class SetTimeAndWeather()
+  case class CheckMaster()
 
   case class Weather(var time: Long, description: String, icon: String, temp: Double, feels_like: Double, wind: Double)
 
@@ -33,10 +35,13 @@ class TimeAndWeatherManager extends Actor{
   val executor: ExecutionContextExecutor = system.dispatcher
   var refresh: Long = 0
   var weather: Weather = _
+  private val deepSeaHost = "192.168.1.28"
+  private val deepSeaPassword = "Whatab0utus"
 
   override def preStart(): Unit = {
     system.scheduler.scheduleWithFixedDelay(0.seconds, 5.minutes, self, SetTimeAndWeather())
     system.scheduler.scheduleWithFixedDelay(0.seconds, 1.minutes, ActorManager.planHours, ConsumeTodayPlanHours())
+    system.scheduler.scheduleWithFixedDelay(0.seconds, 5.minutes, self, CheckMaster())
   }
   override def receive: Receive = {
     case GetTimeAndWeather() =>
@@ -55,6 +60,10 @@ class TimeAndWeatherManager extends Actor{
 //          }
 //        case _ => None
 //      }
+    case CheckMaster() =>
+      if (checkMaster){
+        startMaster()
+      }
     case _ => None
   }
   def setTimeAndWeather(): Unit ={
@@ -94,5 +103,46 @@ class TimeAndWeatherManager extends Actor{
       case Failure(exception) =>
         println(exception)
     })
+  }
+
+  private def checkMaster: Boolean = {
+    checkHttp("https://deep-sea.ru/rest-master/time")
+  }
+  private def checkHttp(url: String): Boolean = {
+    val request = Http().singleRequest(HttpRequest(uri = url))
+    try {
+      Await.result(request, Duration(5, SECONDS)) match {
+        case value => (value.status == StatusCodes.OK)
+        case _ => false
+      }
+    }
+    catch {
+      case e: Exception =>
+        println(e.toString)
+        false
+    }
+  }
+  private def startMaster(): Unit = {
+    val jsch = new JSch()
+    val s = jsch.getSession("root", deepSeaHost)
+    val c = new Properties()
+    c.put("StrictHostKeyChecking", "no")
+    s.setConfig(c)
+    s.setPassword(deepSeaPassword)
+    s.connect()
+    val ch = s.openChannel("exec").asInstanceOf[ChannelExec]
+    val processName = "deepsea-master"
+    val commands =
+      s"tmux kill-ses -t $processName" +
+        s"; tmux new -d -s $processName" +
+        s"; tmux send-keys -t $processName 'cd /home/maven/deepsea-master/' Enter" +
+        s"; tmux send-keys -t $processName 'git pull' Enter" +
+        s"; tmux send-keys -t $processName 'sbt compile' Enter" +
+        s"; tmux send-keys -t $processName 'sbt run' Enter"
+    ch.setCommand(commands)
+    ch.connect()
+    ch.start()
+    ch.disconnect()
+    s.disconnect()
   }
 }
