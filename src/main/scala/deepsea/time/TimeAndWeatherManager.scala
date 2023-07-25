@@ -60,7 +60,7 @@ class TimeAndWeatherManager extends Actor{
 //        case _ => None
 //      }
     case CheckMaster() =>
-      if (!checkMaster){
+      if (checkMaster){
         startMaster()
       }
     case _ => None
