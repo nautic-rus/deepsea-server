@@ -60,7 +60,7 @@ class TimeAndWeatherManager extends Actor{
 //        case _ => None
 //      }
     case CheckMaster() =>
-      if (checkMaster){
+      if (!checkMaster){
         startMaster()
       }
     case _ => None
@@ -134,9 +134,6 @@ class TimeAndWeatherManager extends Actor{
     val commands =
       s"tmux kill-ses -t $processName" +
         s"; tmux new -d -s $processName" +
-        s"; tmux send-keys -t $processName 'cd /home/maven/deepsea-master/' Enter" +
-        s"; tmux send-keys -t $processName 'git pull' Enter" +
-        s"; tmux send-keys -t $processName 'sbt compile' Enter" +
         s"; tmux send-keys -t $processName 'sbt run' Enter"
     ch.setCommand(commands)
     ch.connect()
