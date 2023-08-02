@@ -4,6 +4,7 @@ import akka.actor.{Actor, ActorSystem}
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import deepsea.App
 import deepsea.actors.ActorManager
+import deepsea.database.DBManager
 import deepsea.mail.MailManager.Mail
 import deepsea.time.BackupManager.{BackupForan, NullHostKeyVerifier}
 import net.schmizz.sshj.SSHClient
@@ -17,7 +18,7 @@ import java.security.PublicKey
 import java.time.LocalDate
 import java.util
 import java.util.zip.{ZipEntry, ZipOutputStream}
-import java.util.{Calendar, Date}
+import java.util.{Calendar, Date, UUID}
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.duration.DurationInt
@@ -165,6 +166,27 @@ class BackupManager extends Actor{
     })
     zipsurfaces.close()
     cloud.uploadFile(surfacesDumps, remoteDir + "/" + surfacesDumps.getName)
+
+    val pathId = UUID.randomUUID().toString.substring(0, 4) + "-" + date
+    val file = new File(App.Cloud.Directory + "/" + pathId)
+    file.mkdir()
+    val fileZipDump = new File(App.Cloud.Directory + "/" + pathId + "/" + "dump.zip")
+    val fileZipSurfaces = new File(App.Cloud.Directory + "/" + pathId + "/" + "surfaces.zip")
+    Files.copy(zipDumps.toPath, fileZipDump.toPath)
+    Files.copy(surfacesDumps.toPath, fileZipSurfaces.toPath)
+
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val d = new Date().getTime
+        val p1 = "http://188.187.45.81:1112" + fileZipDump
+        val p2 = "http://188.187.45.81:1112" + fileZipSurfaces
+        val q = s"insert into foran_dumps values ($d, $p1, $p2)"
+        s.execute(q)
+        s.close()
+        c.close()
+      case _ => None
+    }
 
   }
 }
