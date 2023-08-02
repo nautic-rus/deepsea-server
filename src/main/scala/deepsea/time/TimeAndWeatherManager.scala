@@ -134,6 +134,7 @@ class TimeAndWeatherManager extends Actor{
     val commands =
       s"tmux kill-ses -t $processName" +
         s"; tmux new -d -s $processName" +
+        s"; tmux send-keys -t $processName 'cd /home/maven/deepsea-master/' Enter" +
         s"; tmux send-keys -t $processName 'sbt run' Enter"
     ch.setCommand(commands)
     ch.connect()
