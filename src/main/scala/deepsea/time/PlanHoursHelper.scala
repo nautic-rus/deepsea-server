@@ -191,9 +191,9 @@ trait PlanHoursHelper extends IssueManagerHelper with AuthManagerHelper{
   def allocateHours(hoursValue: List[AllocatedHour], fromHourId: Int, userHours: List[PlanHour]): List[AllocatedHour] ={
     if (hoursValue.nonEmpty){
       val hours = hoursValue.sortBy(_.id)
-      val nextHours = userHours.filter(_.hour_type == 1).filter(_.id > fromHourId).take(hours.length)
+      val nextHours = userHours.filter(_.hour_type == 1).filter(_.task_id >= 0).filter(_.id > fromHourId).take(hours.length)
       val assignedHours = nextHours.map(h => AllocatedHour(h.id, hours(nextHours.indexOf(h)).taskId))
-      val taskHours = nextHours.filter(_.task_id != 0).map(h => AllocatedHour(h.id, h.task_id))
+      val taskHours = nextHours.filter(_.task_id > 0).map(h => AllocatedHour(h.id, h.task_id))
       assignedHours ++ allocateHours(taskHours, nextHours.last.id, userHours)
     }
     else{

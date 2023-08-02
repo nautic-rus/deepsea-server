@@ -311,8 +311,8 @@ class HTTPManager extends Actor {
         (get & path("planUserTask") & parameter("userId", "taskId", "fromHour", "amountOfHours", "allowMove")) { (userId, taskId, fromHour, amountOfHours, allowMove) =>
           askFor(ActorManager.planHours, PlanUserTask(userId, taskId, fromHour, amountOfHours, allowMove))
         },
-        (get & path("deleteUserTask") & parameter("userId", "taskId", "fromHour")) { (userId, taskId, fromHour) =>
-          askFor(ActorManager.planHours, DeleteUserTask(userId, taskId, fromHour))
+        (get & path("deleteUserTask") & parameter("userId", "taskId", "fromHour", "fromUser")) { (userId, taskId, fromHour, fromUser) =>
+          askFor(ActorManager.planHours, DeleteUserTask(userId, taskId, fromHour, fromUser))
         },
         (get & path("plannedHours")) {
           askFor(ActorManager.planHours, GetPlannedHours())
