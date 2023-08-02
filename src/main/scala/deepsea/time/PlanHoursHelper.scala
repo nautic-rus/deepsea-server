@@ -417,13 +417,15 @@ trait PlanHoursHelper extends IssueManagerHelper with AuthManagerHelper{
       case _ =>
     }
   }
-  def deleteUserTask(userId: Int, taskId: Int, fromHour: Int): Unit ={
-    DBManager.GetPGConnection() match {
-      case Some(c) =>
-        val query = s"update hours_template_user set task_id = 0 where task_id = $taskId and (id >= $fromHour or $fromHour = 0) and user_id = $userId and task_id > 0"
-        c.createStatement().execute(query)
-        c.close()
-      case _ =>
+  def deleteUserTask(userId: Int, taskId: Int, fromHour: Int, fromUser: String): Unit ={
+    if (taskId > 0 || fromUser == "dolik"){
+      DBManager.GetPGConnection() match {
+        case Some(c) =>
+          val query = s"update hours_template_user set task_id = 0 where task_id = $taskId and (id >= $fromHour or $fromHour = 0) and user_id = $userId and task_id > 0"
+          c.createStatement().execute(query)
+          c.close()
+        case _ =>
+      }
     }
   }
   def reduceTaskPlannedHours(userId: Int, taskId: Int, amount: Int, left: Int): Unit ={

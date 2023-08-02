@@ -27,7 +27,7 @@ object PlanHoursManager extends MongoCodecs {
   case class AssignPlanHoursToUsers(id: Int)
   case class GetUserPlanHours(userId: String, startDate: String, available: String)
   case class PlanUserTask(userId: String, taskId: String, fromHour: String, amountOfHours: String, allowMove: String)
-  case class DeleteUserTask(userId: String, taskId: String, fromHour: String)
+  case class DeleteUserTask(userId: String, taskId: String, fromHour: String, fromUser: String)
   case class ConsumedHour(id: Int, hour_id: Int, user_id: Int, date_inserted: Long, task_id: Int, comment: String)
   case class PlanAlreadyPlannedIssues()
   case class FillConsumed()
@@ -125,8 +125,8 @@ class PlanHoursManager extends Actor with PlanHoursHelper with AuthManagerHelper
         setTaskWithoutMove(userId.toIntOption.getOrElse(0), taskId.toIntOption.getOrElse(0), fromHour.toIntOption.getOrElse(0), amountOfHours.toIntOption.getOrElse(0))
       }
       sender() ! "success".asJson.noSpaces
-    case DeleteUserTask(userId, taskId, fromHour) =>
-      deleteUserTask(userId.toIntOption.getOrElse(0), taskId.toIntOption.getOrElse(0), fromHour.toIntOption.getOrElse(0))
+    case DeleteUserTask(userId, taskId, fromHour, fromUser) =>
+      deleteUserTask(userId.toIntOption.getOrElse(0), taskId.toIntOption.getOrElse(0), fromHour.toIntOption.getOrElse(0), fromUser)
       sender() ! "success".asJson.noSpaces
     case PlanAlreadyPlannedIssues() =>
       val users = getUsers
