@@ -49,6 +49,27 @@ trait PlanManagerHelper {
       case _ => List.empty[PlanInterval]
     }
   }
+  def getUserPlan(userId: Int, from: Long): List[PlanInterval] = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val query = s"select * from plan where user_id = $userId and date_finish >= $from"
+        val plan = RsIterator(s.executeQuery(query)).map(rs => {
+          PlanInterval(
+            rs.getInt("id"),
+            rs.getInt("task_id"),
+            rs.getInt("user_id"),
+            rs.getLong("date_start"),
+            rs.getLong("date_finish"),
+            rs.getInt("task_type"),
+          )
+        }).toList
+        s.close()
+        c.close()
+        plan
+      case _ => List.empty[PlanInterval]
+    }
+  }
 
 
   def addInterval(taskId: Int, userId: Int, from: Long, hoursAmount: Int, taskType: Int): Unit = {
@@ -63,7 +84,7 @@ trait PlanManagerHelper {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val query = s"insert into plan (task_id, user_id, date_start, date_finish, task_type) values ($taskId, $userId, ${hours.head}, ${hours.last}, $taskType)"
+        val query = s"insert into plan (task_id, user_id, date_start, date_finish, task_type, hours_amount) values ($taskId, $userId, ${hours.head}, ${hours.last}, $taskType, ${hours.length})"
         s.execute(query)
         s.close()
         c.close()
@@ -121,10 +142,33 @@ trait PlanManagerHelper {
 
         if (plan.nonEmpty){
           val split = plan.head
-          var splitFirst = split.date_start
-          var splitSecond = splitDate
-          while (splitFirst < splitSecond){
+          val splitFirstStart = split.date_start
+          var splitFirstFinish = split.date_start
+          val splitSecondStart = splitDate
+          val splitSecondFinish = split.date_finish
 
+          val splitFirstHours = ListBuffer.empty[Long]
+          splitFirstHours += splitFirstFinish
+          while (splitFirstFinish < splitDate){
+            splitFirstFinish = nextHour(splitFirstFinish)
+            splitFirstHours += splitFirstFinish
+          }
+
+          val split1 = split.copy(date_start = splitFirstStart, date_finish = splitFirstHours.dropRight(1).last)
+          val split2 = split.copy(date_start = splitSecondStart, date_finish = splitSecondFinish)
+
+          DBManager.GetPGConnection() match {
+            case Some(c) =>
+              val s = c.createStatement()
+              val qRemove = s"delete from plan where id = ${split.id}"
+              s.execute(qRemove)
+              val q1 = s"insert into plan (task_id, user_id, date_start, date_finish, task_type, hours_amount) values (${split.id}, ${split.user_id}, ${split1.date_start}, ${split.date_finish}, ${getHoursOfInterval(split1.date_start, split1.date_finish)})"
+              s.execute(q1)
+              val q2 = s"insert into plan (task_id, user_id, date_start, date_finish, task_type, hours_amount) values (${split.id}, ${split.user_id}, ${split2.date_start}, ${split.date_finish}, ${getHoursOfInterval(split2.date_start, split2.date_finish)})"
+              s.execute(q2)
+              s.close()
+              c.close()
+            case _ => None
           }
         }
 
@@ -136,27 +180,6 @@ trait PlanManagerHelper {
   }
   private def intersectsPlan(hours: List[Long], plan: List[PlanInterval]): Int = {
     hours.count(h => plan.exists(p => p.date_start <= h && h <= p.date_finish))
-  }
-  private def getUserPlan(userId: Int, from: Long): List[PlanInterval] = {
-    DBManager.GetPGConnection() match {
-      case Some(c) =>
-        val s = c.createStatement()
-        val query = s"select * from plan where user_id = $userId and date_finish >= $from"
-        val plan = RsIterator(s.executeQuery(query)).map(rs => {
-          PlanInterval(
-            rs.getInt("id"),
-            rs.getInt("task_id"),
-            rs.getInt("user_id"),
-            rs.getLong("date_start"),
-            rs.getLong("date_finish"),
-            rs.getInt("task_type"),
-          )
-        }).toList
-        s.close()
-        c.close()
-        plan
-      case _ => List.empty[PlanInterval]
-    }
   }
   private def nextHourLatest(userId: Int, dateStart: Long): Long = {
     val now = new Date(dateStart)

@@ -9,6 +9,7 @@ import deepsea.materials.MaterialManager.{Material, MaterialHistory, MaterialNod
 import deepsea.mobile.MobileManager.{Drawing, DrawingInfo, OrizInfo}
 import deepsea.osm.OsmManager.{LatLng, OSMUser, ParkingLocationSheet}
 import deepsea.time.PlanHoursManager.{ConsumedHour, PlanHour, PlannedHours}
+import deepsea.time.PlanManager.PlanInterval
 import deepsea.time.TimeControlManager.{SpyWatch, TimeControlInterval, UserWatch}
 import io.circe.generic.semiauto.{deriveCodec, deriveDecoder, deriveEncoder}
 import io.circe.{Decoder, Encoder}
@@ -152,6 +153,9 @@ trait MongoCodecs {
   implicit val ConsumedHourDecoder: Decoder[ConsumedHour] = deriveDecoder[ConsumedHour]
   implicit val ConsumedHourEncoder: Encoder[ConsumedHour] = deriveEncoder[ConsumedHour]
 
+  implicit val PlanIntervalDecoder: Decoder[PlanInterval] = deriveDecoder[PlanInterval]
+  implicit val PlanIntervalEncoder: Encoder[PlanInterval] = deriveEncoder[PlanInterval]
+
 
 
 
@@ -186,5 +190,6 @@ trait MongoCodecs {
     classOf[Mark],
     classOf[TeamWon],
     classOf[ConsumedHour],
+    classOf[PlanInterval],
   ), DEFAULT_CODEC_REGISTRY)
 }

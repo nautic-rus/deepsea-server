@@ -33,6 +33,7 @@ import deepsea.time.LicenseManager.GetForanLicenses
 import deepsea.time.PlanHoursManager.{ConsumePlanHours, DeleteUserTask, GetConsumedHours, GetPlannedHours, GetUserPlanHours, PlanUserTask, SavePlannedHours}
 import deepsea.time.TimeAndWeatherManager.GetTimeAndWeather
 import deepsea.time.TimeControlManager.{AddSpyWatch, AddUserWatch, GetSpyWatches, GetTime, GetUserTimeControl, GetUserWatches}
+import deepsea.time.PlanManager._
 import org.apache.log4j.{LogManager, Logger}
 import play.api.libs.json.{JsValue, Json}
 
@@ -600,6 +601,16 @@ class HTTPManager extends Actor {
           askFor(ActorManager.issue, LockPlanHours(issue_id, state))
         },
 
+
+        (get & path("plan")) {
+          askFor(ActorManager.plan, GetPlan())
+        },
+        (get & path("plan") & parameter("user") & parameter("from")) { (user, from) =>
+          askFor(ActorManager.plan, GetUserPlan(user, from))
+        },
+        (get & path("planAddInterval") & parameter("taskId", "userId", "from", "hoursAmount", "taskType")) { (taskId, userId, from, hoursAmount, taskType) =>
+          askFor(ActorManager.plan, AddInterval(taskId, userId, from, hoursAmount, taskType))
+        },
       )
     }
   }

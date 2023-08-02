@@ -421,7 +421,7 @@ trait PlanHoursHelper extends IssueManagerHelper with AuthManagerHelper{
     if (taskId > 0 || fromUser == "dolik"){
       DBManager.GetPGConnection() match {
         case Some(c) =>
-          val query = s"update hours_template_user set task_id = 0 where task_id = $taskId and (id >= $fromHour or $fromHour = 0) and user_id = $userId and task_id > 0"
+          val query = s"update hours_template_user set task_id = 0 where task_id = $taskId and (id >= $fromHour or $fromHour = 0) and user_id = $userId"
           c.createStatement().execute(query)
           c.close()
         case _ =>
