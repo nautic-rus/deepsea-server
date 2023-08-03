@@ -1,6 +1,6 @@
 package deepsea.database
 
-import deepsea.auth.AuthManager.{AdminRight, Department, Page, RightUser, Role, User}
+import deepsea.auth.AuthManager.{AdminRight, Department, Page, RightUser, Role, User, UserNotification, UserProject}
 import deepsea.fest.FestManager.{FestKaraoke, FestSauna, FestStories}
 import deepsea.fest.classes.{BestPlayer, Mark, TeamWon}
 import deepsea.files.FileManager.{DocumentDirectories, TreeDirectory, TreeFile, TreeFileHistory}
@@ -155,6 +155,13 @@ trait MongoCodecs {
 
   implicit val PlanIntervalDecoder: Decoder[PlanInterval] = deriveDecoder[PlanInterval]
   implicit val PlanIntervalEncoder: Encoder[PlanInterval] = deriveEncoder[PlanInterval]
+
+  implicit val UserNotificationDecoder: Decoder[UserNotification] = deriveDecoder[UserNotification]
+  implicit val UserNotificationEncoder: Encoder[UserNotification] = deriveEncoder[UserNotification]
+
+  implicit val UserProjectDecoder: Decoder[UserProject] = deriveDecoder[UserProject]
+  implicit val UserProjectEncoder: Encoder[UserProject] = deriveEncoder[UserProject]
+
 
 
 

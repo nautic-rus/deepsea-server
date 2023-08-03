@@ -18,7 +18,7 @@ import ch.megard.akka.http.cors.scaladsl.CorsDirectives.cors
 import deepsea.App
 import deepsea.actors.ActorManager
 import deepsea.actors.ActorStartupManager.HTTPManagerStarted
-import deepsea.auth.AuthManager.{DeleteAdminRight, DeleteRole, DeleteUser, EditAdminRight, EditRole, EditUser, EditUsersProject, GetAdminRightDetails, GetAdminRights, GetDepartmentDetails, GetDepartments, GetPages, GetRightDetails, GetRights, GetRoleDetails, GetRoleRights, GetRoles, GetUserDetails, GetUserVisibleProjects, GetUsers, GetUsersProject, JoinUsersProjects, Login, SaveRoleForAll, SendLogPass, ShareRights, StartRight, StartRole, StartUser, UpdateEmail, UpdateRocketLogin}
+import deepsea.auth.AuthManager.{CreateUsersNotifications, DeleteAdminRight, DeleteRole, DeleteUser, EditAdminRight, EditRole, EditUser, EditUsersProject, GetAdminRightDetails, GetAdminRights, GetDepartmentDetails, GetDepartments, GetPages, GetRightDetails, GetRights, GetRoleDetails, GetRoleRights, GetRoles, GetUserDetails, GetUserVisibleProjects, GetUsers, GetUsersNotifications, GetUsersProject, JoinUsersProjects, Login, SaveRoleForAll, SendLogPass, ShareRights, StartRight, StartRole, StartUser, UpdateEmail, UpdateRocketLogin, UpdateUsersNotifications}
 import deepsea.database.DBManager
 import deepsea.fest.FestManager.{DeleteFestKaraoke, DeleteFestSauna, DeleteFestStories, GetBestPlayers, GetFestKaraoke, GetFestSauna, GetFestStories, GetMarks, GetTeamsWon, SetBestPlayer, SetFestKaraoke, SetFestSauna, SetFestStories, SetMarks, SetTeamsWon}
 import deepsea.files.FileManager.{CreateDocumentCloudDirectory, CreateFile, CreateMaterialCloudDirectory, GetCloudFiles, GetDocumentFiles, GetFileFromCloud, GetFileFromMongo, GetPdSpList, MongoFile, UploadFileToMongo}
@@ -48,8 +48,10 @@ import scala.util.{Failure, Success}
 
 object HTTPManager {
   case class Response(value: String)
+
   var server: Future[Http.ServerBinding] = _
-  def check(): String ={
+
+  def check(): String = {
     server.value.get.get.localAddress.toString
   }
 }
@@ -60,7 +62,7 @@ class HTTPManager extends Actor {
   implicit val timeout: Timeout = Timeout(50, TimeUnit.SECONDS)
   val logger: Logger = LogManager.getLogger("HttpManager")
   val routes: Route = cors() {
-    extractClientIP{ ip =>
+    extractClientIP { ip =>
       logIp(ip)
       concat(
         //AUTHORIZATION COMMANDS
@@ -82,6 +84,15 @@ class HTTPManager extends Actor {
         (get & path("userDetails") & parameter("id")) { id =>
           askFor(ActorManager.auth, GetUserDetails(id))
         },
+        (get & path("userNotifications") & parameter("id")) { id =>
+          askFor(ActorManager.auth, GetUsersNotifications(id))
+        },
+        (post & path("updateNotification") & entity(as[String]) & parameter("userId")) { (notifications, userId) =>
+          askFor(ActorManager.auth, UpdateUsersNotifications(notifications, userId))
+        },
+        (post & path("createNotification") & entity(as[String])) { notification =>
+          askFor(ActorManager.auth, CreateUsersNotifications(notification))
+        },
         (post & path("startUser") & entity(as[String])) { (user) =>
           askFor(ActorManager.auth, StartUser(user))
         },
@@ -94,9 +105,9 @@ class HTTPManager extends Actor {
         (post & path("editUsersProject") & entity(as[String]) & parameter("idProject")) { (idUsers, idProject) =>
           askFor(ActorManager.auth, EditUsersProject(idUsers, idProject))
         },
-//        (get & path("joinUsersProjects")) {
-//          askFor(ActorManager.auth, JoinUsersProjects())
-//        },
+        //        (get & path("joinUsersProjects")) {
+        //          askFor(ActorManager.auth, JoinUsersProjects())
+        //        },
         (get & path("usersProject") & parameter("id")) { id =>
           askFor(ActorManager.auth, GetUsersProject(id))
         },
@@ -542,18 +553,18 @@ class HTTPManager extends Actor {
           complete(HttpEntity("pong"))
         },
 
-//        (post & path("grabInfo") & entity(as[String])) { (data) =>
-//          askFor(ActorManager.timeControl, AddUserWatch(data))
-//        },
-//        (post & path("spyWatch") & entity(as[String])) { (data) =>
-//          askFor(ActorManager.timeControl, AddSpyWatch(data))
-//        },
-//        (get & path("spyWatches")) {
-//          askFor(ActorManager.timeControl, GetSpyWatches())
-//        },
-//        (get & path("userWatches")) {
-//          askFor(ActorManager.timeControl, GetUserWatches())
-//        },
+        //        (post & path("grabInfo") & entity(as[String])) { (data) =>
+        //          askFor(ActorManager.timeControl, AddUserWatch(data))
+        //        },
+        //        (post & path("spyWatch") & entity(as[String])) { (data) =>
+        //          askFor(ActorManager.timeControl, AddSpyWatch(data))
+        //        },
+        //        (get & path("spyWatches")) {
+        //          askFor(ActorManager.timeControl, GetSpyWatches())
+        //        },
+        //        (get & path("userWatches")) {
+        //          askFor(ActorManager.timeControl, GetUserWatches())
+        //        },
         (get & path("time")) {
           askFor(ActorManager.timeControl, GetTime())
         },
@@ -614,6 +625,7 @@ class HTTPManager extends Actor {
       )
     }
   }
+
   def askFor(actor: ActorRef, command: Any, long: Boolean = false): Route = {
     onComplete(actor.ask(command)) {
       case Success(value) => value match {
@@ -649,6 +661,7 @@ class HTTPManager extends Actor {
   override def receive: Receive = {
     case _ => None
   }
+
   private def logIp(ip: RemoteAddress): Unit = {
     ip.toOption.map(_.getHostAddress) match {
       case Some(value) =>

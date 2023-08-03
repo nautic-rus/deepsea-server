@@ -1,7 +1,8 @@
 package deepsea.auth
 
 import deepsea.actors.ActorManager
-import deepsea.auth.AuthManager.{AdminRight, Department, Page, RightUser, Role, RolePage, User, UserProject}
+import deepsea.auth.AuthManager.{AdminRight, Department, Page, RightUser, Role, RolePage, User, UserNotification, UserProject}
+import deepsea.database.DBManager.RsIterator
 import deepsea.database.{DBManager, MongoCodecs}
 import deepsea.issues.{IssueManager, IssueManagerHelper}
 import deepsea.issues.IssueManager.IssueProject
@@ -43,7 +44,7 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
               Option(rs.getString("rocket_login")).getOrElse(""),
               Option(rs.getString("gender")).getOrElse(""),
               Option(rs.getString("visibility")).getOrElse(""),
-              usersProjects.filter(_.user_id == userId.toString).map(x => x.project_name),
+              usersProjects.filter(_.userId == userId).map(x => x.projectName),
               roles.filter(x => groups.contains(x.name)).flatMap(_.pages).distinct,
 //              Option(rs.getString("visible_pages").split(",").toList).getOrElse(List.empty[String]),
               Option(rs.getString("shared_access").split(",").toList).getOrElse(List.empty[String]),
@@ -109,8 +110,8 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
               Option(rs.getString("gender")).getOrElse(""),
               Option(rs.getString("visibility")).getOrElse(""),
               usersProjects.filter(x => {
-                x.user_id.equals(userId.toString)
-              }).map(x => x.project_name),
+                x.userId.equals(userId)
+              }).map(x => x.projectName),
               roles.filter(x => groups.contains(x.name)).flatMap(_.pages).distinct,
 //              Option(rs.getString("visible_pages").split(",").toList).getOrElse(List.empty[String]),
               Option(rs.getString("shared_access").split(",").toList).getOrElse(List.empty[String]),
@@ -165,7 +166,7 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
               Option(rs.getString("rocket_login")).getOrElse(""),
               Option(rs.getString("gender")).getOrElse(""),
               Option(rs.getString("visibility")).getOrElse(""),
-              usersProjects.filter(_.user_id == id).map(x => x.project_name),
+              usersProjects.filter(_.userId.toString == id).map(x => x.projectName),
               roles.filter(x => groups.contains(x.name)).flatMap(_.pages).distinct,
 //              Option(rs.getString("visible_pages").split(",").toList).getOrElse(List.empty[String]),
               Option(rs.getString("shared_access").split(",").toList).getOrElse(List.empty[String]),
@@ -186,6 +187,83 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
       case _ =>
     }
     user
+  }
+
+  def getUsersNotifications(id: String): List[UserNotification] = {
+   DBManager.GetPGConnection() match {
+     case Some(c) =>
+       try {
+         val s = c.createStatement()
+         val query = s"select un.user_id, un.kind, un.method, un.project_id, ip.name as project, un.department_id, id.name as department from users_notification un, issue_projects ip, issue_departments id where user_id = $id and ip.id = un.project_id and id.id = un.department_id"
+
+         val res = RsIterator(s.executeQuery(query)).map(rs => {
+           UserNotification(
+             Option(rs.getInt("user_id")).getOrElse(0),
+             Option(rs.getString("kind")).getOrElse(""),
+             Option(rs.getString("method")).getOrElse(""),
+             Option(rs.getString("project")).getOrElse(""),
+             Option(rs.getInt("project_id")).getOrElse(0),
+             Option(rs.getString("department")).getOrElse(""),
+             Option(rs.getInt("department_id")).getOrElse(0),
+           )
+         }).toList
+
+         s.close()
+         c.close()
+         res.sortBy(_.project)
+       } catch {
+         case e: Exception => {
+           println(e.toString)
+           List.empty[UserNotification]
+         }
+       }
+     case _ => List.empty[UserNotification]
+   }
+  }
+
+  def updateNotifications(notifications: List[UserNotification], userId: String): String = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        try {
+          val s = c.createStatement()
+          println(notifications, userId)
+//          val id = noti
+          s.execute(s"delete from users_notification where user_id = $userId")
+          notifications.foreach(notification => {
+            val query = s"insert into users_notification (user_id, kind, method, project_id, department_id) values (${notification.userId}, '${notification.kind}', '${notification.method}', ${notification.projectId}, ${notification.departmentId})"
+            s.execute(query)
+          })
+          s.close()
+          c.close()
+          "success"
+        } catch {
+          case e: Exception => {
+            println(e.toString)
+            "error"
+          }
+        }
+      case _ => "error"
+    }
+  }
+
+  def createNotification(notification: UserNotification): String = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        try {
+          val s = c.createStatement()
+          val query = s"insert into users_notification (user_id, kind, method, project_id, department_id) values (${notification.userId}, '${notification.kind}', '${notification.method}', ${notification.projectId}, ${notification.departmentId})"
+          s.execute(query)
+          s.close()
+          c.close()
+          "success"
+        } catch {
+          case e: Exception => {
+            println("createNotification" + e.toString)
+            "error"
+          }
+        }
+      case _ => "error"
+    }
   }
 
   def startUser(user: User): String = {
@@ -384,8 +462,8 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
     "success"
   }
 
-  def getUserVisibleProjects(id: String): List[String] = {
-    getUsersProjects.filter(_.user_id == id).map(_.project_name)
+  def getUserVisibleProjects(id: String): List[UserProject] = {
+    getUsersProjects.filter(_.userId.toString == id)
   }
 
   def getUsersProject(id: String): List[Int] = {
@@ -411,12 +489,13 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement();
-        val query = s"select uvp.user_id, ip.name from users_visibility_projects uvp, issue_projects ip where uvp.project_id = ip.id"
+        val query = s"select uvp.user_id, uvp.project_id, ip.name from users_visibility_projects uvp, issue_projects ip where uvp.project_id = ip.id"
         val rs = s.executeQuery(query)
         while (rs.next()) {
           res += (UserProject(
-            rs.getString("user_id"),
-            rs.getString("name")
+            Option(rs.getInt("user_id")).getOrElse(0),
+            Option(rs.getString("name")).getOrElse(""),
+              Option(rs.getInt("project_id")).getOrElse(0),
           ))
         }
         rs.close()
