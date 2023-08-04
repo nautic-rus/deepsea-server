@@ -1,12 +1,15 @@
 package deepsea.time
 
+import deepsea.auth.AuthManagerHelper
 import deepsea.database.DBManager
 import deepsea.database.DBManager.RsIterator
 import deepsea.time.PlanHoursManager.SpecialDay
-import deepsea.time.PlanManager.PlanInterval
+import deepsea.time.PlanManager.{DayInterval, IssuePlan, PlanByDays, PlanInterval, UserPlan}
 
+import java.time.YearMonth
 import java.util.Date
 import scala.collection.mutable.ListBuffer
+import scala.io.Source
 
 trait PlanManagerHelper {
 
@@ -41,6 +44,8 @@ trait PlanManagerHelper {
             rs.getLong("date_start"),
             rs.getLong("date_finish"),
             rs.getInt("task_type"),
+            rs.getInt("hours_amount"),
+            rs.getInt("consumed"),
           )
         }).toList
         s.close()
@@ -62,6 +67,8 @@ trait PlanManagerHelper {
             rs.getLong("date_start"),
             rs.getLong("date_finish"),
             rs.getInt("task_type"),
+            rs.getInt("hours_amount"),
+            rs.getInt("consumed"),
           )
         }).toList
         s.close()
@@ -70,8 +77,136 @@ trait PlanManagerHelper {
       case _ => List.empty[PlanInterval]
     }
   }
+  def getPlanByDays(dateLong: Long): List[UserPlan] = {
+    val plan = getPlan
+    val res = ListBuffer.empty[UserPlan]
+    val date = new Date(dateLong)
+    val month = date.getMonth
+    val year = date.getYear
+    val daysInMonth = YearMonth.of(date.getYear, date.getMonth).lengthOfMonth()
 
+    getUsers.foreach(user => {
+      val planByDays = ListBuffer.empty[PlanByDays]
+      1.to(daysInMonth).foreach(d => {
+        val dayIntervals = ListBuffer.empty[DayInterval]
+        val dayDate = new Date(year, month, d)
+        val hours = hoursOfDay(dayDate.getTime)
+        if (hours.nonEmpty){
+          val intervals = plan.filter(x => x.user_id == user && intervalSameDay(hours.head, hours.last, x.date_start, x.date_finish))
+          intervals.foreach(int => {
+            val intervalHours = hours.filter(x => int.date_start <= x && x <= int.date_finish)
+            dayIntervals += DayInterval(int.task_id, intervalHours.length, int.hours_amount, int.id)
+          })
+          planByDays += PlanByDays(d, month, year, dayIntervals.toList)
+        }
+      })
+      res += UserPlan(user, planByDays.toList)
+    })
 
+    res.toList
+  }
+  def getIssues(ids: List[Int], plan: List[PlanInterval]): List[IssuePlan] = {
+    val res = ListBuffer.empty[IssuePlan]
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        ids.grouped(900).foreach(group => {
+          val query = Source.fromResource("queries/plan-issues.sql").mkString + s" and id in (${ids.mkString(",")})"
+          val rSet = RsIterator(s.executeQuery(query))
+          res ++= rSet.map(rs => {
+            val id = rs.getInt("id")
+            val consumed = plan.filter(_.task_id == id).filter(_.consumed == 1).map(_.hours_amount).sum
+            val planHours = rs.getInt("plan_hours")
+            val inPlan = plan.filter(_.task_id == id).map(_.hours_amount).sum
+            val available = planHours - inPlan
+            IssuePlan(
+              id,
+              rs.getString("issue_name"),
+              rs.getString("doc_number"),
+              planHours,
+              rs.getString("status"),
+              rs.getString("issue_type"),
+              rs.getString("period"),
+              rs.getString("assigned_to"),
+              rs.getString("project"),
+              rs.getString("department"),
+              Option(rs.getString("closing_status")).getOrElse(""),
+              Option(rs.getLong("stage_date")).getOrElse(0),
+              consumed, inPlan, available, available
+            )
+          }).toList
+          rSet.rs.close()
+        })
+        s.close()
+        c.close()
+      case _ => None
+    }
+    res.toList
+  }
+  def getIssues: List[IssuePlan] = {
+    val res = ListBuffer.empty[IssuePlan]
+    val plan = getPlan
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val query = Source.fromResource("queries/plan-issues.sql").mkString
+        val rSet = RsIterator(s.executeQuery(query))
+        res ++= rSet.map(rs => {
+          val id = rs.getInt("id")
+          val consumed = plan.filter(_.task_id == id).filter(_.consumed == 1).map(_.hours_amount).sum
+          val planHours = rs.getInt("plan_hours")
+          val inPlan = plan.filter(_.task_id == id).map(_.hours_amount).sum
+          val available = planHours - inPlan
+          IssuePlan(
+            id,
+            rs.getString("issue_name").trim,
+            rs.getString("doc_number").trim,
+            planHours,
+            rs.getString("status"),
+            rs.getString("issue_type"),
+            rs.getString("period"),
+            rs.getString("assigned_to"),
+            rs.getString("project"),
+            rs.getString("department"),
+            Option(rs.getString("closing_status")).getOrElse(""),
+            Option(rs.getLong("stage_date")).getOrElse(0),
+            consumed, inPlan, available, available
+          )
+        }).toList
+        rSet.rs.close()
+        s.close()
+        c.close()
+      case _ => None
+    }
+    res.toList
+  }
+
+  def getUsers: List[Int] = {
+    val res = ListBuffer.empty[Int]
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        try {
+          val s = c.createStatement();
+          val rs = s.executeQuery(s"select id from users where removed = 0 order by id")
+          while (rs.next()) {
+            res += Option(rs.getInt("id")).getOrElse(0)
+          }
+          rs.close()
+          s.close()
+          c.close()
+        } catch {
+          case e: Exception => println(e.toString)
+        }
+      case _ =>
+    }
+    res.toList
+  }
+  def intervalSameDay(d1: Long, d2: Long, int1: Long, int2: Long): Boolean = {
+    val c1 = int2 >= d1 && int1 <= d1
+    val c2 = int1 >= d1 && int1 <= d2 && int2 <= d2 && int2 >= d1
+    val c3 = int1 >= d1 && int1 <= d2 && int2 >= d2
+    c1 || c2 || c3
+  }
   def addInterval(taskId: Int, userId: Int, from: Long, hoursAmount: Int, taskType: Int): Unit = {
     val dateFrom = nextHourLatest(userId, from)
     val hours = ListBuffer.empty[Long]
@@ -91,6 +226,19 @@ trait PlanManagerHelper {
       case _ => List.empty[PlanInterval]
     }
   }
+  def deleteInterval(id: Int): Unit = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val query = s"delete from plan where id = $id"
+        s.execute(query)
+        s.close()
+        c.close()
+      case _ => None
+    }
+  }
+
+
   def insertInterval(taskId: Int, userId: Int, from: Long, hoursAmount: Int, taskType: Int): Unit = {
     val now = new Date(from)
     val nowStart = new Date(now.getYear, now.getMonth, now.getDate, 8, 0, 0).getTime
@@ -104,31 +252,28 @@ trait PlanManagerHelper {
       hours += h
     }
 
-    //todo split existing task
+    splitTask(nextHourNoPlan, userId)
 
     //todo move all tasks right > start_date
 
-    DBManager.GetPGConnection() match {
-      case Some(c) =>
-        val s = c.createStatement()
-        val query = s"insert into plan (task_id, user_id, date_start, date_finish, task_type) values ($taskId, $userId, ${hours.head}, ${hours.last}, $taskType)"
-        s.execute(query)
-        s.close()
-        c.close()
-      case _ => List.empty[PlanInterval]
-    }
+//    DBManager.GetPGConnection() match {
+//      case Some(c) =>
+//        val s = c.createStatement()
+//        val query = s"insert into plan (task_id, user_id, date_start, date_finish, task_type) values ($taskId, $userId, ${hours.head}, ${hours.last}, $taskType)"
+//        s.execute(query)
+//        s.close()
+//        c.close()
+//      case _ => List.empty[PlanInterval]
+//    }
 
 
   }
-  private def splitInterval(userId: Int, dateStart: Long, dateFinish: Long): Unit = {
-    val hours = getHoursOfInterval(dateStart, dateFinish)
 
-  }
-  private def splitTask(splitDate: Long): List[PlanInterval] = {
+  private def splitTask(splitDate: Long, userId: Int): List[PlanInterval] = {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val query = s"select * from plan where date_start > $splitDate and date_finish <= $splitDate"
+        val query = s"select * from plan where date_start < $splitDate and date_finish >= $splitDate and user_id = $userId"
         val plan = RsIterator(s.executeQuery(query)).map(rs => {
           PlanInterval(
             rs.getInt("id"),
@@ -137,6 +282,8 @@ trait PlanManagerHelper {
             rs.getLong("date_start"),
             rs.getLong("date_finish"),
             rs.getInt("task_type"),
+            rs.getInt("hours_amount"),
+            rs.getInt("consumed"),
           )
         }).toList
 
@@ -162,9 +309,9 @@ trait PlanManagerHelper {
               val s = c.createStatement()
               val qRemove = s"delete from plan where id = ${split.id}"
               s.execute(qRemove)
-              val q1 = s"insert into plan (task_id, user_id, date_start, date_finish, task_type, hours_amount) values (${split.id}, ${split.user_id}, ${split1.date_start}, ${split.date_finish}, ${getHoursOfInterval(split1.date_start, split1.date_finish)})"
+              val q1 = s"insert into plan (task_id, user_id, date_start, date_finish, task_type, hours_amount) values (${split.task_id}, ${split.user_id}, ${split1.date_start}, ${split1.date_finish}, ${split.task_type}, ${getHoursOfInterval(split1.date_start, split1.date_finish).length})"
               s.execute(q1)
-              val q2 = s"insert into plan (task_id, user_id, date_start, date_finish, task_type, hours_amount) values (${split.id}, ${split.user_id}, ${split2.date_start}, ${split.date_finish}, ${getHoursOfInterval(split2.date_start, split2.date_finish)})"
+              val q2 = s"insert into plan (task_id, user_id, date_start, date_finish, task_type, hours_amount) values (${split.task_id}, ${split.user_id}, ${split2.date_start}, ${split2.date_finish}, ${split.task_type}, ${getHoursOfInterval(split2.date_start, split2.date_finish).length})"
               s.execute(q2)
               s.close()
               c.close()
@@ -197,6 +344,8 @@ trait PlanManagerHelper {
             rs.getLong("date_start"),
             rs.getLong("date_finish"),
             rs.getInt("task_type"),
+            rs.getInt("hours_amount"),
+            rs.getInt("consumed"),
           )
         }).toList
         s.close()
@@ -262,7 +411,7 @@ trait PlanManagerHelper {
   private def isHourFree(hour: Long, intervals: List[PlanInterval]): Boolean = {
     intervals.exists(x => x.date_start <= hour || hour <= x.date_finish)
   }
-  private def sameDay(date1: Long, date2: Long): Unit = {
+  private def sameDay(date1: Long, date2: Long): Boolean = {
     val d1 = new Date(date1)
     val d2 = new Date(date2)
     d1.getYear == d2.getYear && d1.getMonth == d2.getMonth && d1.getDate == d2.getDate
@@ -282,5 +431,16 @@ trait PlanManagerHelper {
   private def printDate(date: Long): Unit = {
     val d = new Date(date)
     println(d.getHours + " " + d.getDate + "/" + (d.getMonth + 1))
+  }
+  private def hoursOfDay(dateStart: Long): List[Long] = {
+    val res = ListBuffer.empty[Long]
+    val now = new Date(dateStart)
+    val nowStart = new Date(now.getYear, now.getMonth, now.getDate, 8, 0, 0).getTime
+    var nextHourNoPlan = nextHour(nowStart)
+    while (sameDay(nextHourNoPlan, dateStart)){
+      res += nextHourNoPlan
+      nextHourNoPlan = nextHour(nextHourNoPlan)
+    }
+    res.toList
   }
 }

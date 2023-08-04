@@ -9,7 +9,7 @@ import deepsea.materials.MaterialManager.{Material, MaterialHistory, MaterialNod
 import deepsea.mobile.MobileManager.{Drawing, DrawingInfo, OrizInfo}
 import deepsea.osm.OsmManager.{LatLng, OSMUser, ParkingLocationSheet}
 import deepsea.time.PlanHoursManager.{ConsumedHour, PlanHour, PlannedHours}
-import deepsea.time.PlanManager.PlanInterval
+import deepsea.time.PlanManager.{DayInterval, IssuePlan, PlanByDays, PlanInterval, UserPlan}
 import deepsea.time.TimeControlManager.{SpyWatch, TimeControlInterval, UserWatch}
 import io.circe.generic.semiauto.{deriveCodec, deriveDecoder, deriveEncoder}
 import io.circe.{Decoder, Encoder}
@@ -156,6 +156,18 @@ trait MongoCodecs {
   implicit val PlanIntervalDecoder: Decoder[PlanInterval] = deriveDecoder[PlanInterval]
   implicit val PlanIntervalEncoder: Encoder[PlanInterval] = deriveEncoder[PlanInterval]
 
+  implicit val DayIntervalDecoder: Decoder[DayInterval] = deriveDecoder[DayInterval]
+  implicit val DayIntervalEncoder: Encoder[DayInterval] = deriveEncoder[DayInterval]
+
+  implicit val PlanByDaysDecoder: Decoder[PlanByDays] = deriveDecoder[PlanByDays]
+  implicit val PlanByDaysEncoder: Encoder[PlanByDays] = deriveEncoder[PlanByDays]
+
+  implicit val UserPlanDecoder: Decoder[UserPlan] = deriveDecoder[UserPlan]
+  implicit val UserPlanEncoder: Encoder[UserPlan] = deriveEncoder[UserPlan]
+
+  implicit val IssuePlanDecoder: Decoder[IssuePlan] = deriveDecoder[IssuePlan]
+  implicit val IssuePlanEncoder: Encoder[IssuePlan] = deriveEncoder[IssuePlan]
+
 
 
 
@@ -191,5 +203,9 @@ trait MongoCodecs {
     classOf[TeamWon],
     classOf[ConsumedHour],
     classOf[PlanInterval],
+    classOf[DayInterval],
+    classOf[PlanByDays],
+    classOf[UserPlan],
+    classOf[IssuePlan],
   ), DEFAULT_CODEC_REGISTRY)
 }
