@@ -3,7 +3,7 @@ package deepsea.auth
 import akka.actor.Actor
 import com.sun.mail.imap.Rights
 import deepsea.actors.ActorManager
-import deepsea.auth.AuthManager.{AdminRight, DeleteAdminRight, DeleteRole, DeleteUser, Department, EditAdminRight, EditRole, EditUser, EditUsersProject, GetAdminRightDetails, GetAdminRights, GetDepartmentDetails, GetDepartments, GetPages, GetRightDetails, GetRights, GetRoleDetails, GetRoleRights, GetRoles, GetUser, GetUserDetails, GetUserVisibleProjects, GetUsers, GetUsersProject, JoinUsersProjects, Login, Page, RightUser, Role, SaveRoleForAll, SendLogPass, ShareRights, StartRight, StartRole, StartUser, UpdateEmail, UpdateRocketLogin, User}
+import deepsea.auth.AuthManager.{AdminRight, CreateUsersNotifications, DeleteAdminRight, DeleteRole, DeleteUser, Department, EditAdminRight, EditRole, EditUser, EditUsersProject, GetAdminRightDetails, GetAdminRights, GetDepartmentDetails, GetDepartments, GetPages, GetRightDetails, GetRights, GetRoleDetails, GetRoleRights, GetRoles, GetUser, GetUserDetails, GetUserVisibleProjects, GetUsers, GetUsersNotifications, GetUsersProject, JoinUsersProjects, Login, Page, RightUser, Role, SaveRoleForAll, SendLogPass, ShareRights, StartRight, StartRole, StartUser, UpdateEmail, UpdateRocketLogin, UpdateUsersNotifications, User, UserNotification}
 import deepsea.database.{DBManager, MongoCodecs}
 import deepsea.issues.IssueManager.IssueProject
 import deepsea.issues.{IssueManager, IssueManagerHelper}
@@ -31,6 +31,14 @@ object AuthManager extends MongoCodecs {
 
   case class GetUserDetails(id: String)
 
+  case class GetUsersNotifications(id: String)
+
+  case class UpdateUsersNotifications(notificationsJson: String, userId: String)
+
+  case class CreateUsersNotifications(notification: String)
+
+  case class UserNotification(userId: Int, kind: String, method: String, project: String, projectId: Int, department: String, departmentId: Int)
+
   case class GetUser(login: String)
 
   case class StartUser(userJson: String)
@@ -47,7 +55,7 @@ object AuthManager extends MongoCodecs {
 
   case class GetUserVisibleProjects(id: String)
 
-  case class UserProject(user_id: String, project_name: String)
+  case class UserProject(userId: Int, projectName: String, projectId: Int)
 
   case class SendLogPass(id: String)
 
@@ -186,6 +194,21 @@ class AuthManager extends Actor with AuthManagerHelper with IssueManagerHelper w
     case GetUsers() =>
       sender() ! getUsers.asJson.noSpaces
     case GetUserDetails(id) => sender() ! getUserDetails(id).asJson.noSpaces
+    case GetUsersNotifications(id) => sender() ! getUsersNotifications(id).asJson.noSpaces
+    case UpdateUsersNotifications(notificationsJson, userId) =>
+      circe.jawn.decode[List[UserNotification]](notificationsJson) match {
+        case Right(notification) =>
+          val result = updateNotifications(notification, userId)
+          sender() ! result.asJson.noSpaces
+        case _ => sender() ! "error".asJson.noSpaces
+      }
+    case CreateUsersNotifications(notificationJson) =>
+      circe.jawn.decode[UserNotification](notificationJson) match {
+        case Right(notification) =>
+          val result = createNotification(notification)
+          sender() ! result.asJson.noSpaces
+        case _ => sender() ! "error".asJson.noSpaces
+      }
     case GetRoles() => sender() ! getRoles.asJson.noSpaces
     case GetRoleDetails(name) => sender() ! getRoleDetails(name).asJson.noSpaces
     case GetRoleRights(name) => sender() ! getRoleRights(name).asJson.noSpaces
