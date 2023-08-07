@@ -254,19 +254,49 @@ trait PlanManagerHelper {
 
     splitTask(nextHourNoPlan, userId)
 
-    //todo move all tasks right > start_date
+    moveRight(nextHourNoPlan, userId, hours.length)
 
-//    DBManager.GetPGConnection() match {
-//      case Some(c) =>
-//        val s = c.createStatement()
-//        val query = s"insert into plan (task_id, user_id, date_start, date_finish, task_type) values ($taskId, $userId, ${hours.head}, ${hours.last}, $taskType)"
-//        s.execute(query)
-//        s.close()
-//        c.close()
-//      case _ => List.empty[PlanInterval]
-//    }
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val query = s"insert into plan (task_id, user_id, date_start, date_finish, task_type) values ($taskId, $userId, ${hours.head}, ${hours.last}, $taskType)"
+        s.execute(query)
+        s.close()
+        c.close()
+      case _ => List.empty[PlanInterval]
+    }
+
+  }
+
+  private def moveRight(splitDate: Long, userId: Int, amount: Int): List[PlanInterval] = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val query = s"select * from plan where date_start >= $splitDate and user_id = $userId"
+        val plan = RsIterator(s.executeQuery(query)).map(rs => {
+          PlanInterval(
+            rs.getInt("id"),
+            rs.getInt("task_id"),
+            rs.getInt("user_id"),
+            rs.getLong("date_start"),
+            rs.getLong("date_finish"),
+            rs.getInt("task_type"),
+            rs.getInt("hours_amount"),
+            rs.getInt("consumed"),
+          )
+        }).toList
+
+        plan.foreach(p => {
+          val pN = p.copy(date_start = nextHourN(p.date_start, amount), date_finish = nextHourN(p.date_finish, amount))
+          s.execute(s"update plan set date_start = ${pN.date_start}, date_finish = ${pN.date_finish} where id = ${p.id}")
+        })
 
 
+        s.close()
+        c.close()
+        plan
+      case _ => List.empty[PlanInterval]
+    }
   }
 
   private def splitTask(splitDate: Long, userId: Int): List[PlanInterval] = {
