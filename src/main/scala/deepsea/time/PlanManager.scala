@@ -22,6 +22,7 @@ object PlanManager{
                        closing_status: String, stage_date: Long,
                        consumed: Int, inPlan: Int, available: Int, available_limit: Int)
   case class GetPlanIssues()
+  case class GetPlanIssue(id: String)
 }
 class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
   override def preStart(): Unit = {
@@ -60,6 +61,8 @@ class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
       sender() ! "success".asJson.noSpaces
     case GetPlanIssues() =>
       sender() ! getIssues.asJson.noSpaces
+    case GetPlanIssue(id) =>
+      sender() ! getIssue(id.toIntOption.getOrElse(0)).asJson.noSpaces
     case _ => None
   }
 }
