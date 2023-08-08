@@ -119,9 +119,9 @@ trait PlanManagerHelper {
           val intervals = plan.filter(x => x.user_id == user && intervalSameDay(hours.head, hours.last, x.date_start, x.date_finish))
           intervals.foreach(int => {
             val intervalHours = hours.filter(x => int.date_start <= x && x <= int.date_finish)
-            dayIntervals += DayInterval(int.task_id, intervalHours.length, int.hours_amount, int.id)
+            dayIntervals += DayInterval(int.task_id, intervalHours.length, int.hours_amount, int.id, int.date_start)
           })
-          planByDays += PlanByDays(d, month, year, dayIntervals.toList)
+          planByDays += PlanByDays(d, month, year, dayIntervals.sortBy(_.date_start).toList)
         }
       })
       res += UserPlan(user, planByDays.toList)
@@ -181,10 +181,19 @@ trait PlanManagerHelper {
           val planHours = rs.getInt("plan_hours")
           val inPlan = plan.filter(_.task_id == id).map(_.hours_amount).sum
           val available = planHours - inPlan
+          val docNumber = rs.getString("doc_number").trim
+          val docName = rs.getString("issue_name").trim
+          val docNameTrim = if (docName.length > 50) {
+            docName.toLowerCase.take(50) + "..."
+          }
+          else {
+            docName.toLowerCase
+          }
+          val docNumberTrim = if (docNumber != "") docNumber else "Без номера"
           IssuePlan(
             id,
-            rs.getString("issue_name").trim,
-            rs.getString("doc_number").trim,
+            docNameTrim,
+            docNumberTrim,
             planHours,
             rs.getString("status"),
             rs.getString("issue_type"),
@@ -268,23 +277,31 @@ trait PlanManagerHelper {
     val c3 = int1 >= d1 && int1 <= d2 && int2 >= d2
     c1 || c2 || c3
   }
-  def addInterval(taskId: Int, userId: Int, from: Long, hoursAmount: Int, taskType: Int): Unit = {
-    val dateFrom = nextHourLatest(userId, from)
-    val hours = ListBuffer.empty[Long]
-    var h = dateFrom
-    hours += h
-    while (hours.length < hoursAmount){
-      h = nextHour(h)
-      hours += h
+  def addInterval(taskId: Int, userId: Int, from: Long, hoursAmount: Int, taskType: Int): String = {
+    val today = new Date()
+    val todayStart = new Date(today.getYear, today.getMonth, today.getDate, 0, 0, 0).getTime
+    if (from < todayStart) {
+      "error: wrong planning date"
     }
-    DBManager.GetPGConnection() match {
-      case Some(c) =>
-        val s = c.createStatement()
-        val query = s"insert into plan (task_id, user_id, date_start, date_finish, task_type, hours_amount) values ($taskId, $userId, ${hours.head}, ${hours.last}, $taskType, ${hours.length})"
-        s.execute(query)
-        s.close()
-        c.close()
-      case _ => List.empty[PlanInterval]
+    else{
+      val dateFrom = nextHourLatest(userId, todayStart)
+      val hours = ListBuffer.empty[Long]
+      var h = dateFrom
+      hours += h
+      while (hours.length < hoursAmount) {
+        h = nextHour(h)
+        hours += h
+      }
+      DBManager.GetPGConnection() match {
+        case Some(c) =>
+          val s = c.createStatement()
+          val query = s"insert into plan (task_id, user_id, date_start, date_finish, task_type, hours_amount) values ($taskId, $userId, ${hours.head}, ${hours.last}, $taskType, ${hours.length})"
+          s.execute(query)
+          s.close()
+          c.close()
+        case _ => List.empty[PlanInterval]
+      }
+      "success"
     }
   }
   def deleteInterval(id: Int): Unit = {
@@ -308,7 +325,7 @@ trait PlanManagerHelper {
           val int = intList.head
           val userPlan = getUserPlan(int.user_id, int.date_start).filter(x => x.id != int.id)
           var hourStart = int.date_start
-          userPlan.foreach(p => {
+          userPlan.sortBy(_.date_start).foreach(p => {
             val hourFinish = nextHourN(hourStart, p.hours_amount - 1)
             s.execute(s"update plan set date_start = $hourStart, date_finish = $hourFinish where id = ${p.id}")
             hourStart = nextHour(hourFinish)
@@ -323,33 +340,39 @@ trait PlanManagerHelper {
     }
   }
 
-  def insertInterval(taskId: Int, userId: Int, from: Long, hoursAmount: Int, taskType: Int): Unit = {
+  def insertInterval(taskId: Int, userId: Int, from: Long, hoursAmount: Int, taskType: Int): String = {
     val now = new Date(from)
     val nowStart = new Date(now.getYear, now.getMonth, now.getDate, 8, 0, 0).getTime
     val nextHourNoPlan = nextHour(nowStart)
 
-    val hours = ListBuffer.empty[Long]
-    var h = nextHourNoPlan
-    hours += h
-    while (hours.length < hoursAmount) {
-      h = nextHour(h)
+    val todayStart = new Date(now.getYear, now.getMonth, now.getDate, 0, 0, 0)
+    if (from < todayStart.getTime) {
+      "error: wrong planning date"
+    }
+    else {
+      val hours = ListBuffer.empty[Long]
+      var h = nextHourNoPlan
       hours += h
+      while (hours.length < hoursAmount) {
+        h = nextHour(h)
+        hours += h
+      }
+
+      splitTask(nextHourNoPlan, userId)
+
+      moveRight(nextHourNoPlan, userId, hours.length)
+
+      DBManager.GetPGConnection() match {
+        case Some(c) =>
+          val s = c.createStatement()
+          val query = s"insert into plan (task_id, user_id, date_start, date_finish, task_type, hours_amount) values ($taskId, $userId, ${hours.head}, ${hours.last}, $taskType, ${hours.length})"
+          s.execute(query)
+          s.close()
+          c.close()
+        case _ => List.empty[PlanInterval]
+      }
+      "success"
     }
-
-    splitTask(nextHourNoPlan, userId)
-
-    moveRight(nextHourNoPlan, userId, hours.length)
-
-    DBManager.GetPGConnection() match {
-      case Some(c) =>
-        val s = c.createStatement()
-        val query = s"insert into plan (task_id, user_id, date_start, date_finish, task_type) values ($taskId, $userId, ${hours.head}, ${hours.last}, $taskType)"
-        s.execute(query)
-        s.close()
-        c.close()
-      case _ => List.empty[PlanInterval]
-    }
-
   }
 
   private def moveRight(splitDate: Long, userId: Int, amount: Int): List[PlanInterval] = {
@@ -370,7 +393,7 @@ trait PlanManagerHelper {
           )
         }).toList
 
-        plan.foreach(p => {
+        plan.sortBy(_.date_start).foreach(p => {
           val pN = p.copy(date_start = nextHourN(p.date_start, amount), date_finish = nextHourN(p.date_finish, amount))
           s.execute(s"update plan set date_start = ${pN.date_start}, date_finish = ${pN.date_finish} where id = ${p.id}")
         })
@@ -492,11 +515,16 @@ trait PlanManagerHelper {
     res.toList
   }
   private def nextHourN(date: Long, hours: Int): Long = {
-    var h = nextHour(date)
-    (2 to(hours)).foreach(_ => {
-      h = nextHour(h)
-    })
-    h
+    hours match {
+      case 0 => date
+      case 1 => nextHour(date)
+      case _ =>
+        var h = nextHour(date)
+        (2 to (hours)).foreach(_ => {
+          h = nextHour(h)
+        })
+        h
+    }
   }
   private def nextFreeHour(date: Long, intervals: List[PlanInterval] = List.empty[PlanInterval]): Long = {
     var nH = nextHour(date)

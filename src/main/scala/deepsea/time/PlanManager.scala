@@ -12,7 +12,7 @@ object PlanManager{
   case class PlanInterval(id: Int, task_id: Int, user_id: Int, date_start: Long, date_finish: Long, task_type: Int, hours_amount: Int, consumed: Int)
   case class AddInterval(taskId: String, userId: String, from: String, hoursAmount: String, taskType: String)
   case class InsertInterval(taskId: String, userId: String, from: String, hoursAmount: String, taskType: String)
-  case class DayInterval(taskId: Int, hours: Int, hours_total: Int, id: Int)
+  case class DayInterval(taskId: Int, hours: Int, hours_total: Int, id: Int, date_start: Long)
   case class PlanByDays(day: Int, month: Int, year: Int, ints: List[DayInterval])
   case class UserPlan(userId: Int, plan: List[PlanByDays])
   case class DeleteInterval(id: String)
@@ -46,19 +46,19 @@ class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
       deleteInterval(id.toIntOption.getOrElse(0))
       sender() ! "success".asJson.noSpaces
     case AddInterval(taskId, userId, from, hoursAmount, taskType) =>
-      addInterval(taskId.toIntOption.getOrElse(0),
+      val res = addInterval(taskId.toIntOption.getOrElse(0),
         userId.toIntOption.getOrElse(0),
         from.toLongOption.getOrElse(0),
         hoursAmount.toIntOption.getOrElse(0),
         taskType.toIntOption.getOrElse(0))
-      sender() ! "success".asJson.noSpaces
+      sender() ! res.asJson.noSpaces
     case InsertInterval(taskId, userId, from, hoursAmount, taskType) =>
-      insertInterval(taskId.toIntOption.getOrElse(0),
+      val res = insertInterval(taskId.toIntOption.getOrElse(0),
         userId.toIntOption.getOrElse(0),
         from.toLongOption.getOrElse(0),
         hoursAmount.toIntOption.getOrElse(0),
         taskType.toIntOption.getOrElse(0))
-      sender() ! "success".asJson.noSpaces
+      sender() ! res.asJson.noSpaces
     case GetPlanIssues() =>
       sender() ! getIssues.asJson.noSpaces
     case GetPlanIssue(id) =>
