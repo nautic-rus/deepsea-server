@@ -192,8 +192,8 @@ trait PlanManagerHelper {
           val docNumberTrim = if (docNumber != "") docNumber else "Без номера"
           IssuePlan(
             id,
-            docNameTrim,
-            docNumberTrim,
+            docName,
+            docNumber,
             planHours,
             rs.getString("status"),
             rs.getString("issue_type"),
@@ -495,14 +495,6 @@ trait PlanManagerHelper {
         }
       case _ => nextHourNoPlan
     }
-  }
-  private def moveIntervalRight(interval: PlanInterval, hours: Int, intervals: List[PlanInterval]): Unit = {
-//    val newInterval = interval.copy(date_start = getNextHourN(interval.date_start, hours), date_finish = getNextHourN(interval.date_finish, hours))
-//    val intervalHours = getHoursOfInterval(newInterval.date_start, newInterval.date_finish)
-//    val notFree = intervalHours.filter(x => !isHourFree(x, intervals))
-//    if (notFree.nonEmpty){
-//      //moveIntervalRight()
-//    }
   }
   private def getHoursOfInterval(dateStart: Long, dateFinish: Long): List[Long] = {
     val res = ListBuffer.empty[Long]
