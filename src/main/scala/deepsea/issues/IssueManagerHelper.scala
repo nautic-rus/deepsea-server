@@ -490,7 +490,7 @@ trait IssueManagerHelper extends MongoCodecs {
         val s = c.createStatement()
         //val query = s"select *, (select closing_status from issue_types where type_name = i.issue_type) from issue i where $id = id and removed = 0"
         var query = Source.fromResource("queries/issues.sql").mkString
-        query += s" and doc_number = '$docNumber'"
+        query += s" and doc_number = '$docNumber' and issue_type != 'QNA'"
         val rs = s.executeQuery(query)
         while (rs.next()) {
           issue = Option(new Issue(

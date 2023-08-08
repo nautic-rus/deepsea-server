@@ -58,7 +58,7 @@ trait PlanManagerHelper {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val query = s"select * from plan where id = $id"
+        val query = s"select * from plan where task_id = $id"
         val plan = RsIterator(s.executeQuery(query)).map(rs => {
           PlanInterval(
             rs.getInt("id"),
@@ -205,43 +205,6 @@ trait PlanManagerHelper {
     res.toList
   }
   def getIssue(id: Int): List[IssuePlan] = {
-    val res = ListBuffer.empty[IssuePlan]
-    val plan = getTaskPlan(id)
-    DBManager.GetPGConnection() match {
-      case Some(c) =>
-        val s = c.createStatement()
-        val query = Source.fromResource("queries/plan-issues.sql").mkString
-        val rSet = RsIterator(s.executeQuery(query))
-        res ++= rSet.map(rs => {
-          val id = rs.getInt("id")
-          val consumed = plan.filter(_.task_id == id).filter(_.consumed == 1).map(_.hours_amount).sum
-          val planHours = rs.getInt("plan_hours")
-          val inPlan = plan.filter(_.task_id == id).map(_.hours_amount).sum
-          val available = planHours - inPlan
-          IssuePlan(
-            id,
-            rs.getString("issue_name").trim,
-            rs.getString("doc_number").trim,
-            planHours,
-            rs.getString("status"),
-            rs.getString("issue_type"),
-            rs.getString("period"),
-            rs.getString("assigned_to"),
-            rs.getString("project"),
-            rs.getString("department"),
-            Option(rs.getString("closing_status")).getOrElse(""),
-            Option(rs.getLong("stage_date")).getOrElse(0),
-            consumed, inPlan, available, available
-          )
-        }).toList
-        rSet.rs.close()
-        s.close()
-        c.close()
-      case _ => None
-    }
-    res.toList
-  }
-  def getPlanIssue(id: Int): List[IssuePlan] = {
     val res = ListBuffer.empty[IssuePlan]
     val plan = getTaskPlan(id)
     DBManager.GetPGConnection() match {
