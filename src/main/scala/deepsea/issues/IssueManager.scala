@@ -282,9 +282,9 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
                 })
               }
               else {
-                List(update.assigned_to, update.responsible, update.started_by).filter(_ != user).distinct.foreach(u => {
-                  ActorManager.rocket ! SendNotification(u, s"Что-то поменялось в задаче " + s"<${App.HTTPServer.Url}/?taskId=${issue.id}|$name>")
-                })
+//                List(update.assigned_to, update.responsible, update.started_by).filter(_ != user).distinct.foreach(u => {
+//                  ActorManager.rocket ! SendNotification(u, s"Что-то поменялось в задаче " + s"<${App.HTTPServer.Url}/?taskId=${issue.id}|$name>")
+//                })
               }
             case _ => None
           }

@@ -350,7 +350,44 @@ trait PlanManagerHelper {
       case _ => None
     }
   }
-  def insertInterval(taskId: Int, userId: Int, from: Long, hoursAmount: Int, taskType: Int): String = {
+  def insertInterval(taskId: Int, userId: Int, from: Long, hoursAmount: Int, taskType: Int, consumed: Int = 0): String = {
+    val now = new Date(from)
+    val nowStart = new Date(now.getYear, now.getMonth, now.getDate, 8, 0, 0).getTime
+    val nextHourNoPlan = nextHour(nowStart)
+
+    val todayStart = new Date(now.getYear, now.getMonth, now.getDate, 0, 0, 0)
+    if (from < todayStart.getTime) {
+      "error: wrong planning date"
+    }
+    else {
+      val skip = skipIntervals(userId)
+      val hours = ListBuffer.empty[Long]
+      var h = nextHourNoPlan
+      while (hours.length < hoursAmount) {
+        if (!inInterval(h, skip)) {
+          hours += h
+        }
+        h = nextHour(h)
+      }
+
+      splitTask(nextHourNoPlan, userId)
+
+      moveRight(nextHourNoPlan, userId, hours.length)
+
+      DBManager.GetPGConnection() match {
+        case Some(c) =>
+          val s = c.createStatement()
+          val query = s"insert into plan (task_id, user_id, date_start, date_finish, task_type, hours_amount, consumed) values ($taskId, $userId, ${hours.head}, ${hours.last}, $taskType, ${hours.length}, $consumed)"
+          s.execute(query)
+          s.close()
+          c.close()
+        case _ => List.empty[PlanInterval]
+      }
+      "success"
+    }
+  }
+
+  def insertConsumedInterval(taskId: Int, userId: Int, from: Long, hoursAmount: Int, taskType: Int): String = {
     val now = new Date(from)
     val nowStart = new Date(now.getYear, now.getMonth, now.getDate, 8, 0, 0).getTime
     val nextHourNoPlan = nextHour(nowStart)

@@ -12,6 +12,7 @@ object PlanManager{
   case class PlanInterval(id: Int, task_id: Int, user_id: Int, date_start: Long, date_finish: Long, task_type: Int, hours_amount: Int, consumed: Int)
   case class AddInterval(taskId: String, userId: String, from: String, hoursAmount: String, taskType: String)
   case class InsertInterval(taskId: String, userId: String, from: String, hoursAmount: String, taskType: String)
+  case class InsertConsumedInterval(taskId: String, userId: String, from: String, hoursAmount: String, taskType: String)
   case class DayInterval(taskId: Int, hours: Int, hours_total: Int, id: Int, date_start: Long)
   case class PlanByDays(day: Int, month: Int, year: Int, ints: List[DayInterval])
   case class UserPlan(userId: Int, plan: List[PlanByDays])
@@ -54,6 +55,13 @@ class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
       sender() ! res.asJson.noSpaces
     case InsertInterval(taskId, userId, from, hoursAmount, taskType) =>
       val res = insertInterval(taskId.toIntOption.getOrElse(0),
+        userId.toIntOption.getOrElse(0),
+        from.toLongOption.getOrElse(0),
+        hoursAmount.toIntOption.getOrElse(0),
+        taskType.toIntOption.getOrElse(0))
+      sender() ! res.asJson.noSpaces
+    case InsertConsumedInterval(taskId, userId, from, hoursAmount, taskType) =>
+      val res = insertConsumedInterval(taskId.toIntOption.getOrElse(0),
         userId.toIntOption.getOrElse(0),
         from.toLongOption.getOrElse(0),
         hoursAmount.toIntOption.getOrElse(0),
