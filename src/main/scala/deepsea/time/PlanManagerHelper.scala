@@ -352,20 +352,8 @@ trait PlanManagerHelper {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val intList = RsIterator(s.executeQuery(s"select * from plan where id = $id")).map(rs => {
-          PlanInterval(
-            rs.getInt("id"),
-            rs.getInt("task_id"),
-            rs.getInt("user_id"),
-            rs.getLong("date_start"),
-            rs.getLong("date_finish"),
-            rs.getInt("task_type"),
-            rs.getInt("hours_amount"),
-            rs.getInt("consumed"),
-          )
-        }).toList
-
-        if (intList.nonEmpty){
+        val intList = getInterval(id)
+        if (intList.nonEmpty && intList.head.consumed == 0){
           val int = intList.head
           if (int.task_type != 0){
             splitTask(int.date_start, int.user_id, int.hours_amount)
