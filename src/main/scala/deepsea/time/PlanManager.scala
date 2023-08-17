@@ -13,7 +13,7 @@ object PlanManager{
   case class AddInterval(taskId: String, userId: String, from: String, hoursAmount: String, taskType: String)
   case class InsertInterval(taskId: String, userId: String, from: String, hoursAmount: String, taskType: String)
   case class InsertConsumedInterval(taskId: String, userId: String, from: String, hoursAmount: String, taskType: String)
-  case class DayInterval(taskId: Int, hours: Int, hours_total: Int, id: Int, date_start: Long)
+  case class DayInterval(taskId: Int, hours: Int, hours_total: Int, id: Int, date_start: Long, consumed: Int)
   case class PlanByDays(day: Int, month: Int, year: Int, ints: List[DayInterval])
   case class UserPlan(userId: Int, plan: List[PlanByDays])
   case class DeleteInterval(id: String)

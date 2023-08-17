@@ -637,6 +637,9 @@ class HTTPManager extends Actor {
         (get & path("planInsertInterval") & parameter("taskId", "userId", "from", "hoursAmount", "taskType")) { (taskId, userId, from, hoursAmount, taskType) =>
           askFor(ActorManager.plan, InsertInterval(taskId, userId, from, hoursAmount, taskType))
         },
+        (get & path("planInsertConsumedInterval") & parameter("taskId", "userId", "from", "hoursAmount", "taskType")) { (taskId, userId, from, hoursAmount, taskType) =>
+          askFor(ActorManager.plan, InsertConsumedInterval(taskId, userId, from, hoursAmount, taskType))
+        },
       )
     }
   }
