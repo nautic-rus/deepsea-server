@@ -625,17 +625,17 @@ class HTTPManager extends Actor {
         (get & path("planByDays") & parameter("date")) { (date) =>
           askFor(ActorManager.plan, GetPlanByDays(date))
         },
-        (get & path("planDeleteInterval") & parameter("id")) { (id) =>
-          askFor(ActorManager.plan, DeleteInterval(id))
+        (get & path("planDeleteInterval") & parameter("id", "fromUser")) { (id, fromUser) =>
+          askFor(ActorManager.plan, DeleteInterval(id, fromUser))
         },
         (get & path("plan") & parameter("user") & parameter("from")) { (user, from) =>
           askFor(ActorManager.plan, GetUserPlan(user, from))
         },
-        (get & path("planAddInterval") & parameter("taskId", "userId", "from", "hoursAmount", "taskType")) { (taskId, userId, from, hoursAmount, taskType) =>
-          askFor(ActorManager.plan, AddInterval(taskId, userId, from, hoursAmount, taskType))
+        (get & path("planAddInterval") & parameter("taskId", "userId", "from", "hoursAmount", "taskType", "fromUser")) { (taskId, userId, from, hoursAmount, taskType, fromUser) =>
+          askFor(ActorManager.plan, AddInterval(taskId, userId, from, hoursAmount, taskType, fromUser))
         },
-        (get & path("planInsertInterval") & parameter("taskId", "userId", "from", "hoursAmount", "taskType")) { (taskId, userId, from, hoursAmount, taskType) =>
-          askFor(ActorManager.plan, InsertInterval(taskId, userId, from, hoursAmount, taskType))
+        (get & path("planInsertInterval") & parameter("taskId", "userId", "from", "hoursAmount", "taskType", "fromUser")) { (taskId, userId, from, hoursAmount, taskType, fromUser) =>
+          askFor(ActorManager.plan, InsertInterval(taskId, userId, from, hoursAmount, taskType, fromUser))
         },
         (get & path("planInsertConsumedInterval") & parameter("taskId", "userId", "from", "hoursAmount", "taskType")) { (taskId, userId, from, hoursAmount, taskType) =>
           askFor(ActorManager.plan, InsertConsumedInterval(taskId, userId, from, hoursAmount, taskType))
