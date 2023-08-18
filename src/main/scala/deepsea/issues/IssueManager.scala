@@ -693,7 +693,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     if (!hidden){
       updateHistory(new IssueHistory(id, author, "assign", "", user, date, "assign"))
     }
-    val query = s"update issue set assigned_to = '$user', active_action = '$action', start_date = $start_date, due_date = $due_date, overtime = '$overtime' where id = $id"
+    val query = s"update issue set assigned_to = '$user', active_action = '$action', status = '$action', start_date = $start_date, due_date = $due_date, overtime = '$overtime' where id = $id"
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()

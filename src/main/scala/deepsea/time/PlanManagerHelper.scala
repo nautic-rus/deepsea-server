@@ -100,7 +100,6 @@ trait PlanManagerHelper {
       case _ => List.empty[PlanInterval]
     }
   }
-
   def getUserPlan(userId: Int, from: Long): List[PlanInterval] = {
     DBManager.GetPGConnection() match {
       case Some(c) =>
@@ -284,7 +283,6 @@ trait PlanManagerHelper {
     }
     res.toList
   }
-
   def getUsers: List[Int] = {
     val res = ListBuffer.empty[Int]
     DBManager.GetPGConnection() match {
@@ -311,18 +309,15 @@ trait PlanManagerHelper {
     val c3 = int1 >= d1 && int1 <= d2 && int2 >= d2
     c1 || c2 || c3
   }
-  def addInterval(taskId: Int, userId: Int, from: Long, hoursAmount: Int, taskType: Int): String = {
+  def addInterval(taskId: Int, userId: Int, from: Long, hoursAmount: Int, taskType: Int): Int = {
     if (taskType != 0){
-      insertInterval(taskId, userId, from, hoursAmount, taskType) match {
-        case 0 => "success"
-        case _ => "error: wrong planning date"
-      }
+      insertInterval(taskId, userId, from, hoursAmount, taskType)
     }
     else{
       val today = new Date()
       val todayStart = new Date(today.getYear, today.getMonth, today.getDate, 0, 0, 0).getTime
       if (from < todayStart) {
-        "error: wrong planning date"
+        -1
       }
       else {
         val skip = skipIntervals(userId)
@@ -335,16 +330,23 @@ trait PlanManagerHelper {
           }
           h = nextHour(h)
         }
-        DBManager.GetPGConnection() match {
+        val id = DBManager.GetPGConnection() match {
           case Some(c) =>
             val s = c.createStatement()
-            val query = s"insert into plan (task_id, user_id, date_start, date_finish, task_type, hours_amount) values ($taskId, $userId, ${hours.head}, ${hours.last}, $taskType, ${hours.length})"
-            s.execute(query)
+            val query = s"insert into plan (task_id, user_id, date_start, date_finish, task_type, hours_amount) values ($taskId, $userId, ${hours.head}, ${hours.last}, $taskType, ${hours.length}) returning id"
+            val rs = s.executeQuery(query)
+            val idNext = if (rs.next()) {
+              rs.getInt("id")
+            }
+            else {
+              -2
+            }
             s.close()
             c.close()
-          case _ => List.empty[PlanInterval]
+            idNext
+          case _ => -2
         }
-        "success"
+        id
       }
     }
   }
@@ -373,6 +375,24 @@ trait PlanManagerHelper {
         c.close()
       case _ => None
     }
+  }
+  def userLogin(id: Int): String = {
+    val login = DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val rs = s.executeQuery(s"select login from users where id = $id")
+        val loginValue = if (rs.next()){
+          rs.getString("login")
+        }
+        else{
+          "NOT FOUND"
+        }
+        s.close()
+        c.close()
+        loginValue
+      case _ => ""
+    }
+    login
   }
   def insertInterval(taskId: Int, userId: Int, from: Long, hoursAmount: Int, taskType: Int, consumed: Int = 0, min: Long = 0): Int = {
     val now = new Date(from)
@@ -420,7 +440,6 @@ trait PlanManagerHelper {
       id
     }
   }
-
   def insertConsumedInterval(taskId: Int, userId: Int, from: Long, hoursAmount: Int, taskType: Int): String = {
     val now = new Date(from)
     val nowStart = new Date(now.getYear, now.getMonth, now.getDate, 8, 0, 0).getTime
@@ -484,7 +503,6 @@ trait PlanManagerHelper {
       }
     }
   }
-
   private def skipIntervals(userId: Int): List[PlanInterval] = {
     DBManager.GetPGConnection() match {
       case Some(c) =>
