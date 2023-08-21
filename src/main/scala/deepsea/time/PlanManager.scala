@@ -69,7 +69,20 @@ class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
       if (taskId.toIntOption.getOrElse(0) > 0){
         getInterval(res).headOption match {
           case Some(int) =>
-            ActorManager.issue ! AssignIssue(int.task_id.toString, userLogin(int.user_id), int.date_start.toString, int.date_finish.toString, "Нет", "AssignedTo", fromUser)
+            val intervals = getTaskPlan(int.task_id)
+            var dateStart = int.date_start
+            var dateFinish = int.date_finish
+            if (intervals.nonEmpty) {
+              intervals.find(_.date_start < dateStart) match {
+                case Some(value) => dateStart = value.date_start
+                case _ => None
+              }
+              intervals.find(_.date_finish > dateFinish) match {
+                case Some(value) => dateFinish = value.date_finish
+                case _ => None
+              }
+            }
+            ActorManager.issue ! AssignIssue(int.task_id.toString, userLogin(int.user_id), dateStart.toString, dateFinish.toString, "Нет", "AssignedTo", fromUser)
           case _ => None
         }
       }
@@ -88,7 +101,20 @@ class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
       if (taskId.toIntOption.getOrElse(0) > 0) {
         getInterval(res).headOption match {
           case Some(int) =>
-            ActorManager.issue ! AssignIssue(int.task_id.toString, userLogin(int.user_id), int.date_start.toString, int.date_finish.toString, "Нет", "AssignedTo", fromUser)
+            val intervals = getTaskPlan(int.task_id)
+            var dateStart = int.date_start
+            var dateFinish = int.date_finish
+            if (intervals.nonEmpty) {
+              intervals.find(_.date_start < dateStart) match {
+                case Some(value) => dateStart = value.date_start
+                case _ => None
+              }
+              intervals.find(_.date_finish > dateFinish) match {
+                case Some(value) => dateFinish = value.date_finish
+                case _ => None
+              }
+            }
+            ActorManager.issue ! AssignIssue(int.task_id.toString, userLogin(int.user_id), dateStart.toString, dateFinish.toString, "Нет", "AssignedTo", fromUser)
           case _ => None
         }
       }
