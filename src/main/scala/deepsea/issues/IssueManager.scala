@@ -15,6 +15,7 @@ import deepsea.issues.IssueManager._
 import deepsea.issues.classes.{ChildIssue, Issue, IssueAction, IssueCheck, IssueHistory, IssueMessage, IssuePeriod, IssueType, IssueView, SfiCode}
 import deepsea.mail.MailManager.Mail
 import deepsea.rocket.RocketChatManager.SendNotification
+import deepsea.time.PlanManager.DeletePausedInterval
 import deepsea.time.TimeControlManager.UserWatch
 import io.circe
 import org.mongodb.scala.{Document, MongoCollection}
@@ -439,6 +440,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     case LockPlanHours(issue_id, state) =>
       updateLockPlanHours(issue_id.toIntOption.getOrElse(0), state.toIntOption.getOrElse(0))
       sender() ! "success".asJson.noSpaces
+    case history: IssueHistory => updateHistory(history)
     case _ => None
   }
   def setDayCalendar(user: String, day: String, status: String): ListBuffer[IssueView] ={
@@ -868,6 +870,11 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
           s.close()
           c.close()
         case _ => None
+      }
+      if (name_value == "status"){
+        if (List("Paused", "Check").contains(new_value) || issue.closing_status.contains(new_value)){
+          ActorManager.plan ! DeletePausedInterval(issue.id)
+        }
       }
       //updateIssue(issue, user, updateMessage)
     }

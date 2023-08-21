@@ -376,6 +376,16 @@ trait PlanManagerHelper {
       case _ => None
     }
   }
+  def deletePausedInterval(id: Int): Unit = {
+    val tasks = getTaskPlan(id)
+    tasks.findLast(_.consumed == 1) match {
+      case Some(value) =>
+        tasks.filter(x => x.date_start > value.date_finish).foreach(int => {
+          deleteInterval(int.id)
+        })
+      case _ => None
+    }
+  }
   def userLogin(id: Int): String = {
     val login = DBManager.GetPGConnection() match {
       case Some(c) =>

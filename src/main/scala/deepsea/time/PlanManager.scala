@@ -5,8 +5,11 @@ import deepsea.actors.ActorManager
 import deepsea.auth.AuthManager
 import deepsea.database.MongoCodecs
 import deepsea.issues.IssueManager.AssignIssue
+import deepsea.issues.classes.IssueHistory
 import deepsea.time.PlanManager._
 import io.circe.syntax.EncoderOps
+
+import java.util.Date
 
 object PlanManager{
   case class GetPlan()
@@ -27,6 +30,7 @@ object PlanManager{
                        consumed: Int, inPlan: Int, available: Int, available_limit: Int)
   case class GetPlanIssues()
   case class GetPlanIssue(id: String)
+  case class DeletePausedInterval(id: Int)
 }
 class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
   override def preStart(): Unit = {
@@ -47,12 +51,14 @@ class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
     case GetUserPlan(user, from) =>
       sender() ! getUserPlan(user.toIntOption.getOrElse(0), from.toLongOption.getOrElse(0)).asJson
     case DeleteInterval(id, fromUser) =>
-      deleteInterval(id.toIntOption.getOrElse(0))
       getInterval(id.toIntOption.getOrElse(0)).headOption match {
         case Some(int) =>
-          ActorManager.issue ! AssignIssue(int.task_id.toString, "", 0.toString, 0.toString, "Нет", "New", fromUser)
+          if (int.task_id > 0) {
+            ActorManager.issue ! AssignIssue(int.task_id.toString, "", 0.toString, 0.toString, "Нет", "New", fromUser, "1")
+          }
         case _ => None
       }
+      deleteInterval(id.toIntOption.getOrElse(0))
       sender() ! "success".asJson.noSpaces
     case AddInterval(taskId, userId, from, hoursAmount, taskType, fromUser) =>
       val res = addInterval(taskId.toIntOption.getOrElse(0),
@@ -60,10 +66,12 @@ class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
         from.toLongOption.getOrElse(0),
         hoursAmount.toIntOption.getOrElse(0),
         taskType.toIntOption.getOrElse(0))
-      getInterval(res).headOption match {
-        case Some(int) =>
-          ActorManager.issue ! AssignIssue(int.task_id.toString, userLogin(int.user_id), int.date_start.toString, int.date_finish.toString, "Нет", "AssignedTo", fromUser)
-        case _ => None
+      if (taskId.toIntOption.getOrElse(0) > 0){
+        getInterval(res).headOption match {
+          case Some(int) =>
+            ActorManager.issue ! AssignIssue(int.task_id.toString, userLogin(int.user_id), int.date_start.toString, int.date_finish.toString, "Нет", "AssignedTo", fromUser)
+          case _ => None
+        }
       }
       val response = res match {
         case -2 => "error: critical code error"
@@ -77,10 +85,12 @@ class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
         from.toLongOption.getOrElse(0),
         hoursAmount.toIntOption.getOrElse(0),
         taskType.toIntOption.getOrElse(0))
-      getInterval(res).headOption match {
-        case Some(int) =>
-          ActorManager.issue ! AssignIssue(int.task_id.toString, userLogin(int.user_id), int.date_start.toString, int.date_finish.toString, "Нет", "AssignedTo", fromUser)
-        case _ => None
+      if (taskId.toIntOption.getOrElse(0) > 0) {
+        getInterval(res).headOption match {
+          case Some(int) =>
+            ActorManager.issue ! AssignIssue(int.task_id.toString, userLogin(int.user_id), int.date_start.toString, int.date_finish.toString, "Нет", "AssignedTo", fromUser)
+          case _ => None
+        }
       }
       val response = res match {
         case -2 => "error: critical code error"
@@ -94,9 +104,16 @@ class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
         from.toLongOption.getOrElse(0),
         hoursAmount.toIntOption.getOrElse(0),
         taskType.toIntOption.getOrElse(0))
+      if (taskId.toIntOption.getOrElse(0) > 0) {
+        ActorManager.issue ! new IssueHistory(taskId.toIntOption.getOrElse(0), userLogin(userId.toIntOption.getOrElse(0)),
+        "man_hours", "", hoursAmount, new Date().getTime, "")
+      }
       sender() ! res.asJson.noSpaces
     case GetPlanIssues() =>
       sender() ! getIssues.asJson.noSpaces
+    case DeletePausedInterval(id) =>
+      deletePausedInterval(id)
+      sender() ! "success".asJson.noSpaces
     case GetPlanIssue(id) =>
       sender() ! getIssue(id.toIntOption.getOrElse(0)).asJson.noSpaces
     case _ => None
