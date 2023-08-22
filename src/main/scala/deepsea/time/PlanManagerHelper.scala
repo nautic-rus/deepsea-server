@@ -476,7 +476,7 @@ trait PlanManagerHelper {
         val plan = getInterval(ins)
         if (plan.nonEmpty){
           val int = plan.head
-          val insPlan = getUserPlan(userId, nextHourNoPlan).filter(_.consumed == 0).filter(_.task_id == taskId)
+          val insPlan = getUserPlan(userId, nextHourNoPlan).filter(_.consumed == 0).filter(_.task_id == taskId).filter(_.date_start > int.date_finish)
           var hoursConsumed = 0
           if (ins > 0) {
             if (insPlan.nonEmpty) {
