@@ -554,10 +554,23 @@ trait PlanManagerHelper {
           )
         }).toList
 
-        plan.sortBy(_.date_start).foreach(p => {
-          val pN = p.copy(date_start = nextHourN(p.date_start, amount), date_finish = nextHourN(p.date_finish, amount))
-          s.execute(s"update plan set date_start = ${pN.date_start}, date_finish = ${pN.date_finish} where id = ${p.id}")
-        })
+        if (plan.nonEmpty){
+          val planMin = plan.map(_.date_start).min
+          val hoursBeforeStart = ListBuffer.empty[Long]
+          var startDate = splitDate
+          while (startDate < planMin) {
+            hoursBeforeStart += startDate
+            startDate = nextHour(startDate)
+          }
+
+
+          plan.sortBy(_.date_start).foreach(p => {
+            val pN = p.copy(date_start = nextHourN(p.date_start, amount - hoursBeforeStart.length), date_finish = nextHourN(p.date_finish, amount - hoursBeforeStart.length))
+            s.execute(s"update plan set date_start = ${pN.date_start}, date_finish = ${pN.date_finish} where id = ${p.id}")
+          })
+
+        }
+
 
 
         s.close()
