@@ -116,6 +116,7 @@ object IssueManager{
   case class GroupFolder(id: Int, name: String)
   case class DailyTask(issueId: Int, date: Long, dateCreated: Long, userLogin: String, project: String, details: String, time: Double, id: Int)
   case class IssueProject(id: Int, name: String, pdsp: String, rkd: String, foran: String, managers: String, status: String, factory: String)
+  case class UpdateDates(id: Int, date_start: Long, date_finish: Long)
 }
 class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with FileManagerHelper with AuthManagerHelper{
   implicit val timeout: Timeout = Timeout(30, TimeUnit.SECONDS)
@@ -158,6 +159,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
 //      case _ => sender() ! Json.toJson(ListBuffer.empty[Issue])
 //    }
   }
+
   override def receive: Receive = {
     case GetIssueProjects() => sender() ! getIssueProjects.asJson.noSpaces
     case GetProjectDetails(id) => sender() ! getProjectDetails(id).asJson
@@ -441,6 +443,8 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
       updateLockPlanHours(issue_id.toIntOption.getOrElse(0), state.toIntOption.getOrElse(0))
       sender() ! "success".asJson.noSpaces
     case history: IssueHistory => updateHistory(history)
+    case dates: UpdateDates =>
+      updateDates(dates)
     case _ => None
   }
   def setDayCalendar(user: String, day: String, status: String): ListBuffer[IssueView] ={

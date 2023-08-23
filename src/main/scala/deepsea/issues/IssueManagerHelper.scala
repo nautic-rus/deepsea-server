@@ -9,7 +9,7 @@ import deepsea.database.{DBManager, DatabaseManager, MongoCodecs}
 import deepsea.files.FileManager.{CloudFile, DocumentDirectories}
 import deepsea.files.FileManagerHelper
 import deepsea.files.classes.FileAttachment
-import deepsea.issues.IssueManager.{DailyTask, GroupFolder, IssueProject, Subscriber}
+import deepsea.issues.IssueManager.{DailyTask, GroupFolder, IssueProject, Subscriber, UpdateDates}
 import deepsea.issues.classes.{ChildIssue, Issue, IssueAction, IssueCheck, IssueHistory, IssueMessage, IssuePeriod, SfiCode}
 import deepsea.mail.MailManager
 import deepsea.mail.MailManager.Mail
@@ -1662,6 +1662,16 @@ trait IssueManagerHelper extends MongoCodecs {
     }
   }
 
+  def updateDates(dates: UpdateDates): Unit = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        s.execute(s"update issue set start_date = ${dates.date_start}, due_date = ${dates.date_finish} where id = ${dates.id}")
+        s.close()
+        c.close()
+      case _ =>
+    }
+  }
   def updateLockPlanHours(issue_id: Int, state: Int): Unit = {
     DBManager.GetPGConnection() match {
       case Some(c) =>

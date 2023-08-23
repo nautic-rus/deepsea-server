@@ -1,8 +1,10 @@
 package deepsea.time
 
+import deepsea.actors.ActorManager
 import deepsea.auth.AuthManagerHelper
 import deepsea.database.DBManager
 import deepsea.database.DBManager.{RsIterator, check}
+import deepsea.issues.IssueManager.UpdateDates
 import deepsea.time.PlanHoursManager.SpecialDay
 import deepsea.time.PlanManager.{DayInterval, IssuePlan, PlanByDays, PlanInterval, UserPlan}
 
@@ -446,7 +448,6 @@ trait PlanManagerHelper {
           idNext
         case _ => -2
       }
-
       id
     }
   }
@@ -567,6 +568,26 @@ trait PlanManagerHelper {
           plan.sortBy(_.date_start).foreach(p => {
             val pN = p.copy(date_start = nextHourN(p.date_start, amount - hoursBeforeStart.length), date_finish = nextHourN(p.date_finish, amount - hoursBeforeStart.length))
             s.execute(s"update plan set date_start = ${pN.date_start}, date_finish = ${pN.date_finish} where id = ${p.id}")
+
+            getInterval(pN.id).headOption match {
+              case Some(int) =>
+                val intervals = getTaskPlan(int.task_id)
+                var dateStart = int.date_start
+                var dateFinish = int.date_finish
+                if (intervals.nonEmpty) {
+                  intervals.find(_.date_start < dateStart) match {
+                    case Some(value) => dateStart = value.date_start
+                    case _ => None
+                  }
+                  intervals.find(_.date_finish > dateFinish) match {
+                    case Some(value) => dateFinish = value.date_finish
+                    case _ => None
+                  }
+                }
+                ActorManager.issue ! UpdateDates(int.task_id, dateStart, dateFinish)
+              case _ => None
+            }
+
           })
 
         }
