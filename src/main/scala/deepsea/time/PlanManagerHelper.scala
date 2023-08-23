@@ -414,8 +414,12 @@ trait PlanManagerHelper {
       nextHourNoPlan = nextHour(nextHourNoPlan)
     }
     val todayStart = new Date(now.getYear, now.getMonth, now.getDate, 0, 0, 0)
+    val plan = getUserPlan(userId, nextHourNoPlan).filter(_.consumed == 1)
     if (from < todayStart.getTime) {
       -1
+    }
+    else if (plan.filter(x => sameDay(x.date_start, nextHourNoPlan)).map(_.hours_amount).sum > 0){
+      -2
     }
     else {
       val skip = skipIntervals(userId)
@@ -446,7 +450,7 @@ trait PlanManagerHelper {
           s.close()
           c.close()
           idNext
-        case _ => -2
+        case _ => -3
       }
       id
     }

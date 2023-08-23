@@ -119,8 +119,9 @@ class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
         }
       }
       val response = res match {
-        case -2 => "error: critical code error"
-        case -1 => "error: wrong planing date"
+        case -3 => "error: критическая ошибка"
+        case -2 => "error: невозможно добавить задачу на день в котором есть списанные интервалы"
+        case -1 => "error: неверная дата"
         case _ => "success"
       }
       sender() ! response.asJson.noSpaces
