@@ -482,7 +482,7 @@ trait PlanManagerHelper {
             if (insPlan.nonEmpty) {
               insPlan.foreach(cTask => {
                 if (hoursConsumed < hoursAmount) {
-                  if (cTask.hours_amount <= hoursConsumed) {
+                  if (cTask.hours_amount <= hoursAmount) {
                     hoursConsumed += cTask.hours_amount
                     deleteInterval(cTask.id)
                   }
