@@ -3,13 +3,14 @@ package deepsea.time
 import akka.actor.Actor
 import deepsea.actors.ActorManager
 import deepsea.auth.AuthManager
-import deepsea.database.MongoCodecs
+import deepsea.database.{DBManager, MongoCodecs}
 import deepsea.issues.IssueManager.AssignIssue
 import deepsea.issues.classes.IssueHistory
 import deepsea.time.PlanManager._
 import io.circe.syntax.EncoderOps
 
-import java.util.Date
+import java.util.{Calendar, Date}
+import scala.collection.mutable.ListBuffer
 
 object PlanManager{
   case class GetPlan()
@@ -34,6 +35,8 @@ object PlanManager{
 }
 class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
   override def preStart(): Unit = {
+    //fillPrevCalendar()
+    val qwe = 0
 //    val now = new Date()
 //    var n = nextHour(now.getTime)
 //    printDate(n)
@@ -42,7 +45,85 @@ class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
 //      printDate(n)
 //    })
   }
+  def fillPrevCalendar(): Unit = {
+    val caltoday = Calendar.getInstance()
+    caltoday.set(caltoday.get(Calendar.YEAR), caltoday.get(Calendar.MONTH), caltoday.get(Calendar.DAY_OF_MONTH), 8, 0, 0)
+    val today = caltoday.getTime.getTime
+    getUsers.foreach(u => {
+      val plan = getUserPlanHours(u, 0, 0, true)
+      val planBefore = plan.filter(_.task_id > 0).filter(hour => {
+        val cal = Calendar.getInstance()
+        cal.set(hour.year, hour.month, hour.day, 8, 0, 0)
+        val date = cal.getTime.getTime
+        date < today
+      })
+      val planFurther = plan.filter(_.task_id != 0).filter(hour => {
+        val cal = Calendar.getInstance()
+        cal.set(hour.year, hour.month, hour.day, 8, 0, 0)
+        val date = cal.getTime.getTime
+        date >= today
+      })
 
+      planBefore.groupBy(_.task_id).toList.foreach(gr => {
+        DBManager.GetPGConnection() match {
+          case Some(c) =>
+            val s = c.createStatement()
+            val query = s"insert into plan (task_id, user_id, date_start, date_finish, task_type, hours_amount, consumed) values (${gr._1}, $u, 0, 0, 0, ${gr._2.length}, 1)"
+            s.execute(query)
+            s.close()
+            c.close()
+          case _ => None
+        }
+      })
+      planFurther.groupBy(_.task_id).toList.sortBy(_._2.head.id).foreach(gr => {
+        val taskType = gr._1 match {
+          case -2 => 2
+          case -1 => 1
+          case _ => 0
+        }
+        addInterval(gr._1, u, today, gr._2.length, taskType)
+      })
+      val q = 0
+    })
+    val jk = 0
+
+    //      var prevTask = 0
+    //      val hours = ListBuffer.empty[Long]
+    //      var startHour: Long = 0
+    //      plan.sortBy(_.id).foreach(hour => {
+    //        if (prevTask == 0){
+    //          prevTask = hour.task_id
+    //          val cal = Calendar.getInstance()
+    //          cal.set(hour.year, hour.month, hour.day, 8, 0, 0)
+    //          val todayStart = cal.getTime.getTime
+    //          startHour = nextHour(todayStart)
+    //        }
+    //        if (hours.nonEmpty && hours.last < today && startHour > today){
+    //          addIntervalManual(prevTask, u, hours.head, hours.last, hours.length, 0, 1)
+    //          hours.clear()
+    //          hours += startHour
+    //          startHour = nextHour(startHour)
+    //          prevTask = hour.task_id
+    //        }
+    //        else if (prevTask == hour.task_id){
+    //          hours += startHour
+    //          startHour = nextHour(startHour)
+    //        }
+    //        else{
+    //          val consumed = if (hours.last < today) 1 else 0
+    //          addIntervalManual(prevTask, u, hours.head, hours.last, hours.length, 0, consumed)
+    //          hours.clear()
+    //          hours += startHour
+    //          startHour = nextHour(startHour)
+    //          prevTask = hour.task_id
+    //        }
+    //        if (hours.nonEmpty && plan.last == hour) {
+    //          val consumed = if (hours.last < today) 1 else 0
+    //          addIntervalManual(hour.task_id, hour.user, hours.head, hours.last, hours.length, 0, consumed)
+    //          hours.clear()
+    //        }
+    //      })
+  }
   override def receive: Receive = {
     case GetPlan() =>
       sender() ! getPlan.asJson.noSpaces

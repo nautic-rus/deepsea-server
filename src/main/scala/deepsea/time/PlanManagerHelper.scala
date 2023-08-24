@@ -5,7 +5,7 @@ import deepsea.auth.AuthManagerHelper
 import deepsea.database.DBManager
 import deepsea.database.DBManager.{RsIterator, check}
 import deepsea.issues.IssueManager.UpdateDates
-import deepsea.time.PlanHoursManager.SpecialDay
+import deepsea.time.PlanHoursManager.{PlanHour, SpecialDay}
 import deepsea.time.PlanManager.{DayInterval, IssuePlan, PlanByDays, PlanInterval, UserPlan}
 
 import java.time.YearMonth
@@ -352,6 +352,18 @@ trait PlanManagerHelper {
       }
     }
   }
+  def addIntervalManual(taskId: Int, userId: Int, from: Long, to: Long, hoursAmount: Int, taskType: Int, consumed: Int): Unit = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val query = s"insert into plan (task_id, user_id, date_start, date_finish, task_type, hours_amount, consumed) values ($taskId, $userId, ${from}, ${to}, $taskType, ${hoursAmount}, ${consumed})"
+        s.execute(query)
+        s.close()
+        c.close()
+      case _ => None
+    }
+  }
+
   def deleteInterval(id: Int): Unit = {
     DBManager.GetPGConnection() match {
       case Some(c) =>
@@ -518,6 +530,43 @@ trait PlanManagerHelper {
       }
     }
   }
+
+  def getUserPlanHours(userId: Int, startDate: Long = 0, amount: Int = 25, available: Boolean = false): List[PlanHour] = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val calendar = Calendar.getInstance()
+        if (startDate != 0) {
+          calendar.setTime(new Date(startDate))
+        }
+        else {
+          calendar.add(Calendar.DATE, -4)
+        }
+        val startMonth = calendar.get(Calendar.MONTH)
+
+        val userFilter = s"(user_id = $userId or $userId = 0)"
+        val dateFilter = s"((month = $startMonth) or $available)"
+        val query = s"select * from hours_template_user where $userFilter and $dateFilter"
+        val s = c.createStatement()
+        val planHours = RsIterator(s.executeQuery(query)).map(rs => {
+          PlanHour(
+            Option(rs.getInt("day")).getOrElse(0),
+            Option(rs.getInt("month")).getOrElse(0),
+            Option(rs.getInt("year")).getOrElse(0),
+            Option(rs.getInt("hour_type")).getOrElse(0),
+            Option(rs.getInt("day_type")).getOrElse(0),
+            Option(rs.getInt("day_of_week")).getOrElse(0),
+            Option(rs.getInt("user_id")).getOrElse(0),
+            Option(rs.getInt("id")).getOrElse(0),
+            Option(rs.getInt("task_id")).getOrElse(0),
+          )
+        }).toList
+        s.close()
+        c.close()
+        planHours.sortBy(_.id)
+      case _ => List.empty[PlanHour]
+    }
+  }
+
   private def skipIntervals(userId: Int): List[PlanInterval] = {
     DBManager.GetPGConnection() match {
       case Some(c) =>
@@ -722,7 +771,7 @@ trait PlanManagerHelper {
     }
     nH
   }
-  private def nextHour(date: Long): Long = {
+  def nextHour(date: Long): Long = {
     var d = new Date(date + msOneHour)
     val hours = d.getHours
     if (hours == 12){
@@ -742,7 +791,7 @@ trait PlanManagerHelper {
   private def inInterval(hour: Long, intervals: List[PlanInterval]): Boolean = {
     intervals.exists(x => x.date_start <= hour && hour <= x.date_finish)
   }
-  private def sameDay(date1: Long, date2: Long): Boolean = {
+  def sameDay(date1: Long, date2: Long): Boolean = {
     val d1 = new Date(date1)
     val d2 = new Date(date2)
     d1.getYear == d2.getYear && d1.getMonth == d2.getMonth && d1.getDate == d2.getDate
