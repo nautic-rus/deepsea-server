@@ -374,7 +374,7 @@ trait PlanManagerHelper {
           if (int.task_type != 0){
             splitTask(int.date_start, int.user_id, int.hours_amount)
           }
-          val userPlan = getUserPlan(int.user_id, int.date_start).filter(x => x.id != int.id)
+          val userPlan = getUserPlan(int.user_id, int.date_start).filter(x => x.id != int.id).filter(_.task_type == 0)
           var hourStart = int.date_start
           userPlan.sortBy(_.date_start).foreach(p => {
             val hourFinish = nextHourN(hourStart, p.hours_amount - 1)
@@ -597,7 +597,7 @@ trait PlanManagerHelper {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val query = s"select * from plan where date_start >= $splitDate and user_id = $userId"
+        val query = s"select * from plan where date_start >= $splitDate and user_id = $userId and task_type = 0"
         val plan = RsIterator(s.executeQuery(query)).map(rs => {
           PlanInterval(
             rs.getInt("id"),
