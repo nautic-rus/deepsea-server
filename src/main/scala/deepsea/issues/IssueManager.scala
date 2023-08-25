@@ -298,6 +298,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     case RemoveIssue(_id, user) =>
       val id = Try(_id.toInt).getOrElse(0)
       removeIssue(id, user)
+      ActorManager.plan ! DeletePausedInterval(id)
       sender() ! Json.toJson("success")
     case GetIssueDetails(_id) =>
       sender() ! (getIssueDetails(Try(_id.toInt).getOrElse(0)) match {
