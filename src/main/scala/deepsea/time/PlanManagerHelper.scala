@@ -430,11 +430,14 @@ trait PlanManagerHelper {
     if (from < todayStart.getTime) {
       -1
     }
-    else if (plan.filter(x => sameDay(x.date_start, nextHourNoPlan)).map(_.hours_amount).sum > 0){
-      -2
-    }
+//    else if (plan.filter(x => sameDay(x.date_start, nextHourNoPlan)).map(_.hours_amount).sum > 0){
+//      -2
+//    }
     else {
       val skip = skipIntervals(userId)
+      while (plan.exists(x => x.date_start <= nextHourNoPlan && nextHourNoPlan <= x.date_finish)) {
+        nextHourNoPlan = nextHour(nextHourNoPlan)
+      }
       val hours = ListBuffer.empty[Long]
       var h = nextHourNoPlan
       while (hours.length < hoursAmount) {
@@ -609,17 +612,29 @@ trait PlanManagerHelper {
         }).toList
 
         if (plan.nonEmpty){
-          val planMin = plan.map(_.date_start).min
-          val hoursBeforeStart = ListBuffer.empty[Long]
-          var startDate = splitDate
-          while (startDate < planMin) {
-            hoursBeforeStart += startDate
-            startDate = nextHour(startDate)
+          val nonConsumed = plan.filter(_.consumed == 0)
+          val beforeStartReduce = if (nonConsumed.nonEmpty){
+            val planMin = nonConsumed.map(_.date_start).min
+            val hoursBeforeStart = ListBuffer.empty[Long]
+            var startDate = splitDate
+            while (startDate < planMin) {
+              hoursBeforeStart += startDate
+              startDate = nextHour(startDate)
+            }
+            if (amount < hoursBeforeStart.length) {
+              0
+            }
+            else {
+              amount - hoursBeforeStart.length
+            }
+          }
+          else{
+            amount
           }
 
 
           plan.sortBy(_.date_start).foreach(p => {
-            val pN = p.copy(date_start = nextHourN(p.date_start, amount - hoursBeforeStart.length), date_finish = nextHourN(p.date_finish, amount - hoursBeforeStart.length))
+            val pN = p.copy(date_start = nextHourN(p.date_start, beforeStartReduce), date_finish = nextHourN(p.date_finish, beforeStartReduce))
             s.execute(s"update plan set date_start = ${pN.date_start}, date_finish = ${pN.date_finish} where id = ${p.id}")
 
             getInterval(pN.id).headOption match {
