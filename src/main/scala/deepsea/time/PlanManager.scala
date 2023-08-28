@@ -150,7 +150,7 @@ class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
       if (taskId.toIntOption.getOrElse(0) > 0){
         getInterval(res).headOption match {
           case Some(int) =>
-            val intervals = getTaskPlan(int.task_id)
+            val intervals = getTaskPlan(int.task_id).filter(_.date_start != 0)
             var dateStart = int.date_start
             var dateFinish = int.date_finish
             if (intervals.nonEmpty) {
@@ -182,7 +182,7 @@ class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
       if (taskId.toIntOption.getOrElse(0) > 0) {
         getInterval(res).headOption match {
           case Some(int) =>
-            val intervals = getTaskPlan(int.task_id)
+            val intervals = getTaskPlan(int.task_id).filter(_.date_start != 0)
             var dateStart = int.date_start
             var dateFinish = int.date_finish
             if (intervals.nonEmpty) {
@@ -212,7 +212,7 @@ class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
         from.toLongOption.getOrElse(0),
         hoursAmount.toIntOption.getOrElse(0),
         taskType.toIntOption.getOrElse(0))
-      if (taskId.toIntOption.getOrElse(0) > 0) {
+      if (taskId.toIntOption.getOrElse(0) > 0 && res == "success") {
         ActorManager.issue ! new IssueHistory(taskId.toIntOption.getOrElse(0), userLogin(userId.toIntOption.getOrElse(0)),
         "man_hours", "", hoursAmount, new Date().getTime, "")
       }
