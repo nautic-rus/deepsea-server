@@ -32,6 +32,7 @@ import org.mongodb.scala.bson.BsonDateTime
 import org.mongodb.scala.model.Filters.{and, equal}
 import play.api.libs.json.Json
 
+import java.io.File
 import java.util.Date
 import java.util.concurrent.TimeUnit
 import scala.collection.mutable.ListBuffer
@@ -71,6 +72,7 @@ object IssueManager{
   case class DeleteFile(url: String)
   case class GetIssuePeriods()
   case class SetIssuePeriods(id: String, start: String, end: String)
+  case class GetIssuesFiles(ids: String)
   case class GetReasonsOfChange()
   case class SetRevisionFiles(id: String, revision: String, filesJson: String)
   case class DeleteRevisionFile(file_url: String, user: String)
@@ -446,7 +448,12 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     case history: IssueHistory => updateHistory(history)
     case dates: UpdateDates =>
       updateDates(dates)
-    case _ => None
+    case GetIssuesFiles(json) =>
+      decode[List[Int]](json) match {
+        case Right(value) => downloadFiles(value)
+        case Left(value) => File.createTempFile("", "")
+      }
+    case _ => File.createTempFile("", "")
   }
   def setDayCalendar(user: String, day: String, status: String): ListBuffer[IssueView] ={
     val res = ListBuffer.empty[IssueView]
@@ -932,31 +939,6 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
         c.close()
       case _ =>
     }
-  }
-  def getRevisionFiles: ListBuffer[FileAttachment] ={
-    val res = ListBuffer.empty[FileAttachment]
-    DBManager.GetPGConnection() match {
-      case Some(c) =>
-        val s = c.createStatement()
-        val rs = s.executeQuery(s"select * from revision_files where removed = 0")
-        while (rs.next()){
-          res += new FileAttachment(
-            rs.getString("file_name"),
-            rs.getString("file_url"),
-            rs.getLong("upload_date"),
-            rs.getString("upload_user"),
-            rs.getString("issue_revision"),
-            rs.getString("group_name"),
-          ){
-            issue_id = rs.getInt("issue_id")
-          }
-        }
-        rs.close()
-        s.close()
-        c.close()
-      case _ =>
-    }
-    res
   }
 
   def combineIssues(issue_first: Int, issue_second: Int, user: String): Unit = {

@@ -22,8 +22,11 @@ import org.mongodb.scala.MongoCollection
 import org.mongodb.scala.model.Filters
 import org.mongodb.scala.model.Filters.{and, equal}
 
-import java.nio.file.Files
-import java.util.{Calendar, Date}
+import java.io.{BufferedInputStream, File, FileInputStream, FileOutputStream, FileWriter}
+import java.net.URL
+import java.nio.file.{Files, Path, Paths}
+import java.util.zip.{ZipEntry, ZipOutputStream}
+import java.util.{Calendar, Date, UUID}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
@@ -53,6 +56,154 @@ trait IssueManagerHelper extends MongoCodecs {
         }
         query += s" or (i.department in (select name from issue_departments id where id.manager like '%${user.login}%'))"
         query += s" or (i.project in (select name from issue_projects ip where ip.managers like '%${user.login}%'))"
+        query += ")"
+        val rs = s.executeQuery(query)
+        while (rs.next()) {
+          issues += new Issue(
+            rs.getInt("id") match {
+              case value: Int => value
+              case _ => 0
+            },
+            rs.getString("status") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getString("project") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getString("department") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getString("started_by") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getLong("started_date") match {
+              case value: Long => value
+              case _ => 0
+            },
+            rs.getString("issue_type") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getString("issue_name") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getString("details") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getString("assigned_to") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getLong("due_date") match {
+              case value: Long => value
+              case _ => 0
+            },
+          ) {
+            action = rs.getString("active_action") match {
+              case value: String => value
+              case _ => ""
+            }
+            priority = rs.getString("priority") match {
+              case value: String => value
+              case _ => ""
+            }
+            last_update = rs.getLong("last_update") match {
+              case value: Long => value
+              case _ => 0
+            }
+            doc_number = rs.getString("doc_number") match {
+              case value: String => value
+              case _ => ""
+            }
+            responsible = rs.getString("responsible") match {
+              case value: String => value
+              case _ => ""
+            }
+            overtime = rs.getString("overtime") match {
+              case value: String => value
+              case _ => ""
+            }
+            start_date = rs.getLong("start_date") match {
+              case value: Long => value
+              case _ => 0
+            }
+            period = rs.getString("period") match {
+              case value: String => value
+              case _ => ""
+            }
+            parent_id = rs.getInt("parent_id") match {
+              case value: Int => value
+              case _ => 0
+            }
+            closing_status = rs.getString("closing_status") match {
+              case value: String => value
+              case _ => ""
+            }
+            delivered_date = rs.getLong("delivered_date") match {
+              case value: Long => value
+              case _ => 0
+            }
+            first_send_date = rs.getLong("first_send_date") match {
+              case value: Long => value
+              case _ => 0
+            }
+            revision = rs.getString("revision") match {
+              case value: String => value
+              case _ => ""
+            }
+            issue_comment = rs.getString("issue_comment") match {
+              case value: String => value
+              case _ => ""
+            }
+            ready = rs.getString("ready") match {
+              case value: String => value
+              case _ => ""
+            }
+            contract_due_date = rs.getLong("stage_date") match {
+              case value: Long => value
+              case _ => rs.getLong("contract_due_date") match {
+                case value: Long => value
+                case _ => 0
+              }
+            }
+            plan_hours = rs.getDouble("plan_hours") match {
+              case value: Double => value
+              case _ => 0
+            }
+            plan_hours_locked = rs.getInt("plan_hours_locked") match {
+              case value: Int => value
+              case _ => 0
+            }
+            assistant = rs.getString("assistant") match {
+              case value: String => value
+              case _ => ""
+            }
+          }
+        }
+        rs.close()
+        s.close()
+        c.close()
+      case _ =>
+    }
+    issues
+  }
+
+  def getIssuesForUser(user: String): ListBuffer[Issue] = {
+    val issues = ListBuffer.empty[Issue]
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        var query = Source.fromResource("queries/issues.sql").mkString
+        val filterUsers = s" and (assigned_to = '${user}' or started_by = '${user}' or responsible = '${user}'"
+        query += filterUsers
+        query += s" or (i.department in (select name from issue_departments id where id.manager like '%${user}%'))"
+        query += s" or (i.project in (select name from issue_projects ip where ip.managers like '%${user}%'))"
         query += ")"
         val rs = s.executeQuery(query)
         while (rs.next()) {
@@ -730,6 +881,32 @@ trait IssueManagerHelper extends MongoCodecs {
             rs.getString("issue_revision"),
             rs.getString("group_name"),
           )
+        }
+        rs.close()
+        s.close()
+        c.close()
+      case _ =>
+    }
+    res
+  }
+
+  def getRevisionFiles: ListBuffer[FileAttachment] = {
+    val res = ListBuffer.empty[FileAttachment]
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val rs = s.executeQuery(s"select * from revision_files where removed = 0")
+        while (rs.next()) {
+          res += new FileAttachment(
+            rs.getString("file_name"),
+            rs.getString("file_url"),
+            rs.getLong("upload_date"),
+            rs.getString("upload_user"),
+            rs.getString("issue_revision"),
+            rs.getString("group_name"),
+          ) {
+            issue_id = rs.getInt("issue_id")
+          }
         }
         rs.close()
         s.close()
@@ -1807,5 +1984,55 @@ trait IssueManagerHelper extends MongoCodecs {
       }
     }
     builder.toString
+  }
+  def downloadFiles(ids: List[Int]): Unit = {
+    val revFiles = getRevisionFiles.filter(x => ids.contains(x.issue_id))
+
+    val fileName = "docs.zip"
+    var pathId = UUID.randomUUID().toString.substring(0, 8)
+    var file = new File(App.Cloud.Directory + "/" + pathId)
+    while (file.exists()) {
+      pathId = UUID.randomUUID().toString.substring(0, 8)
+      file = new File(App.Cloud.Directory + "/" + pathId)
+    }
+    file.mkdir()
+    file = new File(App.Cloud.Directory + "/" + pathId + "/" + fileName)
+    val fileUrl = App.Cloud.Url + "/" + pathId + "/" + fileName
+    val zip = new ZipOutputStream(new FileOutputStream(file))
+    val issues = getIssuesForUser("op")
+
+    val pathNames = ListBuffer.empty[String]
+    revFiles.groupBy(x => {
+      val docNumber = issues.find(_.id == x.issue_id) match {
+        case Some(value) => value.doc_number
+        case _ => "no doc_number"
+      }
+      docNumber
+    }).toList.foreach(gr => {
+      zip.putNextEntry(new ZipEntry(gr._1 + "/"))
+      gr._2.foreach(d => {
+        try{
+          val path = App.Cloud.Directory + d.url.replace(App.HTTPServer.RestUrl + "/files", "")
+          var pathName = gr._1 + "/" + d.name
+          while (pathNames.contains(pathName)) {
+            pathName = pathName.replace(".", "%.")
+          }
+          zip.putNextEntry(new ZipEntry(pathName))
+          pathNames += pathName
+          zip.write(Files.readAllBytes(Paths.get(path)))
+        }
+       catch {
+         case e: Exception => println(e.toString)
+       }
+//        var b = str.read()
+//        while (b > -1) {
+//          zip.write(b)
+//          b = str.read()
+//        }
+
+      })
+    })
+
+    zip.close()
   }
 }
