@@ -1985,7 +1985,8 @@ trait IssueManagerHelper extends MongoCodecs {
     }
     builder.toString
   }
-  def downloadFiles(ids: List[Int]): Unit = {
+
+  def downloadFiles(ids: List[Int]): String = {
     val revFiles = getRevisionFiles.filter(x => ids.contains(x.issue_id))
 
     val fileName = "docs.zip"
@@ -2011,7 +2012,7 @@ trait IssueManagerHelper extends MongoCodecs {
     }).toList.foreach(gr => {
       zip.putNextEntry(new ZipEntry(gr._1 + "/"))
       gr._2.foreach(d => {
-        try{
+        try {
           val path = App.Cloud.Directory + d.url.replace(App.HTTPServer.RestUrl + "/files", "")
           var pathName = gr._1 + "/" + d.name
           while (pathNames.contains(pathName)) {
@@ -2021,18 +2022,12 @@ trait IssueManagerHelper extends MongoCodecs {
           pathNames += pathName
           zip.write(Files.readAllBytes(Paths.get(path)))
         }
-       catch {
-         case e: Exception => println(e.toString)
-       }
-//        var b = str.read()
-//        while (b > -1) {
-//          zip.write(b)
-//          b = str.read()
-//        }
-
+        catch {
+          case e: Exception => println(e.toString)
+        }
       })
     })
-
     zip.close()
+    fileUrl
   }
 }

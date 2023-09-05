@@ -449,11 +449,11 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     case dates: UpdateDates =>
       updateDates(dates)
     case GetIssuesFiles(json) =>
-      decode[List[Int]](json) match {
-        case Right(value) => downloadFiles(value)
-        case Left(value) => File.createTempFile("", "")
-      }
-    case _ => File.createTempFile("", "")
+      sender() ! (decode[List[Int]](json) match {
+        case Right(value) => downloadFiles(value).asJson.noSpaces
+        case Left(value) => "error".asJson.noSpaces
+      })
+    case _ => "error".asJson.noSpaces
   }
   def setDayCalendar(user: String, day: String, status: String): ListBuffer[IssueView] ={
     val res = ListBuffer.empty[IssueView]
