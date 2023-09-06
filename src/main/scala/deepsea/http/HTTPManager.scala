@@ -59,7 +59,7 @@ object HTTPManager {
 class HTTPManager extends Actor {
   implicit val system: ActorSystem[Nothing] = ActorSystem(Behaviors.empty, "http")
   implicit val executionContext: ExecutionContextExecutor = system.executionContext
-  implicit val timeout: Timeout = Timeout(50, TimeUnit.SECONDS)
+  implicit val timeout: Timeout = Timeout(350, TimeUnit.SECONDS)
   val logger: Logger = LogManager.getLogger("HttpManager")
   val routes: Route = cors() {
     extractClientIP { ip =>
