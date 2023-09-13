@@ -397,7 +397,10 @@ trait PlanManagerHelper {
         tasks.filter(x => x.date_start > value.date_finish).foreach(int => {
           deleteInterval(int.id)
         })
-      case _ => None
+      case _ =>
+        tasks.foreach(int => {
+          deleteInterval(int.id)
+        })
     }
   }
   def userLogin(id: Int): String = {
