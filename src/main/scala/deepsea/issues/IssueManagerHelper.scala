@@ -1936,13 +1936,19 @@ trait IssueManagerHelper extends MongoCodecs {
   def startProject(project: IssueProject): String = {
     DBManager.GetPGConnection() match {
       case Some(c) =>
-        val s = c.createStatement();
-        val query = s"insert into issue_projects (id, name, foran, rkd, pdsp, factory, managers, status) values (default, '${project.name}', '${project.foran}', '${project.pdsp}', '${project.rkd}', '${project.factory}', '${project.managers}', default)";
-        s.execute(query);
-        s.close();
-        c.close();
-        "success";
-      case _ => "error";
+        val s = c.createStatement()
+        val query = s"insert into issue_projects (id, name, foran, rkd, pdsp, factory, managers, status) values (default, '${project.name}', '${project.foran}', '${project.pdsp}', '${project.rkd}', '${project.factory}', '${project.managers}', default) returning id"
+        val rs = s.executeQuery(query)
+        val id = if (rs.next()){
+          rs.getInt("id")
+        }
+        else{
+          0
+        }
+        s.close()
+        c.close()
+        id.toString
+      case _ => "error"
     }
   }
 
