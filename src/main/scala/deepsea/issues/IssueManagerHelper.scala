@@ -1933,6 +1933,23 @@ trait IssueManagerHelper extends MongoCodecs {
     }
   }
 
+  def getProjectContracts(project: String): List[String] = {
+    val contracts: ListBuffer[String] = ListBuffer.empty[String]
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val rs = s.executeQuery(s"select contract from project_contracts where project in (select id from issue_projects where name = '$project')")
+        while (rs.next()) {
+          contracts += Option(rs.getString("contract")).getOrElse("")
+        }
+        rs.close()
+        s.close()
+        c.close()
+      case _ => None
+    }
+    contracts.toList
+  }
+
   def startProject(project: IssueProject): String = {
     DBManager.GetPGConnection() match {
       case Some(c) =>

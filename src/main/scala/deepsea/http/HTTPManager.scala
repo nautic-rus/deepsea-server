@@ -167,6 +167,9 @@ class HTTPManager extends Actor {
         (get & path("projectDetails") & parameter("id")) { id =>
           askFor(ActorManager.issue, GetProjectDetails(id))
         },
+        (get & path("projectContracts") & parameter("project")) { project =>
+          askFor(ActorManager.issue, GetProjectContracts(project))
+        },
         (post & path("startProject") & entity(as[String])) { (project) =>
           askFor(ActorManager.issue, StartProject(project))
         },
