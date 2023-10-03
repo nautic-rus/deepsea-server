@@ -562,6 +562,10 @@ trait IssueManagerHelper extends MongoCodecs {
               case value: String => value
               case _ => ""
             }
+            contract = rs.getString("contract") match {
+              case value: String => value
+              case _ => ""
+            }
             messages = getIssueMessages(id)
             file_attachments = getIssueFileAttachments(id)
             parent_id = rs.getInt("parent_id") match {
