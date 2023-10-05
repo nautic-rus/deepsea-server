@@ -886,7 +886,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
         case _ => None
       }
       if (name_value == "status"){
-        if (List("Paused", "Check").contains(new_value) || issue.closing_status.contains(new_value)){
+        if (List("Paused", "Check", "Delivered").contains(new_value) || issue.closing_status.contains(new_value)){
           ActorManager.plan ! DeletePausedInterval(issue.id)
         }
       }
