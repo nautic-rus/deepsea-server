@@ -391,7 +391,7 @@ trait PlanManagerHelper {
     }
   }
   def deletePausedInterval(id: Int): Unit = {
-    val tasks = getTaskPlan(id)
+    val tasks = getTaskPlan(id).sortBy(_.date_start)
     tasks.findLast(_.consumed == 1) match {
       case Some(value) =>
         tasks.filter(x => x.date_start > value.date_finish).foreach(int => {
