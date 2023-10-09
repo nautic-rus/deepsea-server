@@ -868,6 +868,11 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
           prev_value = oldIssue.modification_description
           new_value = issue.modification_description
         }
+        else if (oldIssue.contract != issue.contract) {
+          name_value = "contract"
+          prev_value = oldIssue.contract
+          new_value = issue.contract
+        }
       case _ => None
     }
     if (name_value != ""){
