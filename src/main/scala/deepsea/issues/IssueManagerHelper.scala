@@ -2019,7 +2019,7 @@ trait IssueManagerHelper extends MongoCodecs {
     builder.toString
   }
 
-  def downloadFiles(ids: List[Int]): String = {
+  def downloadFiles(ids: List[Int], user: String, email: String): Unit = {
     val revFiles = getRevisionFiles.filter(x => ids.contains(x.issue_id))
 
     val fileName = "docs.zip"
@@ -2061,6 +2061,16 @@ trait IssueManagerHelper extends MongoCodecs {
       })
     })
     zip.close()
-    fileUrl
+    ActorManager.mail ! Mail(user, email, "DeepSea Docs Archive", s"Here is an url to download your files. It will be active 72 hours " + fileUrl)
+    DBManager.GetPGConnection() match {
+      case Some(connection) =>
+        val stmt = connection.createStatement()
+        val date = new Date().getTime
+        val query = s"insert into files_temp (id, url, date) values (default, '$fileUrl', $date)"
+        stmt.execute(query)
+        stmt.close()
+        connection.close()
+      case _ => None
+    }
   }
 }

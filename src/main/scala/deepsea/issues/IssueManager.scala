@@ -73,7 +73,7 @@ object IssueManager{
   case class DeleteFile(url: String)
   case class GetIssuePeriods()
   case class SetIssuePeriods(id: String, start: String, end: String)
-  case class GetIssuesFiles(ids: String)
+  case class GetIssuesFiles(ids: String, user: String, email: String)
   case class GetReasonsOfChange()
   case class SetRevisionFiles(id: String, revision: String, filesJson: String)
   case class DeleteRevisionFile(file_url: String, user: String)
@@ -454,9 +454,11 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     case history: IssueHistory => updateHistory(history)
     case dates: UpdateDates =>
       updateDates(dates)
-    case GetIssuesFiles(json) =>
+    case GetIssuesFiles(json, user, email) =>
       sender() ! (decode[List[Int]](json) match {
-        case Right(value) => downloadFiles(value).asJson.noSpaces
+        case Right(value) =>
+          downloadFiles(value, user, email)
+          "success".asJson.noSpaces
         case Left(value) => "error".asJson.noSpaces
       })
     case _ => "error".asJson.noSpaces
