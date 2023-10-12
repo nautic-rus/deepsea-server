@@ -2061,7 +2061,7 @@ trait IssueManagerHelper extends MongoCodecs {
       })
     })
     zip.close()
-    ActorManager.mail ! Mail(user, email, "DeepSea Docs Archive", s"Here is an url to download your files. It will be active 72 hours. <a href=\"$fileUrl\">" + fileUrl + "</a>")
+    ActorManager.mail ! Mail(user, email, "DeepSea Docs Archive", s"<div>Here is an url to download your files. It will be active 72 hours.</div> <a href=\"$fileUrl\">" + fileUrl + "</a>")
     DBManager.GetPGConnection() match {
       case Some(connection) =>
         val stmt = connection.createStatement()
