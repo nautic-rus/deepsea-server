@@ -6,13 +6,17 @@ import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMethods, HttpRequ
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.util.ByteString
 import com.jcraft.jsch.{ChannelExec, JSch}
+import deepsea.App
 import deepsea.actors.ActorManager
 import deepsea.database.DBManager
 import deepsea.time.PlanHoursManager.ConsumeTodayPlanHours
-import deepsea.time.TimeAndWeatherManager.{CheckMaster, GetTimeAndWeather, SetTimeAndWeather, Weather, writeWeather}
+import deepsea.time.TimeAndWeatherManager._
 import play.api.libs.json.{JsArray, Json, OWrites}
 
+import java.io.File
+import java.nio.file.Files
 import java.util.{Date, Properties}
+import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContextExecutor}
 import scala.util.{Failure, Success}
@@ -22,6 +26,7 @@ object TimeAndWeatherManager{
   case class GetTimeAndWeather()
   case class SetTimeAndWeather()
   case class CheckMaster()
+  case class CheckTempFiles()
 
   case class Weather(var time: Long, description: String, icon: String, temp: Double, feels_like: Double, wind: Double)
 
@@ -41,6 +46,7 @@ class TimeAndWeatherManager extends Actor{
     system.scheduler.scheduleWithFixedDelay(0.seconds, 5.minutes, self, SetTimeAndWeather())
     system.scheduler.scheduleWithFixedDelay(0.seconds, 1.minutes, ActorManager.planHours, ConsumeTodayPlanHours())
     system.scheduler.scheduleWithFixedDelay(0.seconds, 5.minutes, self, CheckMaster())
+    system.scheduler.scheduleWithFixedDelay(0.seconds, 60.minutes, self, CheckTempFiles())
   }
   override def receive: Receive = {
     case GetTimeAndWeather() =>
@@ -63,6 +69,8 @@ class TimeAndWeatherManager extends Actor{
       if (!checkMaster){
         startMaster()
       }
+    case CheckTempFiles() =>
+      checkTempFiles()
     case _ => None
   }
   def setTimeAndWeather(): Unit ={
@@ -141,5 +149,29 @@ class TimeAndWeatherManager extends Actor{
     ch.start()
     ch.disconnect()
     s.disconnect()
+  }
+  private def checkTempFiles(): Unit = {
+    DBManager.GetPGConnection() match {
+      case Some(connection) =>
+        val stmt = connection.createStatement()
+        val date = new Date().getTime
+        val interval = 1000 * 60 * 60 * 24 * 3
+        val limit = date - interval
+        val query = s"select url from files_temp where $date < $limit"
+        val rs = stmt.executeQuery(query)
+        val urls = ListBuffer.empty[String]
+        while (rs.next()){
+          urls += rs.getString("url")
+        }
+        rs.close()
+        stmt.execute(s"delete from files_temp where $date < $limit")
+        stmt.close()
+        connection.close()
+        urls.foreach(url => {
+          val file = url.replace(App.HTTPServer.RestUrl + "/files/", "/cloud/")
+          new File(file).delete()
+        })
+      case _ => None
+    }
   }
 }
