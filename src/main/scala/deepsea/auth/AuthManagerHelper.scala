@@ -88,7 +88,7 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
           val usersProjects = getUsersProjects
           val roles = getRoles
           val s = c.createStatement();
-          val rs = s.executeQuery(s"select * from users where removed = 0 order by id")
+          val rs = s.executeQuery(s"select * from users order by id")
           while (rs.next()) {
             val userId = Option(rs.getInt("id")).getOrElse(0)
             val groups = Option(rs.getString("group").split(",").toList).getOrElse(List.empty[String])

@@ -1760,6 +1760,8 @@ trait IssueManagerHelper extends MongoCodecs {
             case "Electric" => "electric-esp"
             case "Accommodation" => "accommodation-esp"
             case "Design" => "design-esp"
+            case "General" => "general-esp"
+            case _ => "general-esp"
           }
         }
         val departments = getDepartments

@@ -96,6 +96,7 @@ object IssueManager{
   case class AddDailyTask(jsValue: String)
   case class DeleteDailyTask(id: String)
   case class CombineIssues(firstIssue: String, secondIssue: String, user: String)
+  case class UnCombineIssues(firstIssue: String, secondIssue: String, user: String)
   case class GetProjectNames()
   case class SubscribeForNotifications(user: String, issue: String, options: String)
   case class NotifyDocUpload(taskId: String, kind: String, comment: String, count: String)
@@ -432,6 +433,9 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
       sender() ! "success".asJson.noSpaces
     case CombineIssues(firstIssue, secondIssue, user) =>
       combineIssues(firstIssue.toIntOption.getOrElse(0), secondIssue.toIntOption.getOrElse(0), user)
+      sender() ! "success".asJson.noSpaces
+    case UnCombineIssues(firstIssue, secondIssue, user) =>
+      unCombineIssues(firstIssue.toIntOption.getOrElse(0), secondIssue.toIntOption.getOrElse(0), user)
       sender() ! "success".asJson.noSpaces
     case GetProjectNames() =>
       sender() ! getProjectNames.asJson.noSpaces
@@ -954,6 +958,18 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
         val s = c.createStatement()
         val date = new Date().getTime
         s.execute(s"insert into issue_combined values ($issue_first, $issue_second, '$user', $date)")
+        s.close()
+        c.close()
+      case _ =>
+    }
+  }
+
+  def unCombineIssues(issue_first: Int, issue_second: Int, user: String): Unit = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val date = new Date().getTime
+        s.execute(s"delete from issue_combined where (issue_first = $issue_first and issue_second = $issue_second) or (issue_first = $issue_second and issue_second = $issue_first)")
         s.close()
         c.close()
       case _ =>
