@@ -371,27 +371,31 @@ trait PlanManagerHelper {
         val intList = getInterval(id)
         if (intList.nonEmpty && intList.head.consumed == 0){
           val int = intList.head
-          if (int.task_type != 0){
-            splitTask(int.date_start, int.user_id, int.hours_amount)
+          val today = new Date().getTime
+          if (int.date_finish < today){
+            s.execute(s"delete from plan where id = $id")
           }
-          val userPlan = getUserPlan(int.user_id, int.date_start).filter(x => x.id != int.id).filter(_.task_type == 0)
-          var hourStart = int.date_start
-          userPlan.sortBy(_.date_start).foreach(p => {
-            val hourFinish = nextHourN(hourStart, p.hours_amount - 1)
-            s.execute(s"update plan set date_start = $hourStart, date_finish = $hourFinish where id = ${p.id}")
-            hourStart = nextHour(hourFinish)
-          })
-
-          s.execute(s"delete from plan where id = $id")
+          else{
+            if (int.task_type != 0) {
+              splitTask(int.date_start, int.user_id, int.hours_amount)
+            }
+            val userPlan = getUserPlan(int.user_id, int.date_start).filter(x => x.id != int.id).filter(_.task_type == 0)
+            var hourStart = int.date_start
+            userPlan.sortBy(_.date_start).foreach(p => {
+              val hourFinish = nextHourN(hourStart, p.hours_amount - 1)
+              s.execute(s"update plan set date_start = $hourStart, date_finish = $hourFinish where id = ${p.id}")
+              hourStart = nextHour(hourFinish)
+            })
+            s.execute(s"delete from plan where id = $id")
+          }
         }
-
         s.close()
         c.close()
       case _ => None
     }
   }
   def deletePausedInterval(id: Int): Unit = {
-    val tasks = getTaskPlan(id)
+    val tasks = getTaskPlan(id).sortBy(_.date_start)
     tasks.findLast(_.consumed == 1) match {
       case Some(value) =>
         tasks.filter(x => x.date_start > value.date_finish).foreach(int => {

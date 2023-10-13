@@ -26,7 +26,7 @@ object DBManager extends MongoCodecs {
 //  nextcloudSSHSession.setPortForwardingL("localhost", 1155, "172.18.0.5", 5432)
 
 
-  List("N002", "N004", "SC01", "LV01").foreach(project => {
+  List("N002", "N004", "N007", "SC01", "LV01").foreach(project => {
     try{
       configOracle.setDriverClassName("oracle.jdbc.OracleDriver")
       configOracle.setJdbcUrl("jdbc:oracle:thin:@192.168.1.12:1521:ORA3DB")

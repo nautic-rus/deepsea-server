@@ -49,6 +49,7 @@ object IssueManager{
   case class RemoveIssue(id: String, user: String)
   case class GetIssueProjects()
   case class GetProjectDetails(id: String)
+  case class GetProjectContracts(project: String)
   case class StartProject(projectJson: String)
   case class DeleteProject(id: String)
   case class EditProject(projectJson: String, id: String)
@@ -72,7 +73,7 @@ object IssueManager{
   case class DeleteFile(url: String)
   case class GetIssuePeriods()
   case class SetIssuePeriods(id: String, start: String, end: String)
-  case class GetIssuesFiles(ids: String)
+  case class GetIssuesFiles(ids: String, user: String, email: String)
   case class GetReasonsOfChange()
   case class SetRevisionFiles(id: String, revision: String, filesJson: String)
   case class DeleteRevisionFile(file_url: String, user: String)
@@ -95,6 +96,7 @@ object IssueManager{
   case class AddDailyTask(jsValue: String)
   case class DeleteDailyTask(id: String)
   case class CombineIssues(firstIssue: String, secondIssue: String, user: String)
+  case class UnCombineIssues(firstIssue: String, secondIssue: String, user: String)
   case class GetProjectNames()
   case class SubscribeForNotifications(user: String, issue: String, options: String)
   case class NotifyDocUpload(taskId: String, kind: String, comment: String, count: String)
@@ -165,6 +167,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
   override def receive: Receive = {
     case GetIssueProjects() => sender() ! getIssueProjects.asJson.noSpaces
     case GetProjectDetails(id) => sender() ! getProjectDetails(id).asJson
+    case GetProjectContracts(project) => sender() ! getProjectContracts(project).asJson.noSpaces
     case StartProject(projectJson) =>
       circe.jawn.decode[IssueProject](projectJson) match {
         case Right(project) =>
@@ -431,6 +434,9 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     case CombineIssues(firstIssue, secondIssue, user) =>
       combineIssues(firstIssue.toIntOption.getOrElse(0), secondIssue.toIntOption.getOrElse(0), user)
       sender() ! "success".asJson.noSpaces
+    case UnCombineIssues(firstIssue, secondIssue, user) =>
+      unCombineIssues(firstIssue.toIntOption.getOrElse(0), secondIssue.toIntOption.getOrElse(0), user)
+      sender() ! "success".asJson.noSpaces
     case GetProjectNames() =>
       sender() ! getProjectNames.asJson.noSpaces
     case SubscribeForNotifications(user, issue, options) =>
@@ -448,9 +454,11 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     case history: IssueHistory => updateHistory(history)
     case dates: UpdateDates =>
       updateDates(dates)
-    case GetIssuesFiles(json) =>
+    case GetIssuesFiles(json, user, email) =>
       sender() ! (decode[List[Int]](json) match {
-        case Right(value) => downloadFiles(value).asJson.noSpaces
+        case Right(value) =>
+          downloadFiles(value, user, email)
+          "success".asJson.noSpaces
         case Left(value) => "error".asJson.noSpaces
       })
     case _ => "error".asJson.noSpaces
@@ -653,8 +661,8 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val query = s"insert into issue (id, status, project, department, started_by, started_date, issue_type, issue_name, assigned_to, details, priority, last_update, doc_number, responsible, period, parent_id, active_action, due_date, plan_hours, reason_of_changes, modification_of_existing, modification_description) " +
-          s"values (default, '${issue.status}', '${issue.project}', '${issue.department}', '${issue.started_by}', $date, '${issue.issue_type}', '${issue.name}', '${issue.assigned_to}', '${issue.details}', '${issue.priority}', $date, '${issue.doc_number}', '${issue.responsible}', '${issue.period}', '${issue.parent_id}', '${issue.action}', ${issue.due_date}, ${issue.plan_hours}, '${issue.reason_of_changes}', ${issue.modification_of_existing}, '${issue.modification_description}')" +
+        val query = s"insert into issue (id, status, project, department, started_by, started_date, issue_type, issue_name, assigned_to, details, priority, last_update, doc_number, responsible, period, parent_id, active_action, due_date, plan_hours, reason_of_changes, modification_of_existing, modification_description, contract) " +
+          s"values (default, '${issue.status}', '${issue.project}', '${issue.department}', '${issue.started_by}', $date, '${issue.issue_type}', '${issue.name}', '${issue.assigned_to}', '${issue.details}', '${issue.priority}', $date, '${issue.doc_number}', '${issue.responsible}', '${issue.period}', '${issue.parent_id}', '${issue.action}', ${issue.due_date}, ${issue.plan_hours}, '${issue.reason_of_changes}', ${issue.modification_of_existing}, '${issue.modification_description}', '${issue.contract}')" +
           s" returning id"
         val rs = s.executeQuery(query)
         while (rs.next()){
@@ -866,6 +874,11 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
           prev_value = oldIssue.modification_description
           new_value = issue.modification_description
         }
+        else if (oldIssue.contract != issue.contract) {
+          name_value = "contract"
+          prev_value = oldIssue.contract
+          new_value = issue.contract
+        }
       case _ => None
     }
     if (name_value != ""){
@@ -884,7 +897,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
         case _ => None
       }
       if (name_value == "status"){
-        if (List("Paused", "Check").contains(new_value) || issue.closing_status.contains(new_value)){
+        if (List("Paused", "Check", "Delivered").contains(new_value) || issue.closing_status.contains(new_value)){
           ActorManager.plan ! DeletePausedInterval(issue.id)
         }
       }
@@ -947,6 +960,18 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
         val s = c.createStatement()
         val date = new Date().getTime
         s.execute(s"insert into issue_combined values ($issue_first, $issue_second, '$user', $date)")
+        s.close()
+        c.close()
+      case _ =>
+    }
+  }
+
+  def unCombineIssues(issue_first: Int, issue_second: Int, user: String): Unit = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val date = new Date().getTime
+        s.execute(s"delete from issue_combined where (issue_first = $issue_first and issue_second = $issue_second) or (issue_first = $issue_second and issue_second = $issue_first)")
         s.close()
         c.close()
       case _ =>

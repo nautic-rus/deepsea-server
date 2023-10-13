@@ -137,6 +137,10 @@ trait IssueManagerHelper extends MongoCodecs {
               case value: String => value
               case _ => ""
             }
+            contract = rs.getString("contract") match {
+              case value: String => value
+              case _ => ""
+            }
             parent_id = rs.getInt("parent_id") match {
               case value: Int => value
               case _ => 0
@@ -559,6 +563,10 @@ trait IssueManagerHelper extends MongoCodecs {
               case _ => 0
             }
             period = rs.getString("period") match {
+              case value: String => value
+              case _ => ""
+            }
+            contract = rs.getString("contract") match {
               case value: String => value
               case _ => ""
             }
@@ -1752,6 +1760,8 @@ trait IssueManagerHelper extends MongoCodecs {
             case "Electric" => "electric-esp"
             case "Accommodation" => "accommodation-esp"
             case "Design" => "design-esp"
+            case "General" => "general-esp"
+            case _ => "general-esp"
           }
         }
         val departments = getDepartments
@@ -1933,6 +1943,23 @@ trait IssueManagerHelper extends MongoCodecs {
     }
   }
 
+  def getProjectContracts(project: String): List[String] = {
+    val contracts: ListBuffer[String] = ListBuffer.empty[String]
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val rs = s.executeQuery(s"select contract from project_contracts where project in (select id from issue_projects where name = '$project')")
+        while (rs.next()) {
+          contracts += Option(rs.getString("contract")).getOrElse("")
+        }
+        rs.close()
+        s.close()
+        c.close()
+      case _ => None
+    }
+    contracts.toList
+  }
+
   def startProject(project: IssueProject): String = {
     DBManager.GetPGConnection() match {
       case Some(c) =>
@@ -1992,7 +2019,7 @@ trait IssueManagerHelper extends MongoCodecs {
     builder.toString
   }
 
-  def downloadFiles(ids: List[Int]): String = {
+  def downloadFiles(ids: List[Int], user: String, email: String): Unit = {
     val revFiles = getRevisionFiles.filter(x => ids.contains(x.issue_id))
 
     val fileName = "docs.zip"
@@ -2034,6 +2061,17 @@ trait IssueManagerHelper extends MongoCodecs {
       })
     })
     zip.close()
-    fileUrl
+    val q = '"'
+    ActorManager.mail ! Mail(user, email, "DeepSea Docs Archive", s"<div>Here is an url to download your files. It will be active 72 hours.</div> <a href=$q$fileUrl$q>" + fileUrl + "</a>")
+    DBManager.GetPGConnection() match {
+      case Some(connection) =>
+        val stmt = connection.createStatement()
+        val date = new Date().getTime
+        val query = s"insert into files_temp (id, url, date) values (default, '$fileUrl', $date)"
+        stmt.execute(query)
+        stmt.close()
+        connection.close()
+      case _ => None
+    }
   }
 }

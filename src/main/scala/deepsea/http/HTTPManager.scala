@@ -167,6 +167,9 @@ class HTTPManager extends Actor {
         (get & path("projectDetails") & parameter("id")) { id =>
           askFor(ActorManager.issue, GetProjectDetails(id))
         },
+        (get & path("projectContracts") & parameter("project")) { project =>
+          askFor(ActorManager.issue, GetProjectContracts(project))
+        },
         (post & path("startProject") & entity(as[String])) { (project) =>
           askFor(ActorManager.issue, StartProject(project))
         },
@@ -213,6 +216,9 @@ class HTTPManager extends Actor {
         (get & path("combineIssues") & parameter("firstIssue") & parameter("secondIssue") & parameter("user")) { (firstIssue, secondIssue, user) =>
           askFor(ActorManager.issue, CombineIssues(firstIssue, secondIssue, user))
         },
+        (get & path("unCombineIssues") & parameter("firstIssue") & parameter("secondIssue") & parameter("user")) { (firstIssue, secondIssue, user) =>
+          askFor(ActorManager.issue, UnCombineIssues(firstIssue, secondIssue, user))
+        },
         (get & path("issueDetails") & parameter("id")) { (id) =>
           askFor(ActorManager.issue, GetIssueDetails(id))
         },
@@ -246,8 +252,8 @@ class HTTPManager extends Actor {
         (get & path("reasonsOfChange")) {
           askFor(ActorManager.issue, GetReasonsOfChange())
         },
-        (post & path("issuesFiles") & entity(as[String])) { (ids) =>
-          askFor(ActorManager.issue, GetIssuesFiles(ids))
+        (post & path("issuesFiles") & entity(as[String]) & parameter("user", "email")) { (ids, user, email) =>
+          askFor(ActorManager.issue, GetIssuesFiles(ids, user, email))
         },
         (post & path("setRevisionFiles") & entity(as[String]) & parameter("id") & parameter("revision")) { (files, id, revision) =>
           askFor(ActorManager.issue, SetRevisionFiles(id, revision, files))
