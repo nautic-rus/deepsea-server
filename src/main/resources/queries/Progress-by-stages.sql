@@ -1,0 +1,48 @@
+select department,
+count(case when "period" = 'Stage 1' then 1 else null end) as "Stage 1-All",
+count(case when "period" = 'Stage 1' then case WHEN status = 'Delivered' then 1  when status = 'Closed' THEN 1 when status = 'Joined' THEN 1 end end) as "Stage 1-Delivered",
+count(case when "period" = 'Stage 2' then 1 else null end) as "Stage 2-All",
+count(case when "period" = 'Stage 2' then case WHEN status = 'Delivered' then 1  when status = 'Closed' THEN 1 when status = 'Joined' THEN 1 end end) as "Stage 2-Delivered",
+count(case when "period" = 'Stage 3' then 1 else null end) as "Stage 3-All",
+count(case when "period" = 'Stage 3' then case WHEN status = 'Delivered' then 1  when status = 'Closed' THEN 1 when status = 'Joined' THEN 1 end end) as "Stage 3-Delivered",
+count(case when "period" = 'Stage 4' then 1 else null end) as "Stage 4-All",
+count(case when "period" = 'Stage 4' then case WHEN status = 'Delivered' then 1  when status = 'Closed' THEN 1 when status = 'Joined' THEN 1 end end) as "Stage 4-Delivered",
+count(case when "period" = 'Stage 5' then 1 else null end) as "Stage 5-All",
+count(case when "period" = 'Stage 5' then case WHEN status = 'Delivered' then 1  when status = 'Closed' THEN 1 when status = 'Joined' THEN 1 end end) as "Stage 5-Delivered",
+count(case when "period" = 'Stage 6' then 1 else null end) as "Stage 6-All",
+count(case when "period" = 'Stage 6' then case WHEN status = 'Delivered' then 1  when status = 'Closed' THEN 1 when status = 'Joined' THEN 1 end end) as "Stage 6-Delivered",
+count(case when "period" = 'Stage 7' then 1 else null end) as "Stage 7-All",
+count(case when "period" = 'Stage 7' then case WHEN status = 'Delivered' then 1  when status = 'Closed' THEN 1 when status = 'Joined' THEN 1 end end) as "Stage 7-Delivered",
+count(case when "period" = 'Stage 8' then 1 else null end) as "Stage 8-All",
+count(case when "period" = 'Stage 8' then case WHEN status = 'Delivered' then 1  when status = 'Closed' THEN 1 when status = 'Joined' THEN 1 end end) as "Stage 8-Delivered",
+count(case when "period" = 'Stage 9' then 1 else null end) as "Stage 9-All",
+count(case when "period" = 'Stage 9' then case WHEN status = 'Delivered' then 1  when status = 'Closed' THEN 1 when status = 'Joined' THEN 1 end end) as "Stage 9-Delivered",
+count(case when "period" = 'Stage 10' then 1 else null end) as "Stage 10-All",
+count(case when "period" = 'Stage 10' then case WHEN status = 'Delivered' then 1  when status = 'Closed' THEN 1 when status = 'Joined' THEN 1 end end) as "Stage 10-Delivered"
+from issue 
+where project = 'NR002' and issue_type = 'RKD' and removed = 0 and department in ('General','Devices','Hull','System','Electric','Accommodation')
+group by department
+union all 
+select null,
+count(case when "period" = 'Stage 1' then 1 else null end) as "Stage 1-All",
+count(case when "period" = 'Stage 1' then case WHEN status = 'Delivered' then 1  when status = 'Closed' THEN 1 when status = 'Joined' THEN 1 end end) as "Stage 1-Delivered",
+count(case when "period" = 'Stage 2' then 1 else null end) as "Stage 2-All",
+count(case when "period" = 'Stage 2' then case WHEN status = 'Delivered' then 1  when status = 'Closed' THEN 1 when status = 'Joined' THEN 1 end end) as "Stage 2-Delivered",
+count(case when "period" = 'Stage 3' then 1 else null end) as "Stage 3-All",
+count(case when "period" = 'Stage 3' then case WHEN status = 'Delivered' then 1  when status = 'Closed' THEN 1 when status = 'Joined' THEN 1 end end) as "Stage 3-Delivered",
+count(case when "period" = 'Stage 4' then 1 else null end) as "Stage 4-All",
+count(case when "period" = 'Stage 4' then case WHEN status = 'Delivered' then 1  when status = 'Closed' THEN 1 when status = 'Joined' THEN 1 end end) as "Stage 4-Delivered",
+count(case when "period" = 'Stage 5' then 1 else null end) as "Stage 5-All",
+count(case when "period" = 'Stage 5' then case WHEN status = 'Delivered' then 1  when status = 'Closed' THEN 1 when status = 'Joined' THEN 1 end end) as "Stage 5-Delivered",
+count(case when "period" = 'Stage 6' then 1 else null end) as "Stage 6-All",
+count(case when "period" = 'Stage 6' then case WHEN status = 'Delivered' then 1  when status = 'Closed' THEN 1 when status = 'Joined' THEN 1 end end) as "Stage 6-Delivered",
+count(case when "period" = 'Stage 7' then 1 else null end) as "Stage 7-All",
+count(case when "period" = 'Stage 7' then case WHEN status = 'Delivered' then 1  when status = 'Closed' THEN 1 when status = 'Joined' THEN 1 end end) as "Stage 7-Delivered",
+count(case when "period" = 'Stage 8' then 1 else null end) as "Stage 8-All",
+count(case when "period" = 'Stage 8' then case WHEN status = 'Delivered' then 1  when status = 'Closed' THEN 1 when status = 'Joined' THEN 1 end end) as "Stage 8-Delivered",
+count(case when "period" = 'Stage 9' then 1 else null end) as "Stage 9-All",
+count(case when "period" = 'Stage 9' then case WHEN status = 'Delivered' then 1  when status = 'Closed' THEN 1 when status = 'Joined' THEN 1 end end) as "Stage 9-Delivered",
+count(case when "period" = 'Stage 10' then 1 else null end) as "Stage 10-All",
+count(case when "period" = 'Stage 10' then case WHEN status = 'Delivered' then 1  when status = 'Closed' THEN 1 when status = 'Joined' THEN 1 end end) as "Stage 10-Delivered"
+from issue 
+where project = 'NR002' and issue_type = 'RKD' and removed = 0 and department in ('General','Devices','Hull','System','Electric','Accommodation');

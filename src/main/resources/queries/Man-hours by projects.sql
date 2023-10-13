@@ -6,11 +6,11 @@ sum(case when project = '03070-CRABBER' then hours_amount else 0 end) as "03070-
 sum(case when project = '03095-ANDROMEDA' then hours_amount else 0 end) as "03095-ANDROMEDA",
 sum(case when project = '01701-LEV' then hours_amount else 0 end) as "01701-LEV",
 sum(case when project = '01701-ORION' then hours_amount else 0 end) as "01701-ORION",
-sum(case when project = '03095-КАСТОР' then hours_amount else 0 end) as "03095-КАСТОР",
+sum(case when project = '03095-KASTOR' then hours_amount else 0 end) as "03095-КАСТОР",
 sum(hours_amount) as "Total"
 from plan 
 join issue on task_id = issue.id 
-where removed = 0 and department in ('General','Devices','Hull','System','Electric','Accommodation')
+where removed = 0 and department in ('General','Devices','Hull','System','Electric','Accommodation') and issue_type IN ('OTHER')
 group by department
 union all 
 select null, 
@@ -21,8 +21,8 @@ sum(case when project = '03070-CRABBER' then hours_amount else 0 end) as "03070-
 sum(case when project = '03095-ANDROMEDA' then hours_amount else 0 end) as "03095-ANDROMEDA",
 sum(case when project = '01701-LEV' then hours_amount else 0 end) as "01701-LEV",
 sum(case when project = '01701-ORION' then hours_amount else 0 end) as "01701-ORION",
-sum(case when project = '03095-КАСТОР' then hours_amount else 0 end) as "03095-КАСТОР",
+sum(case when project = '03095-KASTOR' then hours_amount else 0 end) as "03095-КАСТОР",
 sum(hours_amount) as "Total"
 from plan 
 join issue on task_id = issue.id 
-where removed = 0 and department in ('General','Devices','Hull','System','Electric','Accommodation');
+where removed = 0 and department in ('General','Devices','Hull','System','Electric','Accommodation') and issue_type IN ('OTHER');
