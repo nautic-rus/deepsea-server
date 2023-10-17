@@ -852,7 +852,7 @@ trait PlanManagerHelper {
   }
 
 
-  def getUserStats(dateFrom: Long, dateTo: Long, userIds: List[Int]): Unit = {
+  def getUserStats(dateFrom: Long, dateTo: Long, userIds: List[Int]): List[UserStats] = {
 
     val res = ListBuffer.empty[UserStats]
 
@@ -933,7 +933,7 @@ trait PlanManagerHelper {
       )
     })
 
-    val jk = 0
+    res.toList
   }
 
   def dmyFromHours(hours: List[Long]): List[DMY] = {

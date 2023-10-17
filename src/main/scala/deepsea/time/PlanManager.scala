@@ -6,7 +6,11 @@ import deepsea.auth.AuthManager
 import deepsea.database.{DBManager, MongoCodecs}
 import deepsea.issues.IssueManager.AssignIssue
 import deepsea.issues.classes.IssueHistory
+import deepsea.materials.MaterialManager.MaterialHistory
 import deepsea.time.PlanManager._
+import io.circe
+import io.circe.{Decoder, Encoder}
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.syntax.EncoderOps
 
 import java.util.{Calendar, Date}
@@ -33,15 +37,26 @@ object PlanManager{
   case class GetPlanIssue(id: String)
   case class DeletePausedInterval(id: Int)
   case class UserTCID(id: Int, tcid: Int)
-  case class GetUserStats(dateFrom: Long, dateTo: Long, users: String)
+  case class GetUserStats(dateFrom: String, dateTo: String, users: String)
+
   case class UserStats(id: Int, tcId: Int, plan: Int, office: Int, tasks: Int, details: List[UserStatsDetails])
+  implicit val UserStatsDecoder: Decoder[UserStats] = deriveDecoder[UserStats]
+  implicit val UserStatsEncoder: Encoder[UserStats] = deriveEncoder[UserStats]
+
   case class UserStatsDetails(dateLong: Long, dateString: String, officeTime: Double, officeTimeStr: String, tasks: List[UserStatsDetailsTask])
+  implicit val UserStatsDetailsDecoder: Decoder[UserStatsDetails] = deriveDecoder[UserStatsDetails]
+  implicit val UserStatsDetailsEncoder: Encoder[UserStatsDetails] = deriveEncoder[UserStatsDetails]
+
   case class UserStatsDetailsTask(id: Int, issueType: String, name: String, docNumber: String, hours: Int)
+  implicit val UserStatsDetailsTaskDecoder: Decoder[UserStatsDetailsTask] = deriveDecoder[UserStatsDetailsTask]
+  implicit val UserStatsDetailsTaskEncoder: Encoder[UserStatsDetailsTask] = deriveEncoder[UserStatsDetailsTask]
+
   case class DMY(day: Int, month: Int, year: Int)
+
 }
 class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
   override def preStart(): Unit = {
-    getUserStats(1697468835000L, 1697468835000L, List(47))
+//    getUserStats(1697468835000L, 1697468835000L, List(47))
   }
   def fillPrevCalendar(): Unit = {
     val caltoday = Calendar.getInstance()
@@ -223,7 +238,11 @@ class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
     case GetPlanIssue(id) =>
       sender() ! getIssue(id.toIntOption.getOrElse(0)).asJson.noSpaces
     case GetUserStats(dateFrom, dateTo, users) =>
-
+      circe.jawn.decode[List[Int]](users) match {
+        case Right(usersIds) =>
+          sender() ! getUserStats(dateFrom.toLongOption.getOrElse(0), dateTo.toLongOption.getOrElse(0), usersIds).asJson.noSpaces
+        case _ => sender() ! "error".asJson.noSpaces
+      }
     case _ => None
   }
 }
