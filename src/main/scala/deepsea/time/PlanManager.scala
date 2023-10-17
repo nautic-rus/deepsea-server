@@ -32,18 +32,16 @@ object PlanManager{
   case class GetPlanIssues()
   case class GetPlanIssue(id: String)
   case class DeletePausedInterval(id: Int)
+  case class UserTCID(id: Int, tcid: Int)
+  case class GetUserStats(dateFrom: Long, dateTo: Long, users: String)
+  case class UserStats(id: Int, tcId: Int, plan: Int, office: Int, tasks: Int, details: List[UserStatsDetails])
+  case class UserStatsDetails(dateLong: Long, dateString: String, officeTime: Double, officeTimeStr: String, tasks: List[UserStatsDetailsTask])
+  case class UserStatsDetailsTask(id: Int, issueType: String, name: String, docNumber: String, hours: Int)
+  case class DMY(day: Int, month: Int, year: Int)
 }
 class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
   override def preStart(): Unit = {
-    //fillPrevCalendar()
-    val qwe = 0
-//    val now = new Date()
-//    var n = nextHour(now.getTime)
-//    printDate(n)
-//    (1.to(120)).foreach(h => {
-//      n = nextHour(n)
-//      printDate(n)
-//    })
+    getUserStats(1697468835000L, 1697468835000L, List(47))
   }
   def fillPrevCalendar(): Unit = {
     val caltoday = Calendar.getInstance()
@@ -224,6 +222,8 @@ class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
       sender() ! "success".asJson.noSpaces
     case GetPlanIssue(id) =>
       sender() ! getIssue(id.toIntOption.getOrElse(0)).asJson.noSpaces
+    case GetUserStats(dateFrom, dateTo, users) =>
+
     case _ => None
   }
 }

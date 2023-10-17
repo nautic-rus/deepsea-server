@@ -1,12 +1,14 @@
 package deepsea.time
 
+import akka.protobufv3.internal.Empty
 import deepsea.actors.ActorManager
 import deepsea.auth.AuthManagerHelper
 import deepsea.database.DBManager
 import deepsea.database.DBManager.{RsIterator, check}
 import deepsea.issues.IssueManager.UpdateDates
 import deepsea.time.PlanHoursManager.{PlanHour, SpecialDay}
-import deepsea.time.PlanManager.{DayInterval, IssuePlan, PlanByDays, PlanInterval, UserPlan}
+import deepsea.time.PlanManager._
+import deepsea.time.TimeControlManager.TimeControlInterval
 
 import java.time.YearMonth
 import java.util.{Calendar, Date}
@@ -310,6 +312,9 @@ trait PlanManagerHelper {
     val c2 = int1 >= d1 && int1 <= d2 && int2 <= d2 && int2 >= d1
     val c3 = int1 >= d1 && int1 <= d2 && int2 >= d2
     c1 || c2 || c3
+  }
+  def inInterval(d1: Long, d2: Long, int1: Long, int2: Long): Boolean = {
+    d1 <= int1 && int2 <= d2
   }
   def addInterval(taskId: Int, userId: Int, from: Long, hoursAmount: Int, taskType: Int): Int = {
     if (taskType != 0){
@@ -844,5 +849,186 @@ trait PlanManagerHelper {
       nextHourNoPlan = nextHour(nextHourNoPlan)
     }
     res.toList
+  }
+
+
+  def getUserStats(dateFrom: Long, dateTo: Long, userIds: List[Int]): Unit = {
+
+    val res = ListBuffer.empty[UserStats]
+
+    val calendarFrom = Calendar.getInstance()
+    calendarFrom.setTime(new Date(dateFrom))
+    calendarFrom.set(calendarFrom.get(Calendar.YEAR), calendarFrom.get(Calendar.MONTH), calendarFrom.get(Calendar.DAY_OF_MONTH), 8, 0, 0)
+    val calendarFromDate = calendarFrom.getTime.getTime
+
+    val calendarTo = Calendar.getInstance()
+    calendarTo.setTime(new Date(dateTo))
+    calendarTo.set(calendarTo.get(Calendar.YEAR), calendarTo.get(Calendar.MONTH), calendarTo.get(Calendar.DAY_OF_MONTH), 23, 0, 0)
+    val calendarToDate = calendarTo.getTime.getTime
+
+    val planByDays = getPlanByDays(calendarFromDate)
+    val issues = getIssuesByChunk(planByDays.flatMap(_.plan).flatMap(_.ints).map(_.taskId).distinct, List.empty[PlanInterval])
+    val tcUsers = getTCUsers.filter(x => userIds.contains(x.id))
+
+    val planHours = getHoursOfInterval(calendarFromDate, calendarToDate)
+    val dmys = dmyFromHours(planHours)
+    val planCalendar = specialDays.filter(x => dmys.exists(y => y.day == x.day && y.month == x.month - 1 && y.year == y.year))
+      .map(_.kind match {
+        case "short" => 7
+        case "weekend" => 0
+      }).sum + dmys.length * 8
+
+
+    val usersTCHours = tcUsers.flatMap(u => getUserTimeControl(u.tcid.toString, calendarFromDate))
+    tcUsers.foreach(tcUser => {
+      val details = ListBuffer.empty[UserStatsDetails]
+      planByDays.find(_.userId == tcUser.id) match {
+        case Some(userPlan) =>
+          dmys.foreach(dmy => {
+            val calendar = Calendar.getInstance()
+            calendar.set(dmy.year, dmy.month, dmy.day, 9, 0)
+            val longDate = calendar.getTime.getTime
+            val strDate = stringDate(dmy.day, dmy.month, dmy.year)
+            val tasks = ListBuffer.empty[UserStatsDetailsTask]
+            val officeIntervals = usersTCHours.filter(_.userId == tcUser.tcid.toString).filter(x => sameDay(calendar.getTime.getTime, x.startDate))
+            val officeTime = officeIntervals.map(x => x.endTime - x.startTime).sum / (1000 * 60 * 60).toDouble
+
+            userPlan.plan.find(x => x.day == dmy.day && x.month == dmy.month && x.year == dmy.year) match {
+              case Some(pl) =>
+                pl.ints.foreach(int => {
+                  issues.find(_.id == int.taskId) match {
+                    case Some(issue) =>
+                      tasks += UserStatsDetailsTask(
+                        issue.id,
+                        issue.issue_type,
+                        issue.name,
+                        issue.docNumber,
+                        int.hours
+                      )
+                    case _ => None
+                  }
+                })
+              case _ => None
+            }
+
+            details += UserStatsDetails(
+              longDate,
+              strDate,
+              officeTime,
+              stringTime(officeTime),
+              tasks.toList
+            )
+          })
+        case _ => None
+      }
+
+
+      res += UserStats(
+        tcUser.id,
+        tcUser.tcid,
+        planCalendar,
+        Math.round(details.map(_.officeTime).sum).toInt,
+        details.flatMap(_.tasks).map(_.hours).sum,
+        details.toList
+      )
+    })
+
+    val jk = 0
+  }
+
+  def dmyFromHours(hours: List[Long]): List[DMY] = {
+    val res = ListBuffer.empty[DMY]
+    val c = Calendar.getInstance()
+    hours.map(h => {
+      c.setTime(new Date(h))
+      val d = c.get(Calendar.DAY_OF_MONTH)
+      val m = c.get(Calendar.MONTH)
+      val y = c.get(Calendar.YEAR)
+      res.find(x => x.day == d && x.month == m && x.year == y) match {
+        case Some(value) => None
+        case _ => res += DMY(d, m, y)
+      }
+    })
+    res.sortBy(x => x.year + "-" + x.month + "-" + x.day).toList
+  }
+  def stringTime(hoursValue: Double): String = {
+    val hours = Math.floor(hoursValue).toInt
+    val minutes = Math.floor((hoursValue - hours) * 60).toInt
+    leftZeros(hours.toString) + ":" + leftZeros(minutes.toString)
+  }
+  def stringDate(day: Int, month: Int, year: Int): String = {
+    leftZeros(day.toString) + "/" + leftZeros((month + 1).toString) + "/" + year
+  }
+  def leftZeros(in: String, length: Int = 2): String = {
+    var res = in
+    while (res.length < length) {
+      res = "0" + res
+    }
+    res
+  }
+  def getTCUsers: List[UserTCID] = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val query = s"select id, tcid from users"
+        val s = c.createStatement()
+        val users = RsIterator(s.executeQuery(query)).map(rs => {
+          UserTCID(
+            Option(rs.getInt("id")).getOrElse(0),
+            Option(rs.getInt("tcid")).getOrElse(0),
+          )
+        }).toList
+        s.close()
+        c.close()
+        users
+      case _ => List.empty[UserTCID]
+    }
+  }
+  def getUserTimeControl(tcId: String, dateFrom: Long): ListBuffer[TimeControlInterval] = {
+    val res = ListBuffer.empty[TimeControlInterval]
+    DBManager.GetFireBaseConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val today = new Date().getTime
+        val days = (today - dateFrom) / (1000 * 60 * 60 * 24) + 3
+        val query = s"select * from GRAPH_FACT WHERE STARTDATE <= current_date and STARTDATE >= current_date - $days and uid = '$tcId'"
+        val rs = s.executeQuery(query)
+        while (rs.next()) {
+          res += TimeControlInterval(
+            rs.getString("UID") match {
+              case userId: String => userId
+              case _ => ""
+            },
+            rs.getDate("STARTTIME") match {
+              case date: Date => date.getTime
+              case _ => 0
+            },
+            rs.getDate("ENDTIME") match {
+              case date: Date => date.getTime
+              case _ => 0
+            },
+            rs.getDate("STARTDATE") match {
+              case date: Date => date.getTime
+              case _ => 0
+            },
+            rs.getDate("ENDDATE") match {
+              case date: Date => date.getTime
+              case _ => 0
+            },
+            rs.getInt("ADDDOOR") match {
+              case value: Int => value
+              case _ => 0
+            },
+            rs.getInt("CLOSEDOOR") match {
+              case value: Int => value
+              case _ => 0
+            }
+          )
+        }
+        rs.close()
+        s.close()
+        c.close()
+      case _ => None
+    }
+    res
   }
 }
