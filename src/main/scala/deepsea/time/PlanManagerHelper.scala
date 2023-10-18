@@ -895,7 +895,7 @@ trait PlanManagerHelper {
 
             userPlan.plan.find(x => x.day == dmy.day && x.month == dmy.month && x.year == dmy.year) match {
               case Some(pl) =>
-                pl.ints.filter(_.consumed == 1).filter(_.taskId > 0).foreach(int => {
+                pl.ints.filter(_.consumed == 1).filter(_.taskType == 0).foreach(int => {
                   issues.find(_.id == int.taskId) match {
                     case Some(issue) =>
                       tasks += UserStatsDetailsTask(
