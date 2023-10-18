@@ -990,7 +990,7 @@ trait PlanManagerHelper {
         val s = c.createStatement()
         val today = new Date().getTime
         val days = (today - dateFrom) / (1000 * 60 * 60 * 24) + 3
-        val query = s"select * from GRAPH_FACT WHERE STARTDATE <= current_date and STARTDATE >= current_date - $days and uid = '$tcId'"
+        val query = s"select * from GRAPH_FACT WHERE STARTDATE <= current_date - 1 and STARTDATE >= current_date - $days and uid = '$tcId'"
         val rs = s.executeQuery(query)
         while (rs.next()) {
           val closeDoor = rs.getInt("CLOSEDOOR") match {
