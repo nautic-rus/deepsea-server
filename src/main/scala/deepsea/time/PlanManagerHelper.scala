@@ -895,7 +895,7 @@ trait PlanManagerHelper {
 
             userPlan.plan.find(x => x.day == dmy.day && x.month == dmy.month && x.year == dmy.year) match {
               case Some(pl) =>
-                pl.ints.foreach(int => {
+                pl.ints.filter(_.consumed == 1).foreach(int => {
                   issues.find(_.id == int.taskId) match {
                     case Some(issue) =>
                       tasks += UserStatsDetailsTask(
@@ -993,6 +993,10 @@ trait PlanManagerHelper {
         val query = s"select * from GRAPH_FACT WHERE STARTDATE <= current_date and STARTDATE >= current_date - $days and uid = '$tcId'"
         val rs = s.executeQuery(query)
         while (rs.next()) {
+          val closeDoor = rs.getInt("CLOSEDOOR") match {
+            case value: Int => value
+            case _ => 0
+          }
           res += TimeControlInterval(
             rs.getString("UID") match {
               case userId: String => userId
@@ -1003,7 +1007,13 @@ trait PlanManagerHelper {
               case _ => 0
             },
             rs.getDate("ENDTIME") match {
-              case date: Date => date.getTime
+              case date: Date =>
+                if (closeDoor == 0){
+                  new Date().getTime
+                }
+                else{
+                  date.getTime
+                }
               case _ => 0
             },
             rs.getDate("STARTDATE") match {
@@ -1018,10 +1028,7 @@ trait PlanManagerHelper {
               case value: Int => value
               case _ => 0
             },
-            rs.getInt("CLOSEDOOR") match {
-              case value: Int => value
-              case _ => 0
-            }
+            closeDoor
           )
         }
         rs.close()
