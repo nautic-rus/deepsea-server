@@ -1012,7 +1012,7 @@ trait PlanManagerHelper {
             },
             rs.getDate("ENDTIME") match {
               case date: Date =>
-                if (addDoor == 0 && closeDoor == 0){
+                if (addDoor != 0 && closeDoor == 0){
                   new Date().getTime
                 }
                 else{
