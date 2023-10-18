@@ -147,7 +147,7 @@ trait PlanManagerHelper {
           val intervals = plan.filter(x => x.user_id == user && intervalSameDay(hours.head, hours.last, x.date_start, x.date_finish))
           intervals.foreach(int => {
             val intervalHours = hours.filter(x => int.date_start <= x && x <= int.date_finish).filter(h => int.task_type != 0 || !inInterval(h, skip))
-            dayIntervals += DayInterval(int.task_id, intervalHours.length, int.hours_amount, int.id, int.date_start, int.consumed)
+            dayIntervals += DayInterval(int.task_id, intervalHours.length, int.hours_amount, int.id, int.date_start, int.consumed, int.task_type)
           })
           planByDays += PlanByDays(d, month, year, dayIntervals.sortBy(_.date_start).toList)
         }
@@ -895,7 +895,7 @@ trait PlanManagerHelper {
 
             userPlan.plan.find(x => x.day == dmy.day && x.month == dmy.month && x.year == dmy.year) match {
               case Some(pl) =>
-                pl.ints.filter(_.consumed == 1).foreach(int => {
+                pl.ints.filter(_.consumed == 1).filter(_.taskId > 0).foreach(int => {
                   issues.find(_.id == int.taskId) match {
                     case Some(issue) =>
                       tasks += UserStatsDetailsTask(
