@@ -997,6 +997,10 @@ trait PlanManagerHelper {
             case value: Int => value
             case _ => 0
           }
+          val addDoor = rs.getInt("ADDDOOR") match {
+            case value: Int => value
+            case _ => 0
+          }
           res += TimeControlInterval(
             rs.getString("UID") match {
               case userId: String => userId
@@ -1008,7 +1012,7 @@ trait PlanManagerHelper {
             },
             rs.getDate("ENDTIME") match {
               case date: Date =>
-                if (closeDoor == 0){
+                if (addDoor == 0 && closeDoor == 0){
                   new Date().getTime
                 }
                 else{
@@ -1024,10 +1028,7 @@ trait PlanManagerHelper {
               case date: Date => date.getTime
               case _ => 0
             },
-            rs.getInt("ADDDOOR") match {
-              case value: Int => value
-              case _ => 0
-            },
+            addDoor,
             closeDoor
           )
         }
