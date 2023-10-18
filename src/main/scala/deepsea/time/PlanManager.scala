@@ -56,7 +56,7 @@ object PlanManager{
 }
 class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
   override def preStart(): Unit = {
-//    getUserStats(1697468835000L, 1697468835000L, List(47))
+    getUserStats(1697618838406L, 1697618838406L, List(271))
   }
   def fillPrevCalendar(): Unit = {
     val caltoday = Calendar.getInstance()

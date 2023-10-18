@@ -879,7 +879,7 @@ trait PlanManagerHelper {
       }).sum + dmys.length * 8
 
 
-    val usersTCHours = tcUsers.flatMap(u => getUserTimeControl(u.tcid.toString, calendarFromDate))
+    val usersTCHours = tcUsers.filter(x => userIds.contains(x.id)).flatMap(u => getUserTimeControl(u.tcid.toString, calendarFromDate))
     tcUsers.foreach(tcUser => {
       val details = ListBuffer.empty[UserStatsDetails]
       planByDays.find(_.userId == tcUser.id) match {
