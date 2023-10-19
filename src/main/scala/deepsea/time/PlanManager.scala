@@ -39,7 +39,7 @@ object PlanManager{
   case class UserTCID(id: Int, tcid: Int)
   case class GetUserStats(dateFrom: String, dateTo: String, users: String)
 
-  case class UserStats(id: Int, tcId: Int, plan: Int, office: Int, tasks: Int, details: List[UserStatsDetails])
+  case class UserStats(id: Int, tcId: Int, plan: Int, office: Int, tasks: Int, vacation: Int, medical: Int, dayOff: Int, study: Int, details: List[UserStatsDetails])
   implicit val UserStatsDecoder: Decoder[UserStats] = deriveDecoder[UserStats]
   implicit val UserStatsEncoder: Encoder[UserStats] = deriveEncoder[UserStats]
 

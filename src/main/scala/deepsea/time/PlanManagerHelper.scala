@@ -922,6 +922,10 @@ trait PlanManagerHelper {
         case _ => None
       }
 
+      val vacation = Math.ceil(planByDays.flatMap(_.plan).flatMap(_.ints).filter(_.taskType == 2).map(_.hours).sum / 8).toInt
+      val medical = Math.ceil(planByDays.flatMap(_.plan).flatMap(_.ints).filter(_.taskType == 1).map(_.hours).sum / 8).toInt
+      val dayOff = Math.ceil(planByDays.flatMap(_.plan).flatMap(_.ints).filter(_.taskType == 4).map(_.hours).sum / 8).toInt
+      val study = planByDays.flatMap(_.plan).flatMap(_.ints).filter(_.taskType == 4).map(_.hours).sum
 
       res += UserStats(
         tcUser.id,
@@ -929,6 +933,10 @@ trait PlanManagerHelper {
         planCalendar,
         Math.round(details.map(_.officeTime).sum).toInt,
         details.flatMap(_.tasks).map(_.hours).sum,
+        vacation,
+        medical,
+        dayOff,
+        study,
         details.toList
       )
     })
