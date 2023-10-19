@@ -882,6 +882,7 @@ trait PlanManagerHelper {
     val usersTCHours = tcUsers.filter(x => userIds.contains(x.id)).flatMap(u => getUserTimeControl(u.tcid.toString, calendarFromDate))
     tcUsers.foreach(tcUser => {
       val details = ListBuffer.empty[UserStatsDetails]
+      val planByDaysPeriod = ListBuffer.empty[DayInterval]
       planByDays.find(_.userId == tcUser.id) match {
         case Some(userPlan) =>
           dmys.foreach(dmy => {
@@ -895,6 +896,7 @@ trait PlanManagerHelper {
 
             userPlan.plan.find(x => x.day == dmy.day && x.month == dmy.month && x.year == dmy.year) match {
               case Some(pl) =>
+                planByDaysPeriod += pl.ints
                 pl.ints.filter(_.consumed == 1).filter(_.taskType == 0).foreach(int => {
                   issues.find(_.id == int.taskId) match {
                     case Some(issue) =>
@@ -922,10 +924,11 @@ trait PlanManagerHelper {
         case _ => None
       }
 
-      val vacation = Math.ceil(planByDays.flatMap(_.plan).flatMap(_.ints).filter(_.taskType == 2).map(_.hours).sum / 8).toInt
-      val medical = Math.ceil(planByDays.flatMap(_.plan).flatMap(_.ints).filter(_.taskType == 1).map(_.hours).sum / 8).toInt
-      val dayOff = Math.ceil(planByDays.flatMap(_.plan).flatMap(_.ints).filter(_.taskType == 4).map(_.hours).sum / 8).toInt
-      val study = planByDays.flatMap(_.plan).flatMap(_.ints).filter(_.taskType == 4).map(_.hours).sum
+
+      val vacation = Math.ceil(planByDaysPeriod.filter(_.taskType == 2).map(_.hours).sum / 8).toInt
+      val medical = Math.ceil(planByDaysPeriod.filter(_.taskType == 1).map(_.hours).sum / 8).toInt
+      val dayOff = Math.ceil(planByDaysPeriod.filter(_.taskType == 4).map(_.hours).sum / 8).toInt
+      val study = planByDaysPeriod.filter(_.taskType == 4).map(_.hours).sum
 
       res += UserStats(
         tcUser.id,
