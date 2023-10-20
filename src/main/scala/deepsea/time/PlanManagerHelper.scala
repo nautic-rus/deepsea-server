@@ -909,7 +909,8 @@ trait PlanManagerHelper {
     val issues = getIssuesByChunk(planByDays.flatMap(_.plan).flatMap(_.ints).map(_.taskId).distinct, List.empty[PlanInterval])
     val tcUsers = getTCUsers.filter(x => userIds.contains(x.id))
 
-    val planHours = getHoursOfInterval(calendarFromDate, calendarToDate)
+    val nextHour = nextHour(calendarFromDate)
+    val planHours = getHoursOfInterval(nextHour, calendarToDate)
     val dmys = dmyFromHours(planHours)
     val planCalendar = specialDays.filter(x => dmys.exists(y => y.day == x.day && y.month == x.month - 1 && y.year == y.year))
       .map(_.kind match {
