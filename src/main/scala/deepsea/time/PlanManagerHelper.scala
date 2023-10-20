@@ -852,6 +852,45 @@ trait PlanManagerHelper {
   }
 
 
+  def getProjectStats(project: String, docType: String): Unit = {
+    val closedStatuses = List("Delivered", "Closed")
+
+    val issues = getIssues.filter(_.project == project).filter(_.issue_type == docType)
+    val plan = getPlan.filter(x => issues.map(_.id).contains(x.task_id))
+    val departments = issues.map(_.department).sorted
+
+
+    val manHoursProgress = ListBuffer.empty[ManHoursProgress]
+    departments.foreach(dep => {
+      val depIssues = issues.filter(_.department == dep)
+      val planHours = plan.filter(x => depIssues.contains(x.task_id)).map(_.hours_amount).sum
+      val actualHours = plan.filter(x => depIssues.contains(x.task_id)).filter(_.consumed == 1).map(_.hours_amount).sum
+      val percentage = (actualHours / planHours) * 100
+      manHoursProgress += ManHoursProgress(dep, planHours, actualHours, percentage)
+    })
+
+    val documentsProgress = ListBuffer.empty[DocumentsProgress]
+    val nonClosedStatuses = issues.map(_.status).filter(!closedStatuses.contains(_)).distinct.sorted
+    val statuses = List("All") ++ nonClosedStatuses ++ List("Delivered")
+    departments.foreach(dep => {
+      val documentProgressStatus = ListBuffer.empty[DocumentProgressStatus]
+      val depIssues = issues.filter(_.department == dep)
+      documentProgressStatus += DocumentProgressStatus("All", depIssues.length)
+      nonClosedStatuses.foreach(status => {
+        documentProgressStatus += DocumentProgressStatus(status, depIssues.count(_.status == status))
+      })
+      val closedIssues = depIssues.map(_.status).count(closedStatuses.contains(_))
+      documentProgressStatus += DocumentProgressStatus("Delivered", closedIssues)
+      val percentage =  (depIssues.length / closedIssues) * 100
+      documentsProgress += DocumentsProgress(dep, documentProgressStatus.toList, percentage)
+    })
+
+    val stageProgress = ListBuffer.empty[StageProgress]
+    val periods = issues.map(_.period).distinct.sorted
+
+
+    ProjectStats(project, docType, departments, statuses, periods, manHoursProgress.toList, documentsProgress.toList, stageProgress.toList)
+  }
   def getUserStats(dateFrom: Long, dateTo: Long, userIds: List[Int]): List[UserStats] = {
 
     val res = ListBuffer.empty[UserStats]
@@ -871,7 +910,7 @@ trait PlanManagerHelper {
     val tcUsers = getTCUsers.filter(x => userIds.contains(x.id))
 
     val planHours = getHoursOfInterval(calendarFromDate, calendarToDate)
-    val dmys = dmyFromHours(planHours)
+    val dmys = dmyFromHours(planHours).sortBy(x => x.year + "-" + x.month + "-" + x.day)
     val planCalendar = specialDays.filter(x => dmys.exists(y => y.day == x.day && y.month == x.month - 1 && y.year == y.year))
       .map(_.kind match {
         case "short" => 7

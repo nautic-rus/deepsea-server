@@ -53,6 +53,14 @@ object PlanManager{
 
   case class DMY(day: Int, month: Int, year: Int)
 
+  case class GetProjectStats(project: String, typeDoc: String)
+
+  case class ProjectStats(project: String, typeDoc: String, departments: List[String], statuses: List[String], periods: List[String], manHoursProgress: List[ManHoursProgress], documentProgress: List[DocumentsProgress], stageProgress: List[StageProgress])
+  case class ManHoursProgress(department: String, plan: Int, actual: Int, percentage: Int)
+  case class DocumentsProgress(department: String, docProgressStatus: List[DocumentProgressStatus], percentage: Int)
+  case class DocumentProgressStatus(status: String, value: Int)
+  case class StageProgress(department: String, stages: List[StageProgressValue])
+  case class StageProgressValue(stage: String, all: Int, delivered: Int)
 }
 class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
   override def preStart(): Unit = {
