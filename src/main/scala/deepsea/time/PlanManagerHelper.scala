@@ -910,7 +910,7 @@ trait PlanManagerHelper {
     val tcUsers = getTCUsers.filter(x => userIds.contains(x.id))
 
     val planHours = getHoursOfInterval(calendarFromDate, calendarToDate)
-    val dmys = dmyFromHours(planHours).sortBy(x => x.year + "-" + x.month + "-" + x.day)
+    val dmys = dmyFromHours(planHours)
     val planCalendar = specialDays.filter(x => dmys.exists(y => y.day == x.day && y.month == x.month - 1 && y.year == y.year))
       .map(_.kind match {
         case "short" => 7
@@ -979,7 +979,7 @@ trait PlanManagerHelper {
         medical,
         dayOff,
         study,
-        details.toList
+        details.sortBy(_.dateLong).toList
       )
     })
 
