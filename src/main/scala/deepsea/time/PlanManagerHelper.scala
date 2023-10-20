@@ -973,7 +973,7 @@ trait PlanManagerHelper {
       val vacation = Math.ceil(planByDaysPeriod.filter(_.taskType == 2).map(_.hours).sum / 8).toInt
       val medical = Math.ceil(planByDaysPeriod.filter(_.taskType == 1).map(_.hours).sum / 8).toInt
       val dayOff = Math.ceil(planByDaysPeriod.filter(_.taskType == 4).map(_.hours).sum / 8).toInt
-      val study = planByDaysPeriod.filter(_.taskType == 4).map(_.hours).sum
+      val study = planByDaysPeriod.filter(_.taskType == 5).map(_.hours).sum
 
       res += UserStats(
         tcUser.id,
