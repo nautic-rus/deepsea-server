@@ -934,11 +934,13 @@ trait PlanManagerHelper {
             val officeIntervals = usersTCHours.filter(_.userId == tcUser.tcid.toString).filter(x => sameDay(calendar.getTime.getTime, x.startDate))
             val officeTime = officeIntervals.map(x => x.endTime - x.startTime).sum / (1000 * 60 * 60).toDouble
 
+            val specialInts = ListBuffer.empty[Int]
+            specialInts += 0
             userPlan.plan.find(x => x.day == dmy.day && x.month == dmy.month && x.year == dmy.year) match {
               case Some(pl) =>
                 planByDaysPeriod ++= pl.ints
                 val taskInts = pl.ints.filter(_.consumed == 1).filter(_.taskType == 0)
-                val specialInts = (List("0") ++ pl.ints.filter(_.taskType != 0).map(_.taskType).distinct.sorted).mkString(",")
+                specialInts ++= pl.ints.filter(_.taskType != 0).map(_.taskType).distinct.sorted
                 taskInts.foreach(int => {
                   issues.find(_.id == int.taskId) match {
                     case Some(issue) =>
@@ -961,7 +963,7 @@ trait PlanManagerHelper {
               officeTime,
               stringTime(officeTime),
               tasks.toList,
-              specialInts
+              specialInts.mkString(",")
             )
           })
         case _ => None
