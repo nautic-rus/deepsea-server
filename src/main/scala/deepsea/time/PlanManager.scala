@@ -43,7 +43,7 @@ object PlanManager{
   implicit val UserStatsDecoder: Decoder[UserStats] = deriveDecoder[UserStats]
   implicit val UserStatsEncoder: Encoder[UserStats] = deriveEncoder[UserStats]
 
-  case class UserStatsDetails(dateLong: Long, dateString: String, officeTime: Double, officeTimeStr: String, tasks: List[UserStatsDetailsTask])
+  case class UserStatsDetails(dateLong: Long, dateString: String, officeTime: Double, officeTimeStr: String, tasks: List[UserStatsDetailsTask], special: String)
   implicit val UserStatsDetailsDecoder: Decoder[UserStatsDetails] = deriveDecoder[UserStatsDetails]
   implicit val UserStatsDetailsEncoder: Encoder[UserStatsDetails] = deriveEncoder[UserStatsDetails]
 

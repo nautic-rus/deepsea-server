@@ -937,7 +937,9 @@ trait PlanManagerHelper {
             userPlan.plan.find(x => x.day == dmy.day && x.month == dmy.month && x.year == dmy.year) match {
               case Some(pl) =>
                 planByDaysPeriod ++= pl.ints
-                pl.ints.filter(_.consumed == 1).filter(_.taskType == 0).foreach(int => {
+                val taskInts = pl.ints.filter(_.consumed == 1).filter(_.taskType == 0)
+                val specialInts = (List("0") ++ pl.ints.filter(_.taskType != 0).map(_.taskType).distinct.sorted).mkString(",")
+                taskInts.foreach(int => {
                   issues.find(_.id == int.taskId) match {
                     case Some(issue) =>
                       tasks += UserStatsDetailsTask(
@@ -958,7 +960,8 @@ trait PlanManagerHelper {
               strDate,
               officeTime,
               stringTime(officeTime),
-              tasks.toList
+              tasks.toList,
+              specialInts
             )
           })
         case _ => None
