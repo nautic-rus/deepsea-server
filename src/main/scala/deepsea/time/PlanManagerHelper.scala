@@ -947,7 +947,7 @@ trait PlanManagerHelper {
         planByDaysPeriod ++= dayIntervals
         val taskInts = dayIntervals.filter(_.consumed == 1).filter(_.taskType == 0)
         specialInts ++= dayIntervals.filter(_.taskType != 0).map(_.taskType).distinct.sorted
-        taskInts.foreach(int => {
+        taskInts.filter(_.hours > 0).foreach(int => {
           issues.find(_.id == int.taskId) match {
             case Some(issue) =>
               tasks += UserStatsDetailsTask(
