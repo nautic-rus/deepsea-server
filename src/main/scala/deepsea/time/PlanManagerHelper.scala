@@ -978,7 +978,7 @@ trait PlanManagerHelper {
       res += UserStats(
         tcUser.id,
         tcUser.tcid,
-        planCalendar - vacation * 8 - medical * 8 - dayOff - study,
+        planCalendar - vacation * 8 - medical * 8 - dayOff * 8 - study,
         Math.round(details.map(_.officeTime).sum).toInt,
         details.flatMap(_.tasks).map(_.hours).sum,
         vacation,
