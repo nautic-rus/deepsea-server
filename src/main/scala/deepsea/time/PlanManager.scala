@@ -6,7 +6,11 @@ import deepsea.auth.AuthManager
 import deepsea.database.{DBManager, MongoCodecs}
 import deepsea.issues.IssueManager.AssignIssue
 import deepsea.issues.classes.IssueHistory
+import deepsea.materials.MaterialManager.MaterialHistory
 import deepsea.time.PlanManager._
+import io.circe
+import io.circe.{Decoder, Encoder}
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.syntax.EncoderOps
 
 import java.util.{Calendar, Date}
@@ -20,7 +24,7 @@ object PlanManager{
   case class AddInterval(taskId: String, userId: String, from: String, hoursAmount: String, taskType: String, fromUser: String)
   case class InsertInterval(taskId: String, userId: String, from: String, hoursAmount: String, taskType: String, fromUser: String)
   case class InsertConsumedInterval(taskId: String, userId: String, from: String, hoursAmount: String, taskType: String)
-  case class DayInterval(taskId: Int, hours: Int, hours_total: Int, id: Int, date_start: Long, consumed: Int)
+  case class DayInterval(taskId: Int, hours: Int, hours_total: Int, id: Int, date_start: Long, consumed: Int, taskType: Int)
   case class PlanByDays(day: Int, month: Int, year: Int, ints: List[DayInterval])
   case class UserPlan(userId: Int, plan: List[PlanByDays])
   case class DeleteInterval(id: String, fromUser: String)
@@ -32,18 +36,35 @@ object PlanManager{
   case class GetPlanIssues()
   case class GetPlanIssue(id: String)
   case class DeletePausedInterval(id: Int)
+  case class UserTCID(id: Int, tcid: Int)
+  case class GetUserStats(dateFrom: String, dateTo: String, users: String)
+
+  case class UserStats(id: Int, tcId: Int, plan: Int, office: Int, tasks: Int, vacation: Int, medical: Int, dayOff: Int, study: Int, details: List[UserStatsDetails])
+  implicit val UserStatsDecoder: Decoder[UserStats] = deriveDecoder[UserStats]
+  implicit val UserStatsEncoder: Encoder[UserStats] = deriveEncoder[UserStats]
+
+  case class UserStatsDetails(dateLong: Long, dateString: String, officeTime: Double, officeTimeStr: String, tasks: List[UserStatsDetailsTask], special: String)
+  implicit val UserStatsDetailsDecoder: Decoder[UserStatsDetails] = deriveDecoder[UserStatsDetails]
+  implicit val UserStatsDetailsEncoder: Encoder[UserStatsDetails] = deriveEncoder[UserStatsDetails]
+
+  case class UserStatsDetailsTask(id: Int, issueType: String, name: String, docNumber: String, hours: Int)
+  implicit val UserStatsDetailsTaskDecoder: Decoder[UserStatsDetailsTask] = deriveDecoder[UserStatsDetailsTask]
+  implicit val UserStatsDetailsTaskEncoder: Encoder[UserStatsDetailsTask] = deriveEncoder[UserStatsDetailsTask]
+
+  case class DMY(day: Int, month: Int, year: Int)
+
+  case class GetProjectStats(project: String, typeDoc: String)
+
+  case class ProjectStats(project: String, typeDoc: String, departments: List[String], statuses: List[String], periods: List[String], manHoursProgress: List[ManHoursProgress], documentProgress: List[DocumentsProgress], stageProgress: List[StageProgress])
+  case class ManHoursProgress(department: String, plan: Int, actual: Int, percentage: Int)
+  case class DocumentsProgress(department: String, docProgressStatus: List[DocumentProgressStatus], percentage: Int)
+  case class DocumentProgressStatus(status: String, value: Int)
+  case class StageProgress(department: String, stages: List[StageProgressValue])
+  case class StageProgressValue(stage: String, all: Int, delivered: Int)
 }
 class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
   override def preStart(): Unit = {
-    //fillPrevCalendar()
-    val qwe = 0
-//    val now = new Date()
-//    var n = nextHour(now.getTime)
-//    printDate(n)
-//    (1.to(120)).foreach(h => {
-//      n = nextHour(n)
-//      printDate(n)
-//    })
+    getUserStats(1697450546000L, 1697968946000L, List(96))
   }
   def fillPrevCalendar(): Unit = {
     val caltoday = Calendar.getInstance()
@@ -224,6 +245,12 @@ class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
       sender() ! "success".asJson.noSpaces
     case GetPlanIssue(id) =>
       sender() ! getIssue(id.toIntOption.getOrElse(0)).asJson.noSpaces
+    case GetUserStats(dateFrom, dateTo, users) =>
+      circe.jawn.decode[List[Int]](users) match {
+        case Right(usersIds) =>
+          sender() ! getUserStats(dateFrom.toLongOption.getOrElse(0), dateTo.toLongOption.getOrElse(0), usersIds).asJson.noSpaces
+        case _ => sender() ! "error".asJson.noSpaces
+      }
     case _ => None
   }
 }

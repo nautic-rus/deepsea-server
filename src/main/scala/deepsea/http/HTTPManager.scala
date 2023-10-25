@@ -649,6 +649,10 @@ class HTTPManager extends Actor {
         (get & path("planInsertConsumedInterval") & parameter("taskId", "userId", "from", "hoursAmount", "taskType")) { (taskId, userId, from, hoursAmount, taskType) =>
           askFor(ActorManager.plan, InsertConsumedInterval(taskId, userId, from, hoursAmount, taskType))
         },
+
+        (post & path("statsUsersDetails") & entity(as[String]) & parameter("dateFrom", "dateTo")) { (users, dateFrom, dateTo) =>
+          askFor(ActorManager.plan, GetUserStats(dateFrom, dateTo, users))
+        },
       )
     }
   }
