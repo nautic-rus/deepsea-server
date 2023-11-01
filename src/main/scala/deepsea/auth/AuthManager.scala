@@ -88,7 +88,8 @@ object AuthManager extends MongoCodecs {
                    var groups: List[String] = List.empty[String],
                    var permissions: List[String] = List.empty[String],
                    var token: String = "",
-                   var id_department: Int
+                   var id_department: Int,
+                   var removed: Int
                  )
 
   case class GetRoles()

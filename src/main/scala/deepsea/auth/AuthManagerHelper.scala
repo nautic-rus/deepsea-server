@@ -54,7 +54,8 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
                 case _ => userRights.filter(_.userId == userId).map(_.role).filter(_ != "")
               },
               "",
-              Option(rs.getInt("id_department")).getOrElse(0)
+              Option(rs.getInt("id_department")).getOrElse(0),
+              Option(rs.getInt("removed")).getOrElse(0),
             ))
           }
           rs.close()
@@ -121,7 +122,8 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
                 case _ => userRights.filter(_.userId == userId).map(_.role)
               },
               "",
-              Option(rs.getInt("id_department")).getOrElse(0)
+              Option(rs.getInt("id_department")).getOrElse(0),
+              Option(rs.getInt("removed")).getOrElse(0)
             )
           }
           rs.close()
@@ -176,7 +178,9 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
                 case _ => userRights.filter(_.userId == userId).map(_.role)
               },
               "",
-              Option(rs.getInt("id_department")).getOrElse(0)))
+              Option(rs.getInt("id_department")).getOrElse(0),
+              Option(rs.getInt("removed")).getOrElse(0),
+            ))
           }
           rs.close()
           s.close()
