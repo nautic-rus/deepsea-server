@@ -824,13 +824,17 @@ trait PlanManagerHelper {
     d1.getYear == d2.getYear && d1.getMonth == d2.getMonth && d1.getDate == d2.getDate
   }
   private def isWeekend(d: Date): Boolean = {
-    specialDays.find(x => x.day == d.getDate && (x.month - 1) == d.getMonth && x.year == d.getYear) match {
+    val c = Calendar.getInstance
+    c.setTime(d)
+    specialDays.find(x => x.day == c.get(Calendar.DAY_OF_MONTH) && (c.get(Calendar.MONTH) - 1) == d.getMonth && c.get(Calendar.YEAR) == d.getYear) match {
       case Some(spec) => spec.kind == "weekend"
       case _ => d.getDay == 0 || d.getDay == 6
     }
   }
   private def isShort(d: Date): Boolean = {
-    specialDays.find(x => x.day == d.getDate && (x.month - 1) == d.getMonth && x.year == d.getYear) match {
+    val c = Calendar.getInstance
+    c.setTime(d)
+    specialDays.find(x => x.day == c.get(Calendar.DAY_OF_MONTH) && (c.get(Calendar.MONTH) - 1) == d.getMonth && c.get(Calendar.YEAR) == d.getYear) match {
       case Some(spec) => spec.kind == "short"
       case _ => false
     }
