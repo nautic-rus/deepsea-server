@@ -77,7 +77,7 @@ class TimeAndWeatherManager extends Actor{
       DBManager.GetFireBaseConnection() match {
         case Some(c) =>
           val s = c.createStatement()
-          val query = s"delete from GRAPH_FACT where UID = 6 and STARTDATE > current_date - 100"
+          val query = s"delete from GRAPH_FACT where UID = 6 and STARTDATE > current_date - 100"1
           s.execute(query)
           s.close()
           c.close()
