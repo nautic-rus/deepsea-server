@@ -26,6 +26,7 @@ object TimeAndWeatherManager{
   case class GetTimeAndWeather()
   case class SetTimeAndWeather()
   case class CheckMaster()
+  case class ClearIntervals()
   case class CheckTempFiles()
 
   case class Weather(var time: Long, description: String, icon: String, temp: Double, feels_like: Double, wind: Double)
@@ -46,6 +47,7 @@ class TimeAndWeatherManager extends Actor{
     system.scheduler.scheduleWithFixedDelay(0.seconds, 5.minutes, self, SetTimeAndWeather())
     system.scheduler.scheduleWithFixedDelay(0.seconds, 1.minutes, ActorManager.planHours, ConsumeTodayPlanHours())
     system.scheduler.scheduleWithFixedDelay(0.seconds, 5.minutes, self, CheckMaster())
+    system.scheduler.scheduleWithFixedDelay(0.seconds, 1.minutes, self, ClearIntervals())
     system.scheduler.scheduleWithFixedDelay(0.seconds, 60.minutes, self, CheckTempFiles())
   }
   override def receive: Receive = {
@@ -71,6 +73,16 @@ class TimeAndWeatherManager extends Actor{
       }
     case CheckTempFiles() =>
       checkTempFiles()
+    case ClearIntervals() =>
+      DBManager.GetFireBaseConnection() match {
+        case Some(c) =>
+          val s = c.createStatement()
+          val query = s"delete from GRAPH_FACT where UID = 6 and STARTDATE > current_date - 100"
+          s.execute(query)
+          s.close()
+          c.close()
+        case _ => None
+      }
     case _ => None
   }
   def setTimeAndWeather(): Unit ={
