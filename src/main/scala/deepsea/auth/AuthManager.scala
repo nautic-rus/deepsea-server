@@ -153,7 +153,9 @@ object AuthManager extends MongoCodecs {
                          name: String,
                          manager: String,
                          visible_documents: Int,
-                         visible_man_hours: Int
+                         visible_man_hours: Int,
+                         visible_task: Int,
+                         visible_qna: Int
                        )
 
   case class GetDepartments()

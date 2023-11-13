@@ -861,6 +861,8 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
             rs.getString("manager"),
             rs.getInt("visible_documents"),
             rs.getInt("visible_man_hours"),
+            rs.getInt("visible_task"),
+            rs.getInt("visible_qna")
           ))
         }
         rs.close()
