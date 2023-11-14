@@ -646,6 +646,8 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
             rs.getString("yard_approval"),
             rs.getInt("sort"),
             rs.getString("visible_row"),
+            rs.getInt("visibility-main-form"),
+            rs.getInt("visibility-subtask")
           )
         }
         rs.close()
