@@ -25,7 +25,7 @@ import deepsea.files.FileManager.{CreateDocumentCloudDirectory, CreateFile, Crea
 import deepsea.files.classes.FileAttachment
 import deepsea.http.HTTPManager.server
 import deepsea.issues.IssueManager._
-import deepsea.materials.MaterialManager.{GetMaterialNodes, GetMaterials, GetMaterialsCode, GetWCDrawings, GetWCZones, GetWeightControl, RemoveWeightControl, SetWeightControl, UpdateMaterial, UpdateMaterialNode}
+import deepsea.materials.MaterialManager.{AddMaterialComplect, GetMaterialComplects, GetMaterialNodes, GetMaterials, GetMaterialsCode, GetWCDrawings, GetWCZones, GetWeightControl, RemoveMaterialComplect, RemoveWeightControl, SetWeightControl, UpdateMaterial, UpdateMaterialComplect, UpdateMaterialNode}
 import deepsea.mobile.MobileManager.{GetDrawingInfo, GetDrawings}
 import deepsea.osm.OsmManager.{AddPLS, GetPLS}
 import deepsea.rocket.RocketChatManager.SendNotification
@@ -652,6 +652,19 @@ class HTTPManager extends Actor {
 
         (post & path("statsUsersDetails") & entity(as[String]) & parameter("dateFrom", "dateTo")) { (users, dateFrom, dateTo) =>
           askFor(ActorManager.plan, GetUserStats(dateFrom, dateTo, users))
+        },
+
+        (get & path("addMaterialComplect") & parameter("project", "name")) { (project, name) =>
+          askFor(ActorManager.materials, AddMaterialComplect(project, name))
+        },
+        (get & path("removeMaterialComplect") & parameter("id")) { (id) =>
+          askFor(ActorManager.materials, RemoveMaterialComplect(id))
+        },
+        (get & path("materialComplects") & parameter("project")) { (project) =>
+          askFor(ActorManager.materials, GetMaterialComplects(project))
+        },
+        (post & path("updateMaterialComplect") & entity(as[String])) { (complectValue) =>
+          askFor(ActorManager.materials, UpdateMaterialComplect(complectValue))
         },
       )
     }
