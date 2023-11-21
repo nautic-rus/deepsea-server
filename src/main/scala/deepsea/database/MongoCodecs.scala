@@ -5,7 +5,7 @@ import deepsea.fest.FestManager.{FestKaraoke, FestSauna, FestStories}
 import deepsea.fest.classes.{BestPlayer, Mark, TeamWon}
 import deepsea.files.FileManager.{DocumentDirectories, TreeDirectory, TreeFile, TreeFileHistory}
 import deepsea.issues.IssueManager.{DailyTask, DayCalendar, IdName, IssueDef, IssueProject, LV, MessageReaction}
-import deepsea.materials.MaterialManager.{Material, MaterialHistory, MaterialNode, MaterialNodeHistory, MaterialTranslation, ProjectName, WCNumberName, WeightControl}
+import deepsea.materials.MaterialManager.{CMaterial, Material, MaterialComplect, MaterialHistory, MaterialNode, MaterialNodeHistory, MaterialTranslation, ProjectName, WCNumberName, WeightControl}
 import deepsea.mobile.MobileManager.{Drawing, DrawingInfo, OrizInfo}
 import deepsea.osm.OsmManager.{LatLng, OSMUser, ParkingLocationSheet}
 import deepsea.time.PlanHoursManager.{ConsumedHour, PlanHour, PlannedHours}
@@ -175,7 +175,11 @@ trait MongoCodecs {
   implicit val UserProjectEncoder: Encoder[UserProject] = deriveEncoder[UserProject]
 
 
+  implicit val MaterialComplectDecoder: Decoder[MaterialComplect] = deriveDecoder[MaterialComplect]
+  implicit val MaterialComplectEncoder: Encoder[MaterialComplect] = deriveEncoder[MaterialComplect]
 
+  implicit val CMaterialDecoder: Decoder[CMaterial] = deriveDecoder[CMaterial]
+  implicit val CMaterialEncoder: Encoder[CMaterial] = deriveEncoder[CMaterial]
 
 
   def codecRegistry: CodecRegistry = fromRegistries(fromProviders(
@@ -214,5 +218,7 @@ trait MongoCodecs {
     classOf[PlanByDays],
     classOf[UserPlan],
     classOf[IssuePlan],
+    classOf[MaterialComplect],
+    classOf[CMaterial],
   ), DEFAULT_CODEC_REGISTRY)
 }
