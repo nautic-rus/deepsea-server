@@ -51,6 +51,11 @@ object PlanManager{
   implicit val UserStatsDetailsTaskDecoder: Decoder[UserStatsDetailsTask] = deriveDecoder[UserStatsDetailsTask]
   implicit val UserStatsDetailsTaskEncoder: Encoder[UserStatsDetailsTask] = deriveEncoder[UserStatsDetailsTask]
 
+  case class ConsumedIntervalNew(id: Int, task_id: Int, user_id: Int, amount: Double, date_consumed: Long, date_created: Long)
+  implicit val ConsumedIntervalNewDecoder: Decoder[ConsumedIntervalNew] = deriveDecoder[ConsumedIntervalNew]
+  implicit val ConsumedIntervalNewEncoder: Encoder[ConsumedIntervalNew] = deriveEncoder[ConsumedIntervalNew]
+
+
   case class DMY(day: Int, month: Int, year: Int)
 
   case class GetProjectStats(project: String, typeDoc: String)
@@ -61,10 +66,16 @@ object PlanManager{
   case class DocumentProgressStatus(status: String, value: Int)
   case class StageProgress(department: String, stages: List[StageProgressValue])
   case class StageProgressValue(stage: String, all: Int, delivered: Int)
+  case class AddManHours(taskId: String, userId: String, dateConsumed: String, hoursAmount: String, comment: String)
 }
 class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
   override def preStart(): Unit = {
-    getUserStats(1697450546000L, 1697968946000L, List(96))
+    //getUserStats(1697450546000L, 1697968946000L, List(96))
+  }
+  def fillNewManHours(): Unit = {
+    getPlan.filter(_.consumed == 1).foreach(c => {
+      addManHours(c.task_id, c.user_id, c.date_start, c.hours_amount, "")
+    })
   }
   def fillPrevCalendar(): Unit = {
     val caltoday = Calendar.getInstance()
@@ -236,6 +247,19 @@ class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
       if (taskId.toIntOption.getOrElse(0) > 0 && res == "success") {
         ActorManager.issue ! new IssueHistory(taskId.toIntOption.getOrElse(0), userLogin(userId.toIntOption.getOrElse(0)),
         "man_hours", "", hoursAmount, new Date().getTime, "")
+      }
+      sender() ! res.asJson.noSpaces
+    case AddManHours(taskId, userId, dateConsumed, hoursAmount, comment) =>
+      val res = addManHours(
+        taskId.toIntOption.getOrElse(0),
+        userId.toIntOption.getOrElse(0),
+        dateConsumed.toLongOption.getOrElse(0),
+        hoursAmount.toDoubleOption.getOrElse(0),
+        comment
+      )
+      if (taskId.toIntOption.getOrElse(0) > 0 && res == "success") {
+        ActorManager.issue ! new IssueHistory(taskId.toIntOption.getOrElse(0), userLogin(userId.toIntOption.getOrElse(0)),
+          "man_hours", "", hoursAmount, new Date().getTime, comment)
       }
       sender() ! res.asJson.noSpaces
     case GetPlanIssues() =>
