@@ -489,11 +489,6 @@ trait PlanManagerHelper {
           deleteInterval(t.id)
         })
       }
-      else {
-        tasks.foreach(int => {
-          deleteInterval(int.id)
-        })
-      }
     }
   }
 
@@ -514,11 +509,6 @@ trait PlanManagerHelper {
         splitTask(nextHourNoPlan, consumed.last.user_id)
         getTaskPlan(tasks.head.task_id).filter(_.date_start >= nextHourNoPlan).foreach(t => {
           deleteInterval(t.id)
-        })
-      }
-      else {
-        tasks.foreach(int => {
-          deleteInterval(int.id)
         })
       }
     }
