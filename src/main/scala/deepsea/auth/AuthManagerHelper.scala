@@ -54,7 +54,8 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
                 case _ => userRights.filter(_.userId == userId).map(_.role).filter(_ != "")
               },
               "",
-              Option(rs.getInt("id_department")).getOrElse(0)
+              Option(rs.getInt("id_department")).getOrElse(0),
+              Option(rs.getInt("removed")).getOrElse(0),
             ))
           }
           rs.close()
@@ -121,7 +122,8 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
                 case _ => userRights.filter(_.userId == userId).map(_.role)
               },
               "",
-              Option(rs.getInt("id_department")).getOrElse(0)
+              Option(rs.getInt("id_department")).getOrElse(0),
+              Option(rs.getInt("removed")).getOrElse(0)
             )
           }
           rs.close()
@@ -176,7 +178,9 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
                 case _ => userRights.filter(_.userId == userId).map(_.role)
               },
               "",
-              Option(rs.getInt("id_department")).getOrElse(0)))
+              Option(rs.getInt("id_department")).getOrElse(0),
+              Option(rs.getInt("removed")).getOrElse(0),
+            ))
           }
           rs.close()
           s.close()
@@ -297,7 +301,7 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
         s.close()
         c.close()
         val messageRocket: String = s"Ваши данные для входа в DeepSea - Логин: ${user.login} | Пароль: ${user.password} | https://deep-sea.ru";
-        val messageMail: String = Source.fromResource("messages/startUser.html").mkString.replaceAll("!login", s"${user.login}").replaceAll("!password", s"${user.password}")
+        val messageMail: String = Source.fromResource("messages/startUser.html").mkString.replaceAll("#login", s"${user.login}").replaceAll("#password", s"${user.password}")
         ActorManager.rocket ! SendNotification(user.rocket_login, messageRocket);
         ActorManager.mail ! Mail(List(user.name, user.surname).mkString(" "), user.email, "DeepSea Notification", messageMail);
         "success"
@@ -424,7 +428,7 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
           val rocket_login = rs.getString("rocket_login");
           val email = rs.getString("email");
           val messageRocket: String = s"Ваши данные для входа в DeepSea - Логин: ${login} | Пароль: ${password} | https://deep-sea.ru";
-          val messageMail: String = Source.fromResource("messages/sendLogPass.html").mkString.replaceAll("$login", login).replaceAll("$password", password)
+          val messageMail: String = Source.fromResource("messages/sendLogPass.html").mkString.replaceAll("#login", login).replaceAll("#password", password)
           ActorManager.rocket ! SendNotification(rocket_login, messageRocket);
           ActorManager.mail ! Mail(List(name, surname).mkString(" "), email, "DeepSea Notification", messageMail);
         };
@@ -857,6 +861,8 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
             rs.getString("manager"),
             rs.getInt("visible_documents"),
             rs.getInt("visible_man_hours"),
+            rs.getInt("visible_task"),
+            rs.getInt("visible_qna")
           ))
         }
         rs.close()

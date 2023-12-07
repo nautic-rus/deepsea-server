@@ -35,7 +35,7 @@ object BackupManager{
   }
 }
 class BackupManager extends Actor{
-  val foranProjects: List[String] = List("P701", "P707", "N002", "N003", "N004", "N005", "SC01", "LV01", "KA01", "AN01")
+  val foranProjects: List[String] = List("P701", "P707", "N002", "N003", "N004", "N005", "N006", "N007", "SC01", "LV01", "KA01", "AN01")
   val procedure: String = Source.fromResource("queries/backupForan.sql").mkString
 
   implicit val system: ActorSystem = ActorSystem()
@@ -55,7 +55,7 @@ class BackupManager extends Actor{
         val complete = new Date().toString
         ActorManager.mail ! Mail("Bogdan Isaev", "redeeming.fury@gmail.com", "Foran Backup Notification", s"Foran Backup started at $start and successfully completed at $complete")
       }
-      if (Calendar.getInstance().get(Calendar.HOUR_OF_DAY) == 5) {
+      if (Calendar.getInstance().get(Calendar.HOUR_OF_DAY) == 2) {
         uploadForanBackup()
       }
   }
@@ -95,7 +95,8 @@ class BackupManager extends Actor{
     val ls = sftp.ls("/backups/oracle/")
     val backups = ListBuffer.empty[RemoteResourceInfo]
     ls.forEach(s => backups += s)
-    val sorted = backups.sortBy(_.getAttributes.getMtime).reverse.filter(_.getName.contains(".fdp")).take(foranProjects.length)
+    val now = new Date().getTime
+    val sorted = backups.sortBy(_.getAttributes.getMtime).reverse.filter(_.getName.contains(".fdp")).filter(x => (now - x.getAttributes.getMtime * 1000) < 1000 * 60 * 60 * 12)
     val dumps = ListBuffer.empty[File]
     sorted.foreach(s => {
       val tempFile = new File(dir + sp + s.getName)

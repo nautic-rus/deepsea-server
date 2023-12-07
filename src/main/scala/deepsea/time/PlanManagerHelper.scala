@@ -546,6 +546,61 @@ trait PlanManagerHelper {
     }
   }
 
+  def addManHours(taskId: Int, userId: Int, from: Long, hoursAmount: Double, comment: String): String = {
+    val now = new Date(from)
+    val consumed = getConsumedIntervalsNew
+    val tasks = getIssue(taskId)
+    if (tasks.isEmpty) {
+      "error: task with id #" + taskId + " not found"
+    }
+    else {
+      val task = tasks.head
+      val sumConsumedDay = consumed.filter(x => sameDay(x.date_consumed, now.getTime)).map(_.amount).sum
+      val sumConsumedTask = consumed.filter(x => x.task_id == taskId).map(_.amount).sum
+      if (sumConsumedDay + hoursAmount > 12){
+        "error: not enough hours left for selected date"
+      }
+      else if (task.plan - sumConsumedTask - hoursAmount < 0){
+        "error: not enough plan hours left for selected task, hours left " + (task.plan - sumConsumedTask).toString
+      }
+      else {
+        DBManager.GetPGConnection() match {
+          case Some(connection) =>
+            val stmt = connection.createStatement()
+            val query = s"insert into issue_man_hours (task_id, user_id, amount, date_consumed, date_created, text_comment) values ($taskId, $userId, $hoursAmount, $from, ${now.getTime}, '$comment')"
+            stmt.execute(query)
+            stmt.close()
+            connection.close()
+            "success"
+          case _ => "error: no postgres connection"
+        }
+      }
+    }
+  }
+  def getConsumedIntervalsNew: List[ConsumedIntervalNew] = {
+    val res = ListBuffer.empty[ConsumedIntervalNew]
+    DBManager.GetPGConnection() match {
+      case Some(connection) =>
+        val stmt = connection.createStatement()
+        val query = "select * from issue_man_hours"
+        val rs = stmt.executeQuery(query)
+        while (rs.next()){
+          res += ConsumedIntervalNew(
+            rs.getInt("id"),
+            rs.getInt("task_id"),
+            rs.getInt("user_id"),
+            rs.getDouble("amount"),
+            rs.getLong("date_consumed"),
+            rs.getLong("date_created"),
+          )
+        }
+        stmt.close()
+        connection.close()
+      case _ => None
+    }
+    res.toList
+  }
+
   def getUserPlanHours(userId: Int, startDate: Long = 0, amount: Int = 25, available: Boolean = false): List[PlanHour] = {
     DBManager.GetPGConnection() match {
       case Some(c) =>
@@ -824,13 +879,17 @@ trait PlanManagerHelper {
     d1.getYear == d2.getYear && d1.getMonth == d2.getMonth && d1.getDate == d2.getDate
   }
   private def isWeekend(d: Date): Boolean = {
-    specialDays.find(x => x.day == d.getDate && x.month == d.getMonth && x.year == d.getYear) match {
+    val c = Calendar.getInstance
+    c.setTime(d)
+    specialDays.find(x => x.day == c.get(Calendar.DAY_OF_MONTH) && (x.month - 1) == c.get(Calendar.MONTH) && x.year == c.get(Calendar.YEAR)) match {
       case Some(spec) => spec.kind == "weekend"
       case _ => d.getDay == 0 || d.getDay == 6
     }
   }
   private def isShort(d: Date): Boolean = {
-    specialDays.find(x => x.day == d.getDate && x.month == d.getMonth && x.year == d.getYear) match {
+    val c = Calendar.getInstance
+    c.setTime(d)
+    specialDays.find(x => x.day == c.get(Calendar.DAY_OF_MONTH) && (x.month - 1) == c.get(Calendar.MONTH) && x.year ==  c.get(Calendar.YEAR)) match {
       case Some(spec) => spec.kind == "short"
       case _ => false
     }

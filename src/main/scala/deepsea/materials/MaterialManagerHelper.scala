@@ -44,4 +44,5 @@ trait MaterialManagerHelper extends IssueManagerHelper {
       case _ => Option.empty[Material]
     }
   }
+
 }

@@ -4,7 +4,7 @@ import akka.actor.Actor
 import com.mongodb.BasicDBObject
 import com.mongodb.client.model.Filters
 import deepsea.database.{DBManager, DatabaseManager, MongoCodecs}
-import deepsea.materials.MaterialManager.{GetMaterialNodes, GetMaterials, GetMaterialsCode, GetWCDrawings, GetWCZones, GetWeightControl, Material, MaterialHistory, MaterialNode, MaterialNodeHistory, RemoveWeightControl, SetWeightControl, UpdateMaterial, UpdateMaterialNode, WCNumberName, WeightControl}
+import deepsea.materials.MaterialManager._
 import io.circe.{jawn, parser}
 import org.bson.Document
 import play.api.libs.json.{JsValue, Json}
@@ -15,7 +15,6 @@ import org.mongodb.scala.MongoClient.DEFAULT_CODEC_REGISTRY
 import org.mongodb.scala.{MongoCollection, MongoDatabase}
 import org.mongodb.scala.bson.codecs.Macros._
 import org.mongodb.scala.model.Filters.{and, equal}
-
 import scala.concurrent.Await
 import scala.concurrent.duration.{Duration, FiniteDuration, SECONDS}
 import io.circe.parser._
@@ -28,7 +27,6 @@ import io.circe.parser._
 import io.circe.generic.auto._
 import io.circe.syntax._
 import io.circe.generic.semiauto._
-
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
 import scala.concurrent.duration.{Duration, SECONDS}
@@ -90,6 +88,14 @@ object MaterialManager{
 
   case class WeightControl(docNumber: String, docName: String, zoneNumber: String, moveElement: String, zoneName: String, mount: Int, side: Int, weight: Double, x: Double, y: Double, z: Double, user: String, date: Long, project: String, var removedDate: Long, var removedUser: String)
   case class WCNumberName(number: String, name: String, project: String)
+
+
+  case class MaterialComplect(id: String, project: String, name: String, materials: List[CMaterial])
+  case class CMaterial(material: Material, count: Int)
+  case class GetMaterialComplects(project: String)
+  case class AddMaterialComplect(project: String, name: String)
+  case class RemoveMaterialComplect(id: String)
+  case class UpdateMaterialComplect(complectValue: String)
 }
 class MaterialManager extends Actor with MongoCodecs{
 
@@ -266,30 +272,45 @@ class MaterialManager extends Actor with MongoCodecs{
           }
         case _ => List.empty[WCNumberName]
       }
-//    case GetMaterials(project) =>
-//      GetMongoConnection() match {
-//        case Some(connection) =>
-//          val res = ListBuffer.empty[JsValue]
-//          val col = connection.getCollection("materials").find(Filters.and(Filters.eq("project", project), Filters.eq("removed", 0))).map(_.toJson).iterator()
-//          while (col.hasNext){
-//            res += Json.parse(col.next())
-//          }
-//          sender() ! Json.toJson(res)
-//        case _ => None
-//      }
-//    case UpdateMaterial(material) =>
-//      GetMongoConnection() match {
-//        case Some(connection) =>
-//          val doc = Document.parse(Json.toJson(material).toString())
-//          val filters = Filters.and(Filters.eq("id", material.id),  Filters.eq("removed", 0))
-//          if (connection.getCollection("materials").find(filters).map(_.toJson).iterator().hasNext) {
-//            connection.getCollection("materials").replaceOne(filters, doc)
-//          } else {
-//            connection.getCollection("materials").insertOne(doc)
-//          }
-//          sender() ! "success"
-//        case _ => None
-//      }
+
+    case GetMaterialComplects(project) =>
+      DBManager.GetMongoConnection() match {
+        case Some(mongo) =>
+          Await.result(mongo.getCollection("material-complects").find[MaterialComplect](equal("project", project)).toFuture(), Duration(30, SECONDS)) match {
+            case dbValues => sender() ! dbValues.toList.asJson.noSpaces
+            case _ => List.empty[MaterialComplect]
+          }
+        case _ => List.empty[WCNumberName]
+      }
+    case AddMaterialComplect(project, name) =>
+      DBManager.GetMongoConnection() match {
+        case Some(mongo) =>
+          val complects: MongoCollection[MaterialComplect] = mongo.getCollection("material-complects")
+          Await.result(complects.insertOne(MaterialComplect(UUID.randomUUID().toString, project, name, List.empty[CMaterial])).toFuture(), Duration(30, SECONDS))
+        case _ =>
+      }
+      sender() ! "success".asJson.noSpaces
+    case RemoveMaterialComplect(id) =>
+      DBManager.GetMongoConnection() match {
+        case Some(mongo) =>
+          val complects: MongoCollection[MaterialComplect] = mongo.getCollection("material-complects")
+          Await.result(complects.deleteOne(equal("id", id)).toFuture(), Duration(30, SECONDS))
+        case _ =>
+      }
+      sender() ! "success".asJson.noSpaces
+    case UpdateMaterialComplect(complectValue) =>
+      decode[MaterialComplect](complectValue) match {
+        case Right(complect) =>
+          DBManager.GetMongoConnection() match {
+            case Some(mongo) =>
+              val complects: MongoCollection[MaterialComplect] = mongo.getCollection("material-complects")
+              Await.result(complects.replaceOne(equal("id", complect.id), complect).toFuture(), Duration(30, SECONDS))
+            case _ =>
+          }
+        case Left(value) =>
+      }
+      sender() ! Json.toJson("success")
+
     case _ => None
   }
 }

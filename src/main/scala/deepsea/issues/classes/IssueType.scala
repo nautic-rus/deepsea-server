@@ -11,6 +11,8 @@ object IssueType{
         yard_approval = (x \ "yard_approval").asOpt[String].getOrElse(""),
         sort = (x \ "value").asOpt[Int].getOrElse(0),
         visible_row = (x \ "visible_row").asOpt[String].getOrElse(""),
+        visibility_main_form = (x \ "visibility_main_form").asOpt[Int].getOrElse(0),
+        visibility_subtask = (x \ "visibility_subtask").asOpt[Int].getOrElse(0),
       ))
       case _ => JsSuccess(null)
     }
@@ -23,11 +25,13 @@ object IssueType{
         "yard_approval" -> x.yard_approval,
         "sort" -> x.sort,
         "visible_row" -> x.visible_row,
+        "visibility_main_form" -> x.visibility_main_form,
+        "visibility_subtask" -> x.visibility_subtask,
       )
       case _ => JsNull
     }
   }
 }
-class IssueType(val type_name: String, val local_approval: String, val yard_approval: String, val sort: Int, val visible_row: String) {
+class IssueType(val type_name: String, val local_approval: String, val yard_approval: String, val sort: Int, val visible_row: String, val visibility_main_form: Int, val visibility_subtask: Int) {
 
 }
