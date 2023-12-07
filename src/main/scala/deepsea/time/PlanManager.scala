@@ -185,7 +185,7 @@ class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
           }
         case _ => None
       }
-      deletePausedInterval(id.toIntOption.getOrElse(0))
+      deletePausedIntervalByIntervalId(id.toIntOption.getOrElse(0))
       //deleteInterval(id.toIntOption.getOrElse(0))
       sender() ! "success".asJson.noSpaces
     case AddInterval(taskId, userId, from, hoursAmount, taskType, fromUser) =>
@@ -280,7 +280,7 @@ class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
     case GetPlanIssues() =>
       sender() ! getIssues.asJson.noSpaces
     case DeletePausedInterval(id) =>
-      deletePausedInterval(id)
+      deletePausedIntervalByTaskId(id)
       sender() ! "success".asJson.noSpaces
     case GetPlanIssue(id) =>
       sender() ! getIssue(id.toIntOption.getOrElse(0)).asJson.noSpaces
