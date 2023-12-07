@@ -195,6 +195,9 @@ class HTTPManager extends Actor {
         (get & path("issues") & parameter("user")) { user =>
           askFor(ActorManager.issue, GetIssues(user))
         },
+        (get & path("issuesAll")) {
+          askFor(ActorManager.issue, GetAllIssues())
+        },
         (get & path("questions")) {
           askFor(ActorManager.issue, GetQuestions())
         },
@@ -342,7 +345,7 @@ class HTTPManager extends Actor {
           askFor(ActorManager.planHours, ConsumePlanHours(planHours, userId, taskId, details))
         },
         (get & path("consumed") & parameter("userId")) { (userId) =>
-          askFor(ActorManager.planHours, GetConsumedHours(userId))
+          askFor(ActorManager.plan, GetConsumedPlan(userId))
         },
         (get & path("savePlanHours") & parameter("userId", "taskId", "value", "plan")) { (userId, taskId, value, plan) =>
           askFor(ActorManager.planHours, SavePlannedHours(userId: String, taskId: String, value: String, plan: String))
@@ -651,6 +654,12 @@ class HTTPManager extends Actor {
         },
         (get & path("addManHours") & parameter("taskId", "userId", "dateConsumed", "hoursAmount", "message")) { (taskId, userId, dateConsumed, hoursAmount, message) =>
           askFor(ActorManager.plan, AddManHours(taskId, userId, dateConsumed, hoursAmount, message))
+        },
+        (get & path("userDiary") & parameter("userId")) { (userId) =>
+          askFor(ActorManager.plan, GetUserDiary(userId))
+        },
+        (get & path("deleteFromDiary") & parameter("id")) { (id) =>
+          askFor(ActorManager.plan, DeleteFromDiary(id))
         },
 
         (post & path("statsUsersDetails") & entity(as[String]) & parameter("dateFrom", "dateTo")) { (users, dateFrom, dateTo) =>

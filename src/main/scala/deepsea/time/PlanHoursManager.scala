@@ -55,6 +55,32 @@ class PlanHoursManager extends Actor with PlanHoursHelper with AuthManagerHelper
     SpecialDay(12, 6, 2023, "weekend"),
     SpecialDay(3, 11, 2023, "short"),
     SpecialDay(6, 11, 2023, "weekend"),
+
+    SpecialDay(1, 1, 2024, "weekend"),
+    SpecialDay(2, 1, 2024, "weekend"),
+    SpecialDay(3, 1, 2024, "weekend"),
+    SpecialDay(4, 1, 2024, "weekend"),
+    SpecialDay(5, 1, 2024, "weekend"),
+    SpecialDay(8, 1, 2024, "weekend"),
+    SpecialDay(22, 2, 2024, "short"),
+    SpecialDay(23, 2, 2024, "weekend"),
+    SpecialDay(7, 3, 2024, "short"),
+    SpecialDay(8, 3, 2024, "weekend"),
+    SpecialDay(27, 4, 2024, "working"),
+    SpecialDay(29, 4, 2024, "weekend"),
+    SpecialDay(30, 4, 2024, "weekend"),
+    SpecialDay(1, 5, 2024, "weekend"),
+    SpecialDay(8, 5, 2024, "short"),
+    SpecialDay(9, 5, 2024, "weekend"),
+    SpecialDay(10, 5, 2024, "weekend"),
+    SpecialDay(11, 6, 2024, "short"),
+    SpecialDay(12, 6, 2024, "weekend"),
+    SpecialDay(2, 11, 2024, "short"),
+    SpecialDay(4, 11, 2024, "weekend"),
+    SpecialDay(28, 12, 2024, "working"),
+    SpecialDay(30, 12, 2024, "weekend"),
+    SpecialDay(31, 12, 2024, "weekend"),
+
   )
   implicit val system: ActorSystem = ActorSystem()
   implicit val executionContext: ExecutionContextExecutor = system.dispatcher

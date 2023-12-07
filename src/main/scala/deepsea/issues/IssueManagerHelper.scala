@@ -9,7 +9,7 @@ import deepsea.database.{DBManager, DatabaseManager, MongoCodecs}
 import deepsea.files.FileManager.{CloudFile, DocumentDirectories}
 import deepsea.files.FileManagerHelper
 import deepsea.files.classes.FileAttachment
-import deepsea.issues.IssueManager.{DailyTask, GroupFolder, IssueProject, Subscriber, UpdateDates}
+import deepsea.issues.IssueManager.{DailyTask, GroupFolder, IssueProject, IssueShort, Subscriber, UpdateDates}
 import deepsea.issues.classes.{ChildIssue, Issue, IssueAction, IssueCheck, IssueHistory, IssueMessage, IssuePeriod, SfiCode}
 import deepsea.mail.MailManager
 import deepsea.mail.MailManager.Mail
@@ -196,6 +196,81 @@ trait IssueManagerHelper extends MongoCodecs {
       case _ =>
     }
     issues
+  }
+
+  def getAllIssues: List[IssueShort] = {
+    val issues = ListBuffer.empty[IssueShort]
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val query = Source.fromResource("queries/issues-of-consumed.sql").mkString
+        val rs = s.executeQuery(query)
+        while (rs.next()) {
+          issues += IssueShort(
+            rs.getInt("id") match {
+              case value: Int => value
+              case _ => 0
+            },
+            rs.getString("status") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getString("project") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getString("department") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getString("issue_type") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getString("issue_name") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getString("assigned_to") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getLong("start_date") match {
+              case value: Long => value
+              case _ => 0
+            },
+            rs.getLong("due_date") match {
+              case value: Long => value
+              case _ => 0
+            },
+            rs.getString("doc_number") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getString("period") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getString("contract") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getString("closing_status") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getString("revision") match {
+              case value: String => value
+              case _ => ""
+            }
+          )
+        }
+        rs.close()
+        s.close()
+        c.close()
+      case _ =>
+    }
+    issues.toList
   }
 
   def getIssuesForUser(user: String): ListBuffer[Issue] = {

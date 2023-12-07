@@ -32,14 +32,22 @@ object PlanManager{
                        plan: Int, status: String, issue_type: String, period: String,
                        assigned_to: String, project: String, department: String,
                        closing_status: String, stage_date: Long,
-                       consumed: Int, inPlan: Int, available: Int, available_limit: Int)
+                       consumed: Double, inPlan: Int, available: Int, available_limit: Int)
+
+  implicit val IssuePlanDecoder: Decoder[IssuePlan] = deriveDecoder[IssuePlan]
+  implicit val IssuePlanEncoder: Encoder[IssuePlan] = deriveEncoder[IssuePlan]
+
   case class GetPlanIssues()
   case class GetPlanIssue(id: String)
   case class DeletePausedInterval(id: Int)
   case class UserTCID(id: Int, tcid: Int)
   case class GetUserStats(dateFrom: String, dateTo: String, users: String)
+  case class GetUserDiary(userId: String)
+  case class DeleteFromDiary(id: String)
+  case class GetConsumedPlan(userId: String)
 
-  case class UserStats(id: Int, tcId: Int, plan: Int, office: Int, tasks: Int, vacation: Int, medical: Int, dayOff: Int, study: Int, details: List[UserStatsDetails])
+
+  case class UserStats(id: Int, tcId: Int, plan: Int, office: Int, tasks: Double, vacation: Int, medical: Int, dayOff: Int, study: Int, details: List[UserStatsDetails])
   implicit val UserStatsDecoder: Decoder[UserStats] = deriveDecoder[UserStats]
   implicit val UserStatsEncoder: Encoder[UserStats] = deriveEncoder[UserStats]
 
@@ -47,13 +55,17 @@ object PlanManager{
   implicit val UserStatsDetailsDecoder: Decoder[UserStatsDetails] = deriveDecoder[UserStatsDetails]
   implicit val UserStatsDetailsEncoder: Encoder[UserStatsDetails] = deriveEncoder[UserStatsDetails]
 
-  case class UserStatsDetailsTask(id: Int, issueType: String, name: String, docNumber: String, hours: Int)
+  case class UserStatsDetailsTask(id: Int, issueType: String, name: String, docNumber: String, hours: Double)
   implicit val UserStatsDetailsTaskDecoder: Decoder[UserStatsDetailsTask] = deriveDecoder[UserStatsDetailsTask]
   implicit val UserStatsDetailsTaskEncoder: Encoder[UserStatsDetailsTask] = deriveEncoder[UserStatsDetailsTask]
 
-  case class ConsumedIntervalNew(id: Int, task_id: Int, user_id: Int, amount: Double, date_consumed: Long, date_created: Long)
-  implicit val ConsumedIntervalNewDecoder: Decoder[ConsumedIntervalNew] = deriveDecoder[ConsumedIntervalNew]
-  implicit val ConsumedIntervalNewEncoder: Encoder[ConsumedIntervalNew] = deriveEncoder[ConsumedIntervalNew]
+  case class ConsumedHours(id: Int, task_id: Int, user_id: Int, amount: Double, date_consumed: Long, date_created: Long)
+  implicit val ConsumedHoursDecoder: Decoder[ConsumedHours] = deriveDecoder[ConsumedHours]
+  implicit val ConsumedHoursEncoder: Encoder[ConsumedHours] = deriveEncoder[ConsumedHours]
+
+  case class UserDiary(interval: ConsumedHours, issue: IssuePlan)
+  implicit val UserDiaryDecoder: Decoder[UserDiary] = deriveDecoder[UserDiary]
+  implicit val UserDiaryEncoder: Encoder[UserDiary] = deriveEncoder[UserDiary]
 
 
   case class DMY(day: Int, month: Int, year: Int)
@@ -71,11 +83,13 @@ object PlanManager{
 class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
   override def preStart(): Unit = {
     //getUserStats(1697450546000L, 1697968946000L, List(96))
+    //fillNewManHours()
   }
   def fillNewManHours(): Unit = {
-    getPlan.filter(_.consumed == 1).foreach(c => {
-      addManHours(c.task_id, c.user_id, c.date_start, c.hours_amount, "")
+    getPlan.filter(_.consumed == 1).filter(_.date_start != 0).filter(_.task_type == 0).filter(_.hours_amount > 0).foreach(c => {
+      addManHours(c.task_id, c.user_id, c.date_start, c.hours_amount, "INITIAL", check = false)
     })
+    val q = 0
   }
   def fillPrevCalendar(): Unit = {
     val caltoday = Calendar.getInstance()
@@ -275,6 +289,13 @@ class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
           sender() ! getUserStats(dateFrom.toLongOption.getOrElse(0), dateTo.toLongOption.getOrElse(0), usersIds).asJson.noSpaces
         case _ => sender() ! "error".asJson.noSpaces
       }
+    case GetUserDiary(userId: String) =>
+      sender() ! getUserDiary(userId.toIntOption.getOrElse(0)).asJson.noSpaces
+    case DeleteFromDiary(id: String) =>
+      deleteFromDiary(id.toIntOption.getOrElse(0))
+      sender() ! "success".asJson.noSpaces
+    case GetConsumedPlan(userId: String) =>
+      sender() ! getConsumedHours(userId.toIntOption.getOrElse(0)).asJson.noSpaces
     case _ => None
   }
 }

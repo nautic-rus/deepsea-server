@@ -43,6 +43,7 @@ import scala.util.Try
 object IssueManager{
 
   case class GetIssues(user: String)
+  case class GetAllIssues()
   case class GetQuestions()
   case class StartIssue(issueJson: String)
   case class UpdateIssue(user: String, updateMessage: String, issueJson: String)
@@ -121,6 +122,11 @@ object IssueManager{
   case class DailyTask(issueId: Int, date: Long, dateCreated: Long, userLogin: String, project: String, details: String, time: Double, id: Int)
   case class IssueProject(id: Int, name: String, pdsp: String, rkd: String, foran: String, managers: String, status: String, factory: String)
   case class UpdateDates(id: Int, date_start: Long, date_finish: Long)
+
+  case class IssueShort(id: Int, status: String, project: String, department: String, issue_type: String, issue_name: String, assigned_to: String, start_date: Long, due_date: Long, doc_number: String, period: String, contract: String, closing_status: String, revision: String)
+  implicit val IssueShortDecoder: Decoder[IssueShort] = deriveDecoder[IssueShort]
+  implicit val IssueShortEncoder: Encoder[IssueShort] = deriveEncoder[IssueShort]
+
 }
 class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with FileManagerHelper with AuthManagerHelper{
   implicit val timeout: Timeout = Timeout(30, TimeUnit.SECONDS)
@@ -238,7 +244,8 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
           case _ => sender() ! Json.toJson(ListBuffer.empty[Issue])
         }
       }
-
+    case GetAllIssues() =>
+      sender() ! getAllIssues.asJson.noSpaces
     case GetQuestions() =>
       sender() ! Json.toJson(getQuestions)
     case UpdateIssue(user, updateMessage, issueJson) =>
@@ -900,6 +907,15 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
       }
       if (name_value == "status"){
         if (List("Paused", "Check", "Delivered", "Closed", "Hold").contains(new_value) || issue.closing_status.contains(new_value)){
+          DBManager.GetPGConnection() match {
+            case Some(c) =>
+              val s = c.createStatement()
+              val resetDatesQuery = s"update issue set start_date = 0, due_date = 0, assigned_to = '' where id = $id"
+              s.execute(resetDatesQuery)
+              s.close()
+              c.close()
+            case _ => None
+          }
           ActorManager.plan ! DeletePausedInterval(issue.id)
         }
       }
