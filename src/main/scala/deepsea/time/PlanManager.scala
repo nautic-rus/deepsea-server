@@ -185,7 +185,8 @@ class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
           }
         case _ => None
       }
-      deleteInterval(id.toIntOption.getOrElse(0))
+      deletePausedInterval(id.toIntOption.getOrElse(0))
+      //deleteInterval(id.toIntOption.getOrElse(0))
       sender() ! "success".asJson.noSpaces
     case AddInterval(taskId, userId, from, hoursAmount, taskType, fromUser) =>
       val res = addInterval(taskId.toIntOption.getOrElse(0),
