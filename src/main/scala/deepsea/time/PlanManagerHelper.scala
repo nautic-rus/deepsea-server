@@ -472,24 +472,28 @@ trait PlanManagerHelper {
   }
   def deletePausedInterval(id: Int): Unit = {
     val tasks = getTaskPlan(id).sortBy(_.date_start)
-    val consumed = getConsumedByTaskHours(List(id)).sortBy(_.date_consumed)
-    if (consumed.nonEmpty) {
-      val latest = consumed.last.date_consumed
-      val now = new Date(latest)
-      val nowStart = new Date(now.getYear, now.getMonth, now.getDate, 8, 0, 0).getTime
-      var nextHourNoPlan = nextHour(nowStart)
-      (1.to(Math.round(consumed.last.amount).toInt)).foreach(x => {
-        nextHourNoPlan = nextHour(nextHourNoPlan)
-      })
-      splitTask(nextHourNoPlan, consumed.last.user_id)
-      getTaskPlan(id).filter(_.date_start >= nextHourNoPlan).foreach(t => {
-        deleteInterval(t.id)
-      })
-    }
-    else{
-      tasks.foreach(int => {
-        deleteInterval(int.id)
-      })
+    if (tasks.nonEmpty){
+      val consumed = getConsumedHours(tasks.head.user_id).sortBy(_.date_consumed)
+      val consumedByTask = consumed.filter(_.task_id == id).sortBy(_.date_consumed)
+      if (consumedByTask.nonEmpty) {
+        val latest = consumedByTask.last.date_consumed
+        val now = new Date(latest)
+        val nowStart = new Date(now.getYear, now.getMonth, now.getDate, 8, 0, 0).getTime
+        var nextHourNoPlan = nextHour(nowStart)
+        val consumedNow = consumed.filter(x => sameDay(x.date_consumed, latest)).map(_.amount).sum + consumedByTask.last.amount
+        (1.to(Math.ceil(consumedNow).toInt)).foreach(x => {
+          nextHourNoPlan = nextHour(nextHourNoPlan)
+        })
+        splitTask(nextHourNoPlan, consumed.last.user_id)
+        getTaskPlan(id).filter(_.date_start >= nextHourNoPlan).foreach(t => {
+          deleteInterval(t.id)
+        })
+      }
+      else {
+        tasks.foreach(int => {
+          deleteInterval(int.id)
+        })
+      }
     }
   }
   def userLogin(id: Int): String = {
