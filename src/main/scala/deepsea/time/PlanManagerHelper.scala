@@ -667,7 +667,7 @@ trait PlanManagerHelper {
     }
     else {
       val task = tasks.head
-      val sumConsumedDay = consumed.filter(_.user_id == userId).filter(x => sameDay(x.date_consumed, now.getTime)).map(_.amount).sum
+      val sumConsumedDay = consumed.filter(_.user_id == userId).filter(x => sameDay(x.date_consumed, from)).map(_.amount).sum
       val sumConsumedTask = consumed.filter(x => x.task_id == taskId).map(_.amount).sum
       if (check && (sumConsumedDay + hoursAmount > 12)) {
         "error: not enough hours left for selected date"
@@ -679,7 +679,7 @@ trait PlanManagerHelper {
         DBManager.GetPGConnection() match {
           case Some(connection) =>
             val stmt = connection.createStatement()
-            val query = s"insert into issue_man_hours (task_id, user_id, amount, date_consumed, date_created, text_comment) values ($taskId, $userId, $hoursAmount, $from, ${now.getTime}, '$comment')"
+            val query = s"insert into issue_man_hours (task_id, user_id, amount, date_consumed, date_created, text_comment) values ($taskId, $userId, $hoursAmount, $from, ${new Date().getTime}, '$comment')"
             stmt.execute(query)
             stmt.close()
             connection.close()
