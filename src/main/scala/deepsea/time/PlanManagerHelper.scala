@@ -675,6 +675,9 @@ trait PlanManagerHelper {
       else if (check && (task.inPlan - sumConsumedTask - hoursAmount < 0)) {
         "error: not enough hours in plan left for selected task, hours left " + (task.inPlan - sumConsumedTask).toString
       }
+      else if (check && (task.plan - sumConsumedTask - hoursAmount < 0)) {
+        "error: not enough man hours left for selected task, hours left " + (task.plan - sumConsumedTask).toString
+      }
       else {
         DBManager.GetPGConnection() match {
           case Some(connection) =>
