@@ -515,7 +515,7 @@ trait PlanManagerHelper {
           val splitHour = hours(consumedByTaskSum - 1)
           val nextHourPlan = nextHour(splitHour)
           splitTask(nextHourPlan, consumed.last.user_id)
-          getTaskPlan(id).filter(_.date_start >= nextHourPlan).foreach(t => {
+          getTaskPlan(tasks.head.task_id).filter(_.date_start >= nextHourPlan).foreach(t => {
             deleteInterval(t.id)
           })
         }
