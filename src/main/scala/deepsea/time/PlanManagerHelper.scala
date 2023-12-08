@@ -323,7 +323,7 @@ trait PlanManagerHelper {
   def getIssue(id: Int): List[IssuePlan] = {
     val res = ListBuffer.empty[IssuePlan]
     val plan = getTaskPlan(id)
-    val planConsumed = getConsumedHours()
+    val planConsumed = getConsumedByTaskHours(List(id))
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
