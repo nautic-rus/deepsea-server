@@ -525,6 +525,9 @@ trait PlanManagerHelper {
           })
         }
       }
+      else{
+        deleteInterval(id)
+      }
     }
   }
 
