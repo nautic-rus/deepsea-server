@@ -471,10 +471,14 @@ trait PlanManagerHelper {
     }
   }
   def deletePausedIntervalByTaskId(id: Int): Unit = {
+    val limit = Calendar.getInstance()
+    limit.add(Calendar.MONTH, -1)
+    val limitTime = limit.getTime.getTime
+
     val tasks = getTaskPlan(id).sortBy(_.date_start)
     if (tasks.nonEmpty){
       val consumed = getConsumedHours(tasks.head.user_id).sortBy(_.date_consumed)
-      val consumedByTask = consumed.filter(_.task_id == id).sortBy(_.date_consumed)
+      val consumedByTask = consumed.filter(_.task_id == id).filter(_.date_consumed > limitTime).sortBy(_.date_consumed)
       if (consumedByTask.nonEmpty) {
         val consumedByTaskSum = Math.ceil(consumedByTask.map(_.amount).sum).toInt
         val hours = tasks.flatMap(x => getHoursOfInterval(x.date_start, x.date_finish))
@@ -496,10 +500,14 @@ trait PlanManagerHelper {
   }
 
   def deletePausedIntervalByIntervalId(id: Int): Unit = {
+    val limit = Calendar.getInstance()
+    limit.add(Calendar.MONTH, -1)
+    val limitTime = limit.getTime.getTime
+
     val tasks = getInterval(id).sortBy(_.date_start)
     if (tasks.nonEmpty) {
       val consumed = getConsumedHours(tasks.head.user_id).sortBy(_.date_consumed)
-      val consumedByTask = consumed.filter(_.task_id == tasks.head.task_id).sortBy(_.date_consumed)
+      val consumedByTask = consumed.filter(_.task_id == tasks.head.task_id).filter(_.date_consumed > limitTime).sortBy(_.date_consumed)
       if (consumedByTask.nonEmpty) {
         val consumedByTaskSum = Math.ceil(consumedByTask.map(_.amount).sum).toInt
         val hours = tasks.flatMap(x => getHoursOfInterval(x.date_start, x.date_finish))
