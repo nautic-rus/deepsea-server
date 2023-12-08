@@ -45,7 +45,7 @@ object DBManager extends MongoCodecs {
   configPG.setJdbcUrl("jdbc:postgresql://192.168.1.26/deepsea")
   configPG.setUsername("deepsea")
   configPG.setPassword("Ship1234")
-  configPG.setMaximumPoolSize(25)
+  configPG.setMaximumPoolSize(20)
   val dsPG = new HikariDataSource(configPG)
 
   private val configPGFest = new HikariConfig()

@@ -328,30 +328,30 @@ trait PlanManagerHelper {
       case Some(c) =>
         val s = c.createStatement()
         val query = Source.fromResource("queries/plan-issues.sql").mkString + s" where id = $id"
-        val rSet = RsIterator(s.executeQuery(query))
-        res ++= rSet.map(rs => {
+        val rs = s.executeQuery(query)
+        while (rs.next()){
           val id = rs.getInt("id")
           val consumed = planConsumed.filter(_.task_id == id).map(_.amount).sum
           val planHours = rs.getInt("plan_hours")
           val inPlan = plan.filter(_.task_id == id).map(_.hours_amount).sum
           val available = planHours - inPlan
-          IssuePlan(
-            id,
-            rs.getString("issue_name").trim,
-            rs.getString("doc_number").trim,
-            planHours,
-            rs.getString("status"),
-            rs.getString("issue_type"),
-            rs.getString("period"),
-            rs.getString("assigned_to"),
-            rs.getString("project"),
-            rs.getString("department"),
-            Option(rs.getString("closing_status")).getOrElse(""),
-            Option(rs.getLong("stage_date")).getOrElse(0),
-            consumed, inPlan, available, available
-          )
-        }).toList
-        rSet.rs.close()
+          res += IssuePlan(
+              id,
+              rs.getString("issue_name").trim,
+              rs.getString("doc_number").trim,
+              planHours,
+              rs.getString("status"),
+              rs.getString("issue_type"),
+              rs.getString("period"),
+              rs.getString("assigned_to"),
+              rs.getString("project"),
+              rs.getString("department"),
+              Option(rs.getString("closing_status")).getOrElse(""),
+              Option(rs.getLong("stage_date")).getOrElse(0),
+              consumed, inPlan, available, available
+            )
+        }
+        rs.close()
         s.close()
         c.close()
       case _ => None
