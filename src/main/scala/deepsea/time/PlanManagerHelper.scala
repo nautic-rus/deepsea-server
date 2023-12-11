@@ -1157,12 +1157,7 @@ trait PlanManagerHelper {
     val nextHourFrom = nextHour(calendarFromDate)
     val planHours = getHoursOfInterval(nextHourFrom, calendarToDate)
     val dmys = dmyFromHours(planHours)
-    val planCalendar = specialDays.filter(x => dmys.exists(y => y.day == x.day && y.month == x.month - 1 && y.year == y.year))
-      .map(_.kind match {
-        case "short" => 7
-        case "weekend" => 0
-      }).sum + dmys.length * 8
-
+    val planCalendar = planHours.length
 
     val usersTCHours = tcUsers.filter(x => userIds.contains(x.id)).flatMap(u => getUserTimeControl(u.tcid.toString, calendarFromDate))
     tcUsers.foreach(tcUser => {
