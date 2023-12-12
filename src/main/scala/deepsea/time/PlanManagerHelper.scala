@@ -33,6 +33,31 @@ trait PlanManagerHelper {
     SpecialDay(12, 6, 2023, "weekend"),
     SpecialDay(3, 11, 2023, "short"),
     SpecialDay(6, 11, 2023, "weekend"),
+
+    SpecialDay(1, 1, 2024, "weekend"),
+    SpecialDay(2, 1, 2024, "weekend"),
+    SpecialDay(3, 1, 2024, "weekend"),
+    SpecialDay(4, 1, 2024, "weekend"),
+    SpecialDay(5, 1, 2024, "weekend"),
+    SpecialDay(8, 1, 2024, "weekend"),
+    SpecialDay(22, 2, 2024, "short"),
+    SpecialDay(23, 2, 2024, "weekend"),
+    SpecialDay(7, 3, 2024, "short"),
+    SpecialDay(8, 3, 2024, "weekend"),
+    SpecialDay(27, 4, 2024, "working"),
+    SpecialDay(29, 4, 2024, "weekend"),
+    SpecialDay(30, 4, 2024, "weekend"),
+    SpecialDay(1, 5, 2024, "weekend"),
+    SpecialDay(8, 5, 2024, "short"),
+    SpecialDay(9, 5, 2024, "weekend"),
+    SpecialDay(10, 5, 2024, "weekend"),
+    SpecialDay(11, 6, 2024, "short"),
+    SpecialDay(12, 6, 2024, "weekend"),
+    SpecialDay(2, 11, 2024, "short"),
+    SpecialDay(4, 11, 2024, "weekend"),
+    SpecialDay(28, 12, 2024, "working"),
+    SpecialDay(30, 12, 2024, "weekend"),
+    SpecialDay(31, 12, 2024, "weekend"),
   )
   val msOneHour = 3600 * 1000
   def getPlan: List[PlanInterval] = {
@@ -471,14 +496,10 @@ trait PlanManagerHelper {
     }
   }
   def deletePausedIntervalByTaskId(id: Int): Unit = {
-    val limit = Calendar.getInstance()
-    limit.add(Calendar.MONTH, -1)
-    val limitTime = limit.getTime.getTime
-
     val tasks = getTaskPlan(id).sortBy(_.date_start)
     if (tasks.nonEmpty){
       val consumed = getConsumedHours(tasks.head.user_id).sortBy(_.date_consumed)
-      val consumedByTask = consumed.filter(_.task_id == id).filter(_.date_consumed > limitTime).sortBy(_.date_consumed)
+      val consumedByTask = consumed.filter(_.task_id == id).sortBy(_.date_consumed)
       if (consumedByTask.nonEmpty) {
         val consumedByTaskSum = Math.ceil(consumedByTask.map(_.amount).sum).toInt
         val hours = tasks.flatMap(x => getHoursOfInterval(x.date_start, x.date_finish))
@@ -500,33 +521,32 @@ trait PlanManagerHelper {
   }
 
   def deletePausedIntervalByIntervalId(id: Int): Unit = {
-    val limit = Calendar.getInstance()
-    limit.add(Calendar.MONTH, -1)
-    val limitTime = limit.getTime.getTime
-
-    val tasks = getInterval(id).sortBy(_.date_start)
-    if (tasks.nonEmpty) {
-      val consumed = getConsumedHours(tasks.head.user_id).sortBy(_.date_consumed)
-      val consumedByTask = consumed.filter(_.task_id == tasks.head.task_id).filter(_.date_consumed > limitTime).sortBy(_.date_consumed)
-      if (consumedByTask.nonEmpty) {
-        val consumedByTaskSum = Math.ceil(consumedByTask.map(_.amount).sum).toInt
-        val hours = tasks.flatMap(x => getHoursOfInterval(x.date_start, x.date_finish))
-        if (hours.nonEmpty && hours.length >= consumedByTaskSum) {
-          val splitHour = hours(consumedByTaskSum - 1)
-          val nextHourPlan = nextHour(splitHour)
-          splitTask(nextHourPlan, consumed.last.user_id)
-          getTaskPlan(tasks.head.task_id).filter(_.date_start >= nextHourPlan).foreach(t => {
-            deleteInterval(t.id)
-          })
+    val ints = getInterval(id).sortBy(_.date_start)
+    if (ints.nonEmpty){
+      val tasks = getTaskPlan(ints.head.task_id).sortBy(_.date_start)
+      if (tasks.nonEmpty) {
+        val consumed = getConsumedHours(tasks.head.user_id).sortBy(_.date_consumed)
+        val consumedByTask = consumed.filter(_.task_id == tasks.head.task_id).sortBy(_.date_consumed)
+        if (consumedByTask.nonEmpty) {
+          val consumedByTaskSum = Math.ceil(consumedByTask.map(_.amount).sum).toInt
+          val hours = tasks.flatMap(x => getHoursOfInterval(x.date_start, x.date_finish))
+          if (hours.nonEmpty && hours.length >= consumedByTaskSum) {
+            val splitHour = hours(consumedByTaskSum - 1)
+            val nextHourPlan = nextHour(splitHour)
+            splitTask(nextHourPlan, consumed.last.user_id)
+            getTaskPlan(tasks.head.task_id).filter(_.date_start >= nextHourPlan).foreach(t => {
+              deleteInterval(t.id)
+            })
+          }
+          else {
+            tasks.foreach(t => {
+              deleteInterval(t.id)
+            })
+          }
         }
         else {
-          tasks.foreach(t => {
-            deleteInterval(t.id)
-          })
+          deleteInterval(id)
         }
-      }
-      else{
-        deleteInterval(id)
       }
     }
   }
