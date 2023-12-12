@@ -35,7 +35,7 @@ object BackupManager{
   }
 }
 class BackupManager extends Actor{
-  val foranProjects: List[String] = List("P701", "P707", "N002", "N003", "N004", "N005", "N006", "N007", "SC01", "LV01", "KA01", "AN01")
+  val foranProjects: List[String] = List("P701", "P707", "N002", "N003", "N004", "N005", "N006", "N007", "SC01", "LV01", "KA01", "AN01", "WH02")
   val procedure: String = Source.fromResource("queries/backupForan.sql").mkString
 
   implicit val system: ActorSystem = ActorSystem()
