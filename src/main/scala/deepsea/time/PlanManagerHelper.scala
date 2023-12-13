@@ -223,9 +223,6 @@ trait PlanManagerHelper {
 
 
     getUsers.foreach(u => {
-//      if (u == 149){
-//        val qwe = 0
-//      }
       val planUser = plan.filter(_.user_id == u).toList
       val inPlan = planSum.filter(inInterval(_, planUser))
       res += UserNotOrdinaryInterval(u, planSum.length - inPlan.length)
