@@ -188,10 +188,10 @@ trait PlanManagerHelper {
     fromDate.set(Calendar.SECOND, 0)
 
     val toDate = Calendar.getInstance()
-    fromDate.setTime(new Date())
-    fromDate.set(Calendar.HOUR_OF_DAY, 8)
-    fromDate.set(Calendar.MINUTE, 0)
-    fromDate.set(Calendar.SECOND, 0)
+    toDate.setTime(new Date())
+    toDate.set(Calendar.HOUR_OF_DAY, 8)
+    toDate.set(Calendar.MINUTE, 0)
+    toDate.set(Calendar.SECOND, 0)
 
     val planSum = getHoursOfInterval(fromDate.getTime.getTime, toDate.getTime.getTime)
 
