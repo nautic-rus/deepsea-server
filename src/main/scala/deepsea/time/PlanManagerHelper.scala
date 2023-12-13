@@ -184,7 +184,7 @@ trait PlanManagerHelper {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val query = s"select * from plan where date_start >= $from where task_type != 0"
+        val query = s"select * from plan where date_start >= $from and task_type != 0"
         val rs = s.executeQuery(query)
         while (rs.next()){
           res += PlanInterval(
