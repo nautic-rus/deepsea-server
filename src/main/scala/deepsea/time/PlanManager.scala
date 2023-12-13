@@ -87,7 +87,7 @@ object PlanManager{
 }
 class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
   override def preStart(): Unit = {
-    getPlanNotOrdinary(new Date().getTime)
+    //getPlanNotOrdinary(new Date().getTime)
     //getUserStats(1698847977000L, 1701353577000L, List(144))
     //fillNewManHours()
   }
