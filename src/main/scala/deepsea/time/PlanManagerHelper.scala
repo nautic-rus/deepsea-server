@@ -178,6 +178,33 @@ trait PlanManagerHelper {
       case _ => List.empty[PlanInterval]
     }
   }
+
+  def getPlanNotOrdinary(from: Long): List[PlanInterval] = {
+    val res = ListBuffer.empty[PlanInterval]
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val query = s"select * from plan where date_start >= $from where task_type != 0"
+        val rs = s.executeQuery(query)
+        while (rs.next()){
+          res += PlanInterval(
+            rs.getInt("id"),
+            rs.getInt("task_id"),
+            rs.getInt("user_id"),
+            rs.getLong("date_start"),
+            rs.getLong("date_finish"),
+            rs.getInt("task_type"),
+            rs.getInt("hours_amount"),
+            rs.getInt("consumed"),
+          )
+        }
+        rs.close()
+        s.close()
+        c.close()
+      case _ => None
+    }
+    res.toList
+  }
   def getPlanByDays(dateLong: Long): List[UserPlan] = {
     val plan = getPlan
     //val issues = getIssuesByChunk(plan.map(_.task_id), plan)

@@ -20,6 +20,7 @@ object PlanManager{
   case class GetPlan()
   case class GetPlanByDays(date: String)
   case class GetUserPlan(user: String, from: String)
+  case class GetPlanNotOrdinary(from: String)
   case class PlanInterval(id: Int, task_id: Int, user_id: Int, date_start: Long, date_finish: Long, task_type: Int, hours_amount: Int, consumed: Int)
   case class AddInterval(taskId: String, userId: String, from: String, hoursAmount: String, taskType: String, fromUser: String)
   case class InsertInterval(taskId: String, userId: String, from: String, hoursAmount: String, taskType: String, fromUser: String)
@@ -177,6 +178,8 @@ class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
       sender() ! getPlanByDays(date.toLongOption.getOrElse(0)).asJson.noSpaces
     case GetUserPlan(user, from) =>
       sender() ! getUserPlan(user.toIntOption.getOrElse(0), from.toLongOption.getOrElse(0)).asJson
+    case GetPlanNotOrdinary(from) =>
+      sender() ! getPlanNotOrdinary(from.toLongOption.getOrElse(0)).asJson
     case DeleteInterval(id, fromUser) =>
       getInterval(id.toIntOption.getOrElse(0)).headOption match {
         case Some(int) =>
