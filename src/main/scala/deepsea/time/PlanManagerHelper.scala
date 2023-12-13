@@ -179,15 +179,32 @@ trait PlanManagerHelper {
     }
   }
 
-  def getPlanNotOrdinary(from: Long): List[PlanInterval] = {
-    val res = ListBuffer.empty[PlanInterval]
+  def getPlanNotOrdinary(from: Long): List[UserNotOrdinaryInterval] = {
+    val fromDate = Calendar.getInstance()
+    fromDate.setTime(new Date(from))
+    fromDate.set(Calendar.DAY_OF_MONTH, 1)
+    fromDate.set(Calendar.HOUR_OF_DAY, 9)
+    fromDate.set(Calendar.MINUTE, 0)
+    fromDate.set(Calendar.SECOND, 0)
+
+    val toDate = Calendar.getInstance()
+    fromDate.setTime(new Date())
+    fromDate.set(Calendar.HOUR_OF_DAY, 8)
+    fromDate.set(Calendar.MINUTE, 0)
+    fromDate.set(Calendar.SECOND, 0)
+
+    val planSum = getHoursOfInterval(fromDate.getTime.getTime, toDate.getTime.getTime)
+
+
+    val res = ListBuffer.empty[UserNotOrdinaryInterval]
+    val plan = ListBuffer.empty[PlanInterval]
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val query = s"select * from plan where date_start >= $from and task_type != 0"
+        val query = s"select * from plan where task_type != 0"
         val rs = s.executeQuery(query)
         while (rs.next()){
-          res += PlanInterval(
+          plan += PlanInterval(
             rs.getInt("id"),
             rs.getInt("task_id"),
             rs.getInt("user_id"),
@@ -203,6 +220,14 @@ trait PlanManagerHelper {
         c.close()
       case _ => None
     }
+
+
+    getUsers.foreach(u => {
+      val planUser = plan.filter(_.user_id == u).toList
+      val inPlan = planSum.filter(inInterval(_, planUser))
+      res += UserNotOrdinaryInterval(u, planSum.length - inPlan.length)
+    })
+
     res.toList
   }
   def getPlanByDays(dateLong: Long): List[UserPlan] = {

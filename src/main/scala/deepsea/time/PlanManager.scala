@@ -68,6 +68,10 @@ object PlanManager{
   implicit val UserDiaryDecoder: Decoder[UserDiary] = deriveDecoder[UserDiary]
   implicit val UserDiaryEncoder: Encoder[UserDiary] = deriveEncoder[UserDiary]
 
+  case class UserNotOrdinaryInterval(userId: Int, plan: Double)
+  implicit val UserNotOrdinaryIntervalDecoder: Decoder[UserNotOrdinaryInterval] = deriveDecoder[UserNotOrdinaryInterval]
+  implicit val UserNotOrdinaryIntervalEncoder: Encoder[UserNotOrdinaryInterval] = deriveEncoder[UserNotOrdinaryInterval]
+
 
   case class DMY(day: Int, month: Int, year: Int)
 
@@ -178,8 +182,8 @@ class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
       sender() ! getPlanByDays(date.toLongOption.getOrElse(0)).asJson.noSpaces
     case GetUserPlan(user, from) =>
       sender() ! getUserPlan(user.toIntOption.getOrElse(0), from.toLongOption.getOrElse(0)).asJson
-    case GetPlanNotOrdinary(from) =>
-      sender() ! getPlanNotOrdinary(from.toLongOption.getOrElse(0)).asJson
+    case GetPlanNotOrdinary(from: String) => (from)
+      sender() ! getPlanNotOrdinary(from.toLongOption.getOrElse(0)).asJson.noSpaces
     case DeleteInterval(id, fromUser) =>
       getInterval(id.toIntOption.getOrElse(0)).headOption match {
         case Some(int) =>
