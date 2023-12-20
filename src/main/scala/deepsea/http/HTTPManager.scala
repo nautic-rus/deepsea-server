@@ -668,6 +668,9 @@ class HTTPManager extends Actor {
         (post & path("statsUsersDetails") & entity(as[String]) & parameter("dateFrom", "dateTo")) { (users, dateFrom, dateTo) =>
           askFor(ActorManager.plan, GetUserStats(dateFrom, dateTo, users))
         },
+        (get & path("projectStats") & parameter("project", "docType")) { (project, docType) =>
+          askFor(ActorManager.plan, GetProjectStats(project, docType))
+        },
 
         (get & path("addMaterialComplect") & parameter("project", "name")) { (project, name) =>
           askFor(ActorManager.materials, AddMaterialComplect(project, name))

@@ -43,6 +43,7 @@ object PlanManager{
   case class DeletePausedInterval(id: Int)
   case class UserTCID(id: Int, tcid: Int)
   case class GetUserStats(dateFrom: String, dateTo: String, users: String)
+  case class GetProjectStats(project: String, docType: String)
   case class GetUserDiary(userId: String)
   case class DeleteFromDiary(id: String)
   case class GetConsumedPlan(userId: String)
@@ -75,14 +76,30 @@ object PlanManager{
 
   case class DMY(day: Int, month: Int, year: Int)
 
-  case class GetProjectStats(project: String, typeDoc: String)
-
   case class ProjectStats(project: String, typeDoc: String, departments: List[String], statuses: List[String], periods: List[String], manHoursProgress: List[ManHoursProgress], documentProgress: List[DocumentsProgress], stageProgress: List[StageProgress])
-  case class ManHoursProgress(department: String, plan: Int, actual: Int, percentage: Int)
+  implicit val ProjectStatsDecoder: Decoder[ProjectStats] = deriveDecoder[ProjectStats]
+  implicit val ProjectStatsEncoder: Encoder[ProjectStats] = deriveEncoder[ProjectStats]
+
+  case class ManHoursProgress(department: String, plan: Int, actual: Double, percentage: Double)
+  implicit val ManHoursProgressDecoder: Decoder[ManHoursProgress] = deriveDecoder[ManHoursProgress]
+  implicit val ManHoursProgressEncoder: Encoder[ManHoursProgress] = deriveEncoder[ManHoursProgress]
+
   case class DocumentsProgress(department: String, docProgressStatus: List[DocumentProgressStatus], percentage: Int)
+  implicit val DocumentsProgressDecoder: Decoder[DocumentsProgress] = deriveDecoder[DocumentsProgress]
+  implicit val DocumentsProgressEncoder: Encoder[DocumentsProgress] = deriveEncoder[DocumentsProgress]
+
   case class DocumentProgressStatus(status: String, value: Int)
+  implicit val DocumentProgressStatusDecoder: Decoder[DocumentProgressStatus] = deriveDecoder[DocumentProgressStatus]
+  implicit val DocumentProgressStatusEncoder: Encoder[DocumentProgressStatus] = deriveEncoder[DocumentProgressStatus]
+
   case class StageProgress(department: String, stages: List[StageProgressValue])
+  implicit val StageProgressDecoder: Decoder[StageProgress] = deriveDecoder[StageProgress]
+  implicit val StageProgressEncoder: Encoder[StageProgress] = deriveEncoder[StageProgress]
+
   case class StageProgressValue(stage: String, all: Int, delivered: Int)
+  implicit val StageProgressValueDecoder: Decoder[StageProgressValue] = deriveDecoder[StageProgressValue]
+  implicit val StageProgressValueEncoder: Encoder[StageProgressValue] = deriveEncoder[StageProgressValue]
+
   case class AddManHours(taskId: String, userId: String, dateConsumed: String, hoursAmount: String, comment: String)
 }
 class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
@@ -298,6 +315,8 @@ class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
           sender() ! getUserStats(dateFrom.toLongOption.getOrElse(0), dateTo.toLongOption.getOrElse(0), usersIds).asJson.noSpaces
         case _ => sender() ! "error".asJson.noSpaces
       }
+    case GetProjectStats(project, docType) =>
+      sender() ! getProjectStats(project, docType).asJson.noSpaces
     case GetUserDiary(userId: String) =>
       sender() ! getUserDiary(userId.toIntOption.getOrElse(0)).asJson.noSpaces
     case DeleteFromDiary(id: String) =>

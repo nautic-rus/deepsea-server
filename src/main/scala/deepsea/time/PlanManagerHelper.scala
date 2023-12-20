@@ -1177,20 +1177,23 @@ trait PlanManagerHelper {
   }
 
 
-  def getProjectStats(project: String, docType: String): Unit = {
+  def getProjectStats(project: String, docType: String): ProjectStats = {
     val closedStatuses = List("Delivered", "Closed")
 
     val issues = getIssues.filter(_.project == project).filter(_.issue_type == docType)
     val plan = getPlan.filter(x => issues.map(_.id).contains(x.task_id))
-    val departments = issues.map(_.department).sorted
+    val departments = issues.map(_.department).distinct.sorted
+    val consumed = getConsumedHours()
 
 
     val manHoursProgress = ListBuffer.empty[ManHoursProgress]
     departments.foreach(dep => {
       val depIssues = issues.filter(_.department == dep)
-      val planHours = plan.filter(x => depIssues.contains(x.task_id)).map(_.hours_amount).sum
-      val actualHours = plan.filter(x => depIssues.contains(x.task_id)).filter(_.consumed == 1).map(_.hours_amount).sum
-      val percentage = (actualHours / planHours) * 100
+      val depIssuesIds = issues.filter(_.department == dep).map(_.id)
+      //val planHours = plan.filter(x => depIssues.contains(x.task_id)).map(_.hours_amount).sum
+      val planHours = depIssues.map(_.plan).sum
+      val actualHours = consumed.filter(x => depIssuesIds.contains(x.task_id)).map(_.amount).sum
+      val percentage = Math.round((actualHours / planHours) * 100)
       manHoursProgress += ManHoursProgress(dep, planHours, actualHours, percentage)
     })
 
@@ -1206,13 +1209,24 @@ trait PlanManagerHelper {
       })
       val closedIssues = depIssues.map(_.status).count(closedStatuses.contains(_))
       documentProgressStatus += DocumentProgressStatus("Delivered", closedIssues)
-      val percentage =  (depIssues.length / closedIssues) * 100
+      val percentage = if (depIssues.isEmpty) 0 else (closedIssues / depIssues.length * 100)
       documentsProgress += DocumentsProgress(dep, documentProgressStatus.toList, percentage)
     })
 
     val stageProgress = ListBuffer.empty[StageProgress]
     val periods = issues.map(_.period).distinct.sorted
-
+    departments.foreach(dep => {
+      val depIssues = issues.filter(_.department == dep)
+      val stageProgressValues = ListBuffer.empty[StageProgressValue]
+      periods.foreach(period => {
+        stageProgressValues += StageProgressValue(
+          period,
+          depIssues.length,
+          depIssues.count(x => closedStatuses.contains(x.status))
+        )
+      })
+      stageProgress += StageProgress(dep, stageProgressValues.toList)
+    })
 
     ProjectStats(project, docType, departments, statuses, periods, manHoursProgress.toList, documentsProgress.toList, stageProgress.toList)
   }

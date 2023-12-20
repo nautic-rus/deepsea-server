@@ -96,7 +96,7 @@ class BackupManager extends Actor{
     val backups = ListBuffer.empty[RemoteResourceInfo]
     ls.forEach(s => backups += s)
     val now = new Date().getTime
-    val sorted = backups.sortBy(_.getAttributes.getMtime).reverse.filter(_.getName.contains(".fdp")).filter(x => (now - x.getAttributes.getMtime * 1000) < 1000 * 60 * 60 * 12)
+    val sorted = backups.sortBy(_.getAttributes.getMtime).reverse.filter(_.getName.contains(".fdp")).filter(x => (now - x.getAttributes.getMtime * 1000) < 1000 * 60 * 60 * 3)
     val dumps = ListBuffer.empty[File]
     sorted.foreach(s => {
       val tempFile = new File(dir + sp + s.getName)
