@@ -44,6 +44,7 @@ object IssueManager{
 
   case class GetIssues(user: String)
   case class GetAllIssues()
+  case class GetAllIssuesShort()
   case class GetQuestions()
   case class StartIssue(issueJson: String)
   case class UpdateIssue(user: String, updateMessage: String, issueJson: String)
@@ -246,6 +247,8 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
       }
     case GetAllIssues() =>
       sender() ! getAllIssues.asJson.noSpaces
+    case GetAllIssuesShort() =>
+      sender() ! getAllIssuesShort.asJson.noSpaces
     case GetQuestions() =>
       sender() ! Json.toJson(getQuestions)
     case UpdateIssue(user, updateMessage, issueJson) =>
@@ -910,7 +913,8 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
           DBManager.GetPGConnection() match {
             case Some(c) =>
               val s = c.createStatement()
-              val resetDatesQuery = s"update issue set start_date = 0, due_date = 0, assigned_to = '' where id = $id"
+              //val resetDatesQuery = s"update issue set start_date = 0, due_date = 0, assigned_to = '' where id = $id"
+              val resetDatesQuery = s"update issue set start_date = 0, due_date = 0 where id = $id"
               s.execute(resetDatesQuery)
               s.close()
               c.close()

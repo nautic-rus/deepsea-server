@@ -198,6 +198,9 @@ class HTTPManager extends Actor {
         (get & path("issuesAll")) {
           askFor(ActorManager.issue, GetAllIssues())
         },
+        (get & path("issuesAllShort")) {
+          askFor(ActorManager.issue, GetAllIssuesShort())
+        },
         (get & path("questions")) {
           askFor(ActorManager.issue, GetQuestions())
         },
