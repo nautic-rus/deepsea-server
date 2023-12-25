@@ -1228,8 +1228,8 @@ trait PlanManagerHelper {
       }).map(_.value).sum
       documentProgressStatusTotal += DocumentProgressStatus(status, docs)
     })
-    val docProgressAllTotal = documentProgressStatusTotal.find(_.status == "All")
-    val docProgressDeliveredTotal = docProgressAllTotal.find(_.status == "Delivered")
+    val docProgressAllTotal = documentProgressStatusTotal.find(_.status == "All").get.value
+    val docProgressDeliveredTotal = documentProgressStatusTotal.find(_.status == "Delivered").get.value
     val docProgressPercentageTotal = Math.round((docProgressDeliveredTotal / docProgressAllTotal) * 100)
     documentsProgress += DocumentsProgress("Total", documentProgressStatusTotal.toList, docProgressPercentageTotal)
 
