@@ -1196,6 +1196,10 @@ trait PlanManagerHelper {
       val percentage = Math.round((actualHours / planHours) * 100)
       manHoursProgress += ManHoursProgress(dep, planHours, actualHours, percentage)
     })
+    val manHoursTotalPlan = manHoursProgress.map(_.plan).sum
+    val manHoursTotalActual = manHoursProgress.map(_.actual).sum
+    val manHoursTotalPercentage = Math.round((manHoursTotalActual / manHoursTotalPlan) * 100)
+    manHoursProgress += ManHoursProgress("Total", manHoursTotalPlan, manHoursTotalActual, manHoursTotalPercentage)
 
     val documentsProgress = ListBuffer.empty[DocumentsProgress]
     val nonClosedStatuses = issues.map(_.status).filter(!closedStatuses.contains(_)).distinct.sorted
@@ -1212,6 +1216,22 @@ trait PlanManagerHelper {
       val percentage = if (depIssues.isEmpty) 0 else (closedIssues / depIssues.length * 100)
       documentsProgress += DocumentsProgress(dep, documentProgressStatus.toList, percentage)
     })
+    val documentProgressStatusTotal = ListBuffer.empty[DocumentProgressStatus]
+    statuses.foreach(status => {
+      val docs = documentsProgress.flatMap(_.docProgressStatus).filter(x => {
+        if (status == "All"){
+          true
+        }
+        else{
+          x.status == status
+        }
+      }).map(_.value).sum
+      documentProgressStatusTotal += DocumentProgressStatus(status, docs)
+    })
+    val docProgressAllTotal = documentProgressStatusTotal.find(_.status == "All")
+    val docProgressDeliveredTotal = docProgressAllTotal.find(_.status == "Delivered")
+    val docProgressPercentageTotal = Math.round((docProgressDeliveredTotal / docProgressAllTotal) * 100)
+    documentsProgress += DocumentsProgress("Total", documentProgressStatusTotal.toList, docProgressPercentageTotal)
 
     val stageProgress = ListBuffer.empty[StageProgress]
     val periods = issues.map(_.period).distinct.sortBy(x => {
@@ -1230,8 +1250,15 @@ trait PlanManagerHelper {
       })
       stageProgress += StageProgress(dep, stageProgressValues.toList)
     })
+    val stageProgressTotal = ListBuffer.empty[StageProgressValue]
+    periods.foreach(period => {
+      val all = stageProgress.flatMap(_.stages).filter(_.stage == period).map(_.all).sum
+      val delivered = stageProgress.flatMap(_.stages).filter(_.stage == period).map(_.delivered).sum
+      stageProgressTotal += StageProgressValue(period, all, delivered)
+    })
+    stageProgress += stageProgressTotal
 
-    ProjectStats(project, docType, departments, statuses, periods, manHoursProgress.toList, documentsProgress.toList, stageProgress.toList)
+    ProjectStats(project, docType, departments ++ "Total", statuses, periods, manHoursProgress.toList, documentsProgress.toList, stageProgress.toList)
   }
   def getUserStats(dateFrom: Long, dateTo: Long, userIds: List[Int]): List[UserStats] = {
 
