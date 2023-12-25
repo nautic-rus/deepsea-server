@@ -1256,9 +1256,9 @@ trait PlanManagerHelper {
       val delivered = stageProgress.flatMap(_.stages).filter(_.stage == period).map(_.delivered).sum
       stageProgressTotal += StageProgressValue(period, all, delivered)
     })
-    stageProgress += stageProgressTotal
+    stageProgress += StageProgress("Total", stageProgressTotal.toList)
 
-    ProjectStats(project, docType, departments ++ "Total", statuses, periods, manHoursProgress.toList, documentsProgress.toList, stageProgress.toList)
+    ProjectStats(project, docType, departments, statuses, periods, manHoursProgress.toList, documentsProgress.toList, stageProgress.toList)
   }
   def getUserStats(dateFrom: Long, dateTo: Long, userIds: List[Int]): List[UserStats] = {
 
