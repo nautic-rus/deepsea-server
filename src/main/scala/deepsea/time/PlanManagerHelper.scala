@@ -11,6 +11,7 @@ import deepsea.time.PlanManager._
 import deepsea.time.TimeControlManager.TimeControlInterval
 
 import java.time.YearMonth
+import java.util
 import java.util.{Calendar, Date}
 import scala.collection.mutable.ListBuffer
 import scala.io.Source
@@ -1258,7 +1259,7 @@ trait PlanManagerHelper {
     })
     stageProgress += StageProgress("Total", stageProgressTotal.toList)
 
-    ProjectStats(project, docType, departments, statuses, periods, manHoursProgress.toList, documentsProgress.toList, stageProgress.toList)
+    ProjectStats(project, docType, departments ++ List("Total"), statuses, periods, manHoursProgress.toList, documentsProgress.toList, stageProgress.toList)
   }
   def getUserStats(dateFrom: Long, dateTo: Long, userIds: List[Int]): List[UserStats] = {
 
