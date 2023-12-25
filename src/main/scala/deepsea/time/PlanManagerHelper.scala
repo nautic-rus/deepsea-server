@@ -1215,8 +1215,8 @@ trait PlanManagerHelper {
 
     val stageProgress = ListBuffer.empty[StageProgress]
     val periods = issues.map(_.period).distinct.sortBy(x => {
-      if ("""\d+""".r.matches(x)){
-        """\d+""".r.findFirstIn(x).getOrElse("").toIntOption.getOrElse(0)
+      if ("""\\d+""".r.matches(x)){
+        """\\d+""".r.findFirstIn(x).getOrElse("").toIntOption.getOrElse(0)
       }
       else{
         0
@@ -1226,10 +1226,11 @@ trait PlanManagerHelper {
       val depIssues = issues.filter(_.department == dep)
       val stageProgressValues = ListBuffer.empty[StageProgressValue]
       periods.foreach(period => {
+        val stageIssues = depIssues.filter(_.period == period)
         stageProgressValues += StageProgressValue(
           period,
-          depIssues.length,
-          depIssues.count(x => closedStatuses.contains(x.status))
+          stageIssues.length,
+          stageIssues.count(x => closedStatuses.contains(x.status))
         )
       })
       stageProgress += StageProgress(dep, stageProgressValues.toList)
