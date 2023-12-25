@@ -107,7 +107,7 @@ class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
     //getPlanNotOrdinary(1696148526000L)
     //getUserStats(1696148526000L, 1698740526000L, List(264))
     //fillNewManHours()
-    self ! GetProjectStats("NR002", "RKD")
+    //self ! GetProjectStats("NR002", "RKD")
   }
   def fillNewManHours(): Unit = {
     getPlan.filter(_.consumed == 1).filter(_.date_start != 0).filter(_.task_type == 0).filter(_.hours_amount > 0).foreach(c => {
