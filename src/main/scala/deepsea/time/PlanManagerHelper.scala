@@ -1183,7 +1183,7 @@ trait PlanManagerHelper {
 
 
   def getProjectStats(project: String, docType: String): ProjectStats = {
-    val closedStatuses = List("Delivered", "Closed")
+    val closedStatuses = List("Delivered", "Closed", "Joined")
 
     val issues = getIssues.filter(_.project == project).filter(_.issue_type == docType).filter(_.removed == 0)
     val plan = getPlan.filter(x => issues.map(_.id).contains(x.task_id))
