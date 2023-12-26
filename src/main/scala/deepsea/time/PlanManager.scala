@@ -25,7 +25,7 @@ object PlanManager{
   case class AddInterval(taskId: String, userId: String, from: String, hoursAmount: String, taskType: String, fromUser: String)
   case class InsertInterval(taskId: String, userId: String, from: String, hoursAmount: String, taskType: String, fromUser: String)
   case class InsertConsumedInterval(taskId: String, userId: String, from: String, hoursAmount: String, taskType: String)
-  case class DayInterval(taskId: Int, hours: Int, hours_total: Int, id: Int, date_start: Long, consumed: Int, taskType: Int)
+  case class DayInterval(taskId: Int, hours: Double, hours_total: Double, id: Int, date_start: Long, consumed: Int, taskType: Int)
   case class PlanByDays(day: Int, month: Int, year: Int, ints: List[DayInterval])
   case class UserPlan(userId: Int, plan: List[PlanByDays])
   case class DeleteInterval(id: String, fromUser: String)
@@ -49,7 +49,7 @@ object PlanManager{
   case class GetConsumedPlan(userId: String)
 
 
-  case class UserStats(id: Int, tcId: Int, plan: Int, office: Int, tasks: Double, vacation: Int, medical: Int, dayOff: Int, study: Int, details: List[UserStatsDetails])
+  case class UserStats(id: Int, tcId: Int, plan: Double, office: Int, tasks: Double, vacation: Int, medical: Int, dayOff: Int, study: Double, details: List[UserStatsDetails])
   implicit val UserStatsDecoder: Decoder[UserStats] = deriveDecoder[UserStats]
   implicit val UserStatsEncoder: Encoder[UserStats] = deriveEncoder[UserStats]
 
@@ -105,7 +105,7 @@ object PlanManager{
 class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
   override def preStart(): Unit = {
     //getPlanNotOrdinary(1696148526000L)
-    //getUserStats(1696148526000L, 1698740526000L, List(264))
+    getUserStats(1702034601000L, 1702034601000L, List(38))
     //fillNewManHours()
     //self ! GetProjectStats("NR002", "RKD")
   }
