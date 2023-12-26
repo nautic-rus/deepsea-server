@@ -1276,7 +1276,7 @@ trait PlanManagerHelper {
     val calendarToDate = calendarTo.getTime.getTime
 
     val planByDays = getPlan
-    val issues = getIssuesByChunk(planByDays.map(_.task_id).distinct, List.empty[PlanInterval])
+    val issues = getIssuesByChunk(planConsumed.map(_.task_id).distinct, List.empty[PlanInterval])
     val tcUsers = getTCUsers.filter(x => userIds.contains(x.id))
 
     val nextHourFrom = nextHour(calendarFromDate)
@@ -1288,7 +1288,7 @@ trait PlanManagerHelper {
     tcUsers.foreach(tcUser => {
       val details = ListBuffer.empty[UserStatsDetails]
       val planByDaysPeriod = ListBuffer.empty[DayInterval]
-      //val ints = planByDays.filter(_.user_id == tcUser.id)
+      val ints = planByDays.filter(_.user_id == tcUser.id)
       val skip = skipIntervals(tcUser.id)
 
       dmys.foreach(dmy => {
@@ -1303,15 +1303,11 @@ trait PlanManagerHelper {
         val specialInts = ListBuffer.empty[Int]
         specialInts += 0
         val hours = hoursOfDay(calendar.getTime.getTime)
-        //val intsThisDay = ints.filter(x => intervalSameDay(hours.head, hours.last, x.date_start, x.date_finish))
-        val intsThisDay = planConsumed.filter(_.user_id == tcUser.id).filter(x => intervalSameDay(hours.head, hours.last, x.date_consumed, x.date_consumed))
+        val intsThisDay = ints.filter(x => intervalSameDay(hours.head, hours.last, x.date_start, x.date_finish))
         val dayIntervals = ListBuffer.empty[DayInterval]
-//        intsThisDay.foreach(int => {
-//          val intervalHours = hours.filter(x => int.date_start <= x && x <= int.date_finish).filter(h => int.task_type != 0 || !inInterval(h, skip))
-//          dayIntervals += DayInterval(int.task_id, intervalHours.length, int.hours_amount, int.id, int.date_start, int.consumed, int.task_type)
-//        })
-        intsThisDay.foreach(int => {
-          dayIntervals += DayInterval(int.task_id, int.amount, int.amount, int.id, int.date_consumed, 1, 0)
+        intsThisDay.filter(_.task_type != 0).foreach(int => {
+          val intervalHours = hours.filter(x => int.date_start <= x && x <= int.date_finish).filter(h => int.task_type != 0 || !inInterval(h, skip))
+          dayIntervals += DayInterval(int.task_id, intervalHours.length, int.hours_amount, int.id, int.date_start, int.consumed, int.task_type)
         })
         planByDaysPeriod ++= dayIntervals
         //val taskInts = dayIntervals.filter(_.consumed == 1).filter(_.taskType == 0)
