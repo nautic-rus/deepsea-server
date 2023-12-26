@@ -31,7 +31,7 @@ object PlanManager{
   case class DeleteInterval(id: String, fromUser: String)
   case class IssuePlan(id: Int, name: String, docNumber: String,
                        plan: Int, status: String, issue_type: String, period: String,
-                       assigned_to: String, project: String, department: String,
+                       assigned_to: String, project: String, department: String, removed: Int,
                        closing_status: String, stage_date: Long,
                        consumed: Double, inPlan: Int, available: Int, available_limit: Int)
 

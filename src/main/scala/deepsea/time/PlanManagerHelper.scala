@@ -304,6 +304,7 @@ trait PlanManagerHelper {
               rs.getString("assigned_to"),
               rs.getString("project"),
               rs.getString("department"),
+              rs.getInt("removed"),
               Option(rs.getString("closing_status")).getOrElse(""),
               Option(rs.getLong("stage_date")).getOrElse(0),
               consumed, inPlan, available, available
@@ -345,6 +346,7 @@ trait PlanManagerHelper {
               rs.getString("assigned_to"),
               rs.getString("project"),
               rs.getString("department"),
+              rs.getInt("removed"),
               Option(rs.getString("closing_status")).getOrElse(""),
               Option(rs.getLong("stage_date")).getOrElse(0),
               consumed, inPlan, available, available
@@ -394,6 +396,7 @@ trait PlanManagerHelper {
             rs.getString("assigned_to"),
             rs.getString("project"),
             rs.getString("department"),
+            rs.getInt("removed"),
             Option(rs.getString("closing_status")).getOrElse(""),
             Option(rs.getLong("stage_date")).getOrElse(0),
             consumed, inPlan, available, available
@@ -432,6 +435,7 @@ trait PlanManagerHelper {
               rs.getString("assigned_to"),
               rs.getString("project"),
               rs.getString("department"),
+              rs.getInt("removed"),
               Option(rs.getString("closing_status")).getOrElse(""),
               Option(rs.getLong("stage_date")).getOrElse(0),
               consumed, inPlan, available, available
@@ -888,7 +892,7 @@ trait PlanManagerHelper {
     }
     val issues = getIssuesByChunkNew(userConsumedIntervals.map(_.task_id).distinct.toList, plan, userConsumedIntervals.toList)
     userConsumedIntervals.map(u => {
-      UserDiary(u, issues.find(_.id == u.task_id).getOrElse(IssuePlan(0, "NOT FOUND", "", 0, "", "", "", "", "", "", "", 0, 0, 0, 0, 0)))
+      UserDiary(u, issues.find(_.id == u.task_id).getOrElse(IssuePlan(0, "NOT FOUND", "", 0, "", "", "", "", "", "", 0, "", 0, 0, 0, 0, 0)))
     }).toList
   }
   def deleteFromDiary(id: Int): Unit = {
@@ -1181,7 +1185,7 @@ trait PlanManagerHelper {
   def getProjectStats(project: String, docType: String): ProjectStats = {
     val closedStatuses = List("Delivered", "Closed")
 
-    val issues = getIssues.filter(_.project == project).filter(_.issue_type == docType)
+    val issues = getIssues.filter(_.project == project).filter(_.issue_type == docType).filter(_.removed == 0)
     val plan = getPlan.filter(x => issues.map(_.id).contains(x.task_id))
     val departments = issues.map(_.department).distinct.sorted
     val consumed = getConsumedHours()
