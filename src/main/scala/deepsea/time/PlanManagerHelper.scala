@@ -1223,14 +1223,7 @@ trait PlanManagerHelper {
     })
     val documentProgressStatusTotal = ListBuffer.empty[DocumentProgressStatus]
     statuses.foreach(status => {
-      val docs = documentsProgress.flatMap(_.docProgressStatus).filter(x => {
-        if (status == "All"){
-          true
-        }
-        else{
-          x.status == status
-        }
-      }).map(_.value).sum
+      val docs = documentsProgress.flatMap(_.docProgressStatus).filter(_.status == status).map(_.value).sum
       documentProgressStatusTotal += DocumentProgressStatus(status, docs)
     })
     val docProgressAllTotal = documentProgressStatusTotal.find(_.status == "All").get.value
