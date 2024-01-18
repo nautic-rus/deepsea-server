@@ -563,7 +563,7 @@ trait PlanManagerHelper {
   def deletePausedIntervalByTaskId(id: Int): Unit = {
     val tasks = getTaskPlan(id).sortBy(_.date_start)
     if (tasks.nonEmpty){
-      val consumed = getConsumedHours(tasks.head.user_id).sortBy(_.date_consumed)
+      val consumed = getConsumedHoursByTaskId(id).sortBy(_.date_consumed)
       val consumedByTask = consumed.filter(_.task_id == id).sortBy(_.date_consumed)
       if (consumedByTask.nonEmpty) {
         val consumedByTaskSum = Math.ceil(consumedByTask.map(_.amount).sum).toInt
@@ -590,7 +590,7 @@ trait PlanManagerHelper {
     if (ints.nonEmpty){
       val tasks = getTaskPlan(ints.head.task_id).sortBy(_.date_start)
       if (tasks.nonEmpty) {
-        val consumed = getConsumedHours(tasks.head.user_id).sortBy(_.date_consumed)
+        val consumed = getConsumedHours(tasks.head.task_id).sortBy(_.date_consumed)
         val consumedByTask = consumed.filter(_.task_id == tasks.head.task_id).sortBy(_.date_consumed)
         if (consumedByTask.nonEmpty) {
           val consumedByTaskSum = Math.ceil(consumedByTask.map(_.amount).sum).toInt
@@ -808,6 +808,29 @@ trait PlanManagerHelper {
     res.toList
   }
 
+  def getConsumedHoursByTaskId(taskId: Int): List[ConsumedHours] = {
+    val res = ListBuffer.empty[ConsumedHours]
+    DBManager.GetPGConnection() match {
+      case Some(connection) =>
+        val stmt = connection.createStatement()
+        val query = s"select * from issue_man_hours where task_id = $taskId"
+        val rs = stmt.executeQuery(query)
+        while (rs.next()) {
+          res += ConsumedHours(
+            rs.getInt("id"),
+            rs.getInt("task_id"),
+            rs.getInt("user_id"),
+            rs.getDouble("amount"),
+            rs.getLong("date_consumed"),
+            rs.getLong("date_created"),
+          )
+        }
+        stmt.close()
+        connection.close()
+      case _ => None
+    }
+    res.toList
+  }
   def getConsumedByTaskHours(taskIds: List[Int]): List[ConsumedHours] = {
     val res = ListBuffer.empty[ConsumedHours]
     DBManager.GetPGConnection() match {
