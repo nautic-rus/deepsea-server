@@ -589,7 +589,7 @@ trait PlanManagerHelper {
     if (ints.nonEmpty){
       val tasks = getTaskPlan(ints.head.task_id).sortBy(_.date_start)
       if (tasks.nonEmpty) {
-        val consumedByTask = getConsumedHours(tasks.head.task_id).sortBy(_.date_consumed)
+        val consumedByTask = getConsumedHoursByTaskId(tasks.head.task_id).sortBy(_.date_consumed)
         if (consumedByTask.nonEmpty) {
           val consumedByTaskSum = Math.ceil(consumedByTask.map(_.amount).sum).toInt
           val hours = tasks.flatMap(x => getHoursOfInterval(x.date_start, x.date_finish))
