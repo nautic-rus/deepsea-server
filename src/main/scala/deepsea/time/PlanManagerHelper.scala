@@ -531,6 +531,7 @@ trait PlanManagerHelper {
   }
 
   def deleteInterval(id: Int): Unit = {
+    val needToUpdateInts = ListBuffer.empty[Int]
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
@@ -538,7 +539,8 @@ trait PlanManagerHelper {
         if (intList.nonEmpty && intList.head.consumed == 0){
           val int = intList.head
           val today = new Date().getTime
-          if (int.date_finish < today){
+          //if (int.date_finish < today){
+          if (false){
             s.execute(s"delete from plan where id = $id")
           }
           else{
@@ -551,12 +553,32 @@ trait PlanManagerHelper {
               val hourFinish = nextHourN(hourStart, p.hours_amount - 1)
               s.execute(s"update plan set date_start = $hourStart, date_finish = $hourFinish where id = ${p.id}")
               hourStart = nextHour(hourFinish)
+              needToUpdateInts += p.task_id
             })
             s.execute(s"delete from plan where id = $id")
           }
         }
         s.close()
         c.close()
+      case _ => None
+    }
+    updateIssueIntervals(needToUpdateInts.toList)
+  }
+
+  def updateIssueIntervals(ids: List[Int]): Unit = {
+    DBManager.GetPGConnection() match {
+      case Some(conn) =>
+        val stmt = conn.createStatement()
+        ids.distinct.foreach(id => {
+          val taskPlan = getTaskPlan(id)
+          if (taskPlan.nonEmpty){
+            val dateStart = taskPlan.sortBy(_.date_start).head.date_start
+            val dateFinish = taskPlan.sortBy(_.date_finish).last.date_finish
+            stmt.execute(s"update issue set start_date = $dateStart, due_date = $dateFinish where id = $id")
+          }
+        })
+        stmt.close()
+        conn.close()
       case _ => None
     }
   }
