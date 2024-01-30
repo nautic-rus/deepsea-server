@@ -1938,11 +1938,13 @@ trait IssueManagerHelper extends MongoCodecs {
           case Some(c) =>
             val s = c.createStatement()
             //val q = Source.fromResource("queries/userNotificationsByProject.sql").mkString.replace("&project", issue.project)
-            val q = s"select distinct email from users where id in (select user_id from users_notification where kind = 'document' and method = 'email' and project_id = $projectId and department_id = $departmentId)"
-            val rsIter = RsIterator(s.executeQuery(q))
-            val emails = rsIter.map(rs => {
-              rs.getString("email")
-            })
+            val q = s"select distinct email from users where id in (select user_id from users_notification where kind = 'documents' and method = 'mail' and project_id = $projectId and department_id = $departmentId)"
+            val emails = ListBuffer.empty[String]
+            val rs = s.executeQuery(q)
+            while (rs.next()){
+              emails += rs.getString("email")
+            }
+
 
             val title = kind match {
               case "correction" => "В систему добавлено оперативное решение для документа"
@@ -1973,7 +1975,7 @@ trait IssueManagerHelper extends MongoCodecs {
               ActorManager.mail ! Mail("Nautic Rus", email, title, text)
             })
 
-            rsIter.rs.close()
+            rs.close()
             s.close()
             c.close()
           case _ =>
