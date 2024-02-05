@@ -30,7 +30,8 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
             res = Option(User(
               userId,
               Option(rs.getString("login")).getOrElse(""),
-              Option(rs.getString("password")).getOrElse(""),
+              //Option(rs.getString("password")).getOrElse(""),
+              "hidden",
               Option(rs.getString("name")).getOrElse(""),
               Option(rs.getString("surname")).getOrElse(""),
               Option(rs.getString("profession")).getOrElse(""),
@@ -96,7 +97,8 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
             res += User(
               userId,
               Option(rs.getString("login")).getOrElse(""),
-              Option(rs.getString("password")).getOrElse(""),
+              //Option(rs.getString("password")).getOrElse(""),
+              "hidden",
               Option(rs.getString("name")).getOrElse(""),
               Option(rs.getString("surname")).getOrElse(""),
               Option(rs.getString("profession")).getOrElse(""),
@@ -154,7 +156,8 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
             user = Option(User(
               userId,
               Option(rs.getString("login")).getOrElse(""),
-              Option(rs.getString("password")).getOrElse(""),
+              //Option(rs.getString("password")).getOrElse(""),
+              "hidden",
               Option(rs.getString("name")).getOrElse(""),
               Option(rs.getString("surname")).getOrElse(""),
               Option(rs.getString("profession")).getOrElse(""),
