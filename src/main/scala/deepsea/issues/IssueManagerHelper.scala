@@ -262,6 +262,10 @@ trait IssueManagerHelper extends MongoCodecs {
             rs.getString("revision") match {
               case value: String => value
               case _ => ""
+            },
+            rs.getInt("removed") match {
+              case value: Int => value
+              case _ => 0
             }
           )
         }
@@ -336,6 +340,10 @@ trait IssueManagerHelper extends MongoCodecs {
             rs.getString("revision") match {
               case value: String => value
               case _ => ""
+            },
+            rs.getInt("removed") match {
+              case value: Int => value
+              case _ => 0
             }
           )
         }

@@ -124,7 +124,7 @@ object IssueManager{
   case class IssueProject(id: Int, name: String, pdsp: String, rkd: String, foran: String, managers: String, status: String, factory: String)
   case class UpdateDates(id: Int, date_start: Long, date_finish: Long)
 
-  case class IssueShort(id: Int, status: String, project: String, department: String, issue_type: String, issue_name: String, assigned_to: String, start_date: Long, due_date: Long, doc_number: String, period: String, contract: String, closing_status: String, revision: String)
+  case class IssueShort(id: Int, status: String, project: String, department: String, issue_type: String, issue_name: String, assigned_to: String, start_date: Long, due_date: Long, doc_number: String, period: String, contract: String, closing_status: String, revision: String, removed: Int)
   implicit val IssueShortDecoder: Decoder[IssueShort] = deriveDecoder[IssueShort]
   implicit val IssueShortEncoder: Encoder[IssueShort] = deriveEncoder[IssueShort]
 
