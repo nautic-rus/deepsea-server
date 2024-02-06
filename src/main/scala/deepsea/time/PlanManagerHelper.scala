@@ -554,9 +554,10 @@ trait PlanManagerHelper {
               splitTask(int.date_start, int.user_id, int.hours_amount)
             }
             val userPlan = getUserPlan(int.user_id, int.date_start).filter(x => x.id != int.id).filter(_.task_type == 0)
+            val skipInts = skipIntervals(int.user_id)
             var hourStart = int.date_start
             userPlan.sortBy(_.date_start).foreach(p => {
-              val hourFinish = nextHourN(hourStart, p.hours_amount - 1)
+              val hourFinish = nextHourNWithSkip(hourStart, p.hours_amount - 1, skipInts)
               s.execute(s"update plan set date_start = $hourStart, date_finish = $hourFinish where id = ${p.id}")
               hourStart = nextHour(hourFinish)
               needToUpdateInts += p.task_id
@@ -1170,6 +1171,19 @@ trait PlanManagerHelper {
         h
     }
   }
+
+  private def nextHourNWithSkip(date: Long, hours: Int, skip: List[PlanInterval]): Long = {
+    hours match {
+      case 0 => date
+      case 1 => nextHourWithSkip(date, skip)
+      case _ =>
+        var h = nextHourWithSkip(date, skip)
+        (2 to (hours)).foreach(_ => {
+          h = nextHourWithSkip(h, skip)
+        })
+        h
+    }
+  }
   private def nextFreeHour(date: Long, intervals: List[PlanInterval] = List.empty[PlanInterval]): Long = {
     var nH = nextHour(date)
     while (!inInterval(date, intervals)) {
@@ -1193,6 +1207,30 @@ trait PlanManagerHelper {
       d = new Date(d.getTime + msOneHour * 24)
     }
     new Date(d.getYear, d.getMonth, d.getDate, d.getHours, 0, 0).getTime
+  }
+
+  def nextHourWithSkip(date: Long, skip: List[PlanInterval]): Long = {
+    var d = new Date(date + msOneHour)
+    val hours = d.getHours
+    if (hours == 12) {
+      d = new Date(date + msOneHour * 2)
+    }
+    else if (isShort(d) && hours == 17) {
+      d = new Date(date + msOneHour * 17)
+    }
+    else if (hours == 18) {
+      d = new Date(date + msOneHour * 16)
+    }
+    while (isWeekend(d)) {
+      d = new Date(d.getTime + msOneHour * 24)
+    }
+    val newD = new Date(d.getYear, d.getMonth, d.getDate, d.getHours, 0, 0).getTime
+    if (inInterval(newD, skip)){
+      nextHourWithSkip(newD, skip)
+    }
+    else{
+      newD
+    }
   }
   private def inInterval(hour: Long, intervals: List[PlanInterval]): Boolean = {
     intervals.exists(x => x.date_start <= hour && hour <= x.date_finish)
