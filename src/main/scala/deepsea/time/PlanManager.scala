@@ -241,6 +241,7 @@ class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
         }
       }
       val response = res match {
+        case -3 => "error: нельзя назначить задачу нескольким пользователям"
         case -2 => "error: critical code error"
         case -1 => "error: wrong planing date"
         case _ => "success"
@@ -273,6 +274,7 @@ class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
         }
       }
       val response = res match {
+        case -4 => "error: нельзя назначить задачу нескольким пользователям"
         case -3 => "error: критическая ошибка"
         case -2 => "error: невозможно добавить задачу на день в котором есть списанные интервалы"
         case -1 => "error: неверная дата"

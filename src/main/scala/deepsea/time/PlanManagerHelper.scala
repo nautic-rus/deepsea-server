@@ -488,33 +488,39 @@ trait PlanManagerHelper {
         -1
       }
       else {
-        val skip = skipIntervals(userId)
-        val dateFrom = nextHourLatest(userId, todayStart)
-        val hours = ListBuffer.empty[Long]
-        var h = dateFrom
-        while (hours.length < hoursAmount) {
-          if (!inInterval(h, skip)) {
-            hours += h
+        val taskUsers = getTaskPlan(taskId).map(_.user_id).distinct
+        if (taskUsers.nonEmpty && !taskUsers.contains(userId)) {
+          -3
+        }
+        else{
+          val skip = skipIntervals(userId)
+          val dateFrom = nextHourLatest(userId, todayStart)
+          val hours = ListBuffer.empty[Long]
+          var h = dateFrom
+          while (hours.length < hoursAmount) {
+            if (!inInterval(h, skip)) {
+              hours += h
+            }
+            h = nextHour(h)
           }
-          h = nextHour(h)
+          val id = DBManager.GetPGConnection() match {
+            case Some(c) =>
+              val s = c.createStatement()
+              val query = s"insert into plan (task_id, user_id, date_start, date_finish, task_type, hours_amount) values ($taskId, $userId, ${hours.head}, ${hours.last}, $taskType, ${hours.length}) returning id"
+              val rs = s.executeQuery(query)
+              val idNext = if (rs.next()) {
+                rs.getInt("id")
+              }
+              else {
+                -2
+              }
+              s.close()
+              c.close()
+              idNext
+            case _ => -2
+          }
+          id
         }
-        val id = DBManager.GetPGConnection() match {
-          case Some(c) =>
-            val s = c.createStatement()
-            val query = s"insert into plan (task_id, user_id, date_start, date_finish, task_type, hours_amount) values ($taskId, $userId, ${hours.head}, ${hours.last}, $taskType, ${hours.length}) returning id"
-            val rs = s.executeQuery(query)
-            val idNext = if (rs.next()) {
-              rs.getInt("id")
-            }
-            else {
-              -2
-            }
-            s.close()
-            c.close()
-            idNext
-          case _ => -2
-        }
-        id
       }
     }
   }
@@ -663,8 +669,12 @@ trait PlanManagerHelper {
     }
     val todayStart = new Date(now.getYear, now.getMonth, now.getDate, 0, 0, 0)
     val plan = getUserPlan(userId, nextHourNoPlan).filter(_.consumed == 1)
+    val taskUsers = getTaskPlan(taskId).map(_.user_id).distinct
     if (from < todayStart.getTime) {
       -1
+    }
+    else if (taskUsers.nonEmpty && !taskUsers.contains(userId)){
+      -5
     }
 //    else if (plan.filter(x => sameDay(x.date_start, nextHourNoPlan)).map(_.hours_amount).sum > 0){
 //      -2
