@@ -330,7 +330,14 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
       case Some(c) =>
         val s = c.createStatement();
         val q = '"'
-        val query = s"update users set id = '${user.id}', login = '${user.login}', password = '${user.password}', name = '${user.name}', surname = '${user.surname}', email = '${user.email}', phone = '${user.phone}', tcid = '${user.tcid}', avatar = '${user.avatar}', profession = '${user.profession}', visibility = '${user.visibility}', gender = '${user.gender}', department = '${user.department}', visible_projects = '${user.visible_projects.mkString(",")}', rocket_login = '${user.rocket_login}', ${q}group${q} = '${user.groups.mkString(",")}', id_department = '${user.id_department}' where id = '$id'"
+        val query = {
+          if (user.password != "hidden"){
+            s"update users set id = '${user.id}', login = '${user.login}', password = '${user.password}', name = '${user.name}', surname = '${user.surname}', email = '${user.email}', phone = '${user.phone}', tcid = '${user.tcid}', avatar = '${user.avatar}', profession = '${user.profession}', visibility = '${user.visibility}', gender = '${user.gender}', department = '${user.department}', visible_projects = '${user.visible_projects.mkString(",")}', rocket_login = '${user.rocket_login}', ${q}group${q} = '${user.groups.mkString(",")}', id_department = '${user.id_department}' where id = '$id'"
+          }
+          else{
+            s"update users set id = '${user.id}', login = '${user.login}', name = '${user.name}', surname = '${user.surname}', email = '${user.email}', phone = '${user.phone}', tcid = '${user.tcid}', avatar = '${user.avatar}', profession = '${user.profession}', visibility = '${user.visibility}', gender = '${user.gender}', department = '${user.department}', visible_projects = '${user.visible_projects.mkString(",")}', rocket_login = '${user.rocket_login}', ${q}group${q} = '${user.groups.mkString(",")}', id_department = '${user.id_department}' where id = '$id'"
+          }
+        }
         s.execute(query);
 
         s.execute(s"delete from user_rights where user_id = '$id'");
