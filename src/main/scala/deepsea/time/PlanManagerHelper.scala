@@ -642,6 +642,16 @@ trait PlanManagerHelper {
         else {
           deleteInterval(id)
         }
+        if (tasks.head.task_type != 0){
+          val task = tasks.head
+          val ints = getUserPlan(tasks.head.user_id, 0).filter(x => x.date_start <= task.date_start && x.date_finish <= task.date_finish)
+          if (ints.nonEmpty){
+            ints.sortBy(_.date_start).foreach(int => {
+              deleteInterval(int.id)
+              addInterval(int.task_id, int.user_id, int.date_start, int.hours_amount, int.task_type)
+            })
+          }
+        }
       }
     }
   }
