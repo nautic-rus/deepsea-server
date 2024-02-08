@@ -492,7 +492,7 @@ trait PlanManagerHelper {
         val consumedByTask = getConsumedHoursByTaskId(taskId).map(_.amount).sum
         val amountInPlan = taskPlan.map(x => getHoursOfInterval(x.date_start, x.date_finish).length).sum
         val taskUsers = taskPlan.map(_.user_id).distinct
-        if (taskUsers.nonEmpty && !taskUsers.contains(userId) && consumedByTask < amountInPlan) {
+        if (taskType == 0 && taskUsers.nonEmpty && !taskUsers.contains(userId) && consumedByTask < amountInPlan) {
           -3
         }
         else{
@@ -681,7 +681,7 @@ trait PlanManagerHelper {
     if (from < todayStart.getTime) {
       -1
     }
-    else if (taskUsers.nonEmpty && !taskUsers.contains(userId) && consumedByTask < amountInPlan){
+    else if (taskType == 0 && taskUsers.nonEmpty && !taskUsers.contains(userId) && consumedByTask < amountInPlan){
       -5
     }
 //    else if (plan.filter(x => sameDay(x.date_start, nextHourNoPlan)).map(_.hours_amount).sum > 0){
