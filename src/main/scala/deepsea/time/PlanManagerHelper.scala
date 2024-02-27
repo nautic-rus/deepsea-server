@@ -544,7 +544,7 @@ trait PlanManagerHelper {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val intList = getInterval(id)
+        val intList = getInterval(id).filter(_.date_start > 0)
         if (intList.nonEmpty && intList.head.consumed == 0){
           val int = intList.head
           val today = new Date().getTime
