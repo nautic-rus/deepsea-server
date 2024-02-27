@@ -1,3 +1,4 @@
+from django.shortcuts import render
 import requests
 import json
 import psycopg2
