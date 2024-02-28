@@ -608,12 +608,13 @@ trait PlanManagerHelper {
           })
         }
         else{
-          val today = new Date()
-          val todayStart = new Date(today.getYear, today.getMonth, today.getDate, 8, 0, 0).getTime
-          tasks.foreach(t => {
-            deleteInterval(t.id)
-          })
+
         }
+      }
+      else{
+        tasks.foreach(t => {
+          deleteInterval(t.id)
+        })
       }
     }
   }
