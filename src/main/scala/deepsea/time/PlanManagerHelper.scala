@@ -477,14 +477,14 @@ trait PlanManagerHelper {
   def inInterval(d1: Long, d2: Long, int1: Long, int2: Long): Boolean = {
     d1 <= int1 && int2 <= d2
   }
-  def addInterval(taskId: Int, userId: Int, from: Long, hoursAmount: Int, taskType: Int): Int = {
+  def addInterval(taskId: Int, userId: Int, from: Long, hoursAmount: Int, taskType: Int, allowPast: Boolean = false): Int = {
     if (taskType != 0){
       insertInterval(taskId, userId, from, hoursAmount, taskType)
     }
     else{
       val today = new Date()
       val todayStart = new Date(today.getYear, today.getMonth, today.getDate, 0, 0, 0).getTime
-      if (from < todayStart) {
+      if (from < todayStart && !allowPast) {
         -1
       }
       else {
@@ -636,22 +636,20 @@ trait PlanManagerHelper {
               deleteInterval(t.id)
             })
           }
-          else {
-//            tasks.foreach(t => {
-//              deleteInterval(t.id)
-//            })
-          }
         }
         else {
           deleteInterval(id)
         }
         if (tasks.head.task_type != 0){
           val task = ints.head
-          val intsChange = getUserPlan(task.user_id, 0).filter(x => x.date_start >= task.date_start).filter(_.task_type == 0)
+          val intsChange = getUserPlan(task.user_id, 0).filter(x => x.date_start >= task.date_start || x.date_finish >= task.date_start).filter(_.task_type == 0)
           if (intsChange.nonEmpty){
+            val dateStart = intsChange.sortBy(_.date_start).map(_.date_start).headOption.getOrElse(new Date().getTime)
             intsChange.sortBy(_.date_start).foreach(int => {
               deleteInterval(int.id)
-              addInterval(int.task_id, int.user_id, int.date_start, int.hours_amount, int.task_type)
+            })
+            intsChange.sortBy(_.date_start).reverse.foreach(int => {
+              insertInterval(int.task_id, int.user_id, dateStart, int.hours_amount, int.task_type)
             })
           }
         }
