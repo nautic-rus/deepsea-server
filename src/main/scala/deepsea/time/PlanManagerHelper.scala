@@ -610,7 +610,7 @@ trait PlanManagerHelper {
         else{
           val today = new Date()
           val todayStart = new Date(today.getYear, today.getMonth, today.getDate, 8, 0, 0).getTime
-          tasks.filter(_.date_start > todayStart).foreach(t => {
+          tasks.foreach(t => {
             deleteInterval(t.id)
           })
         }
@@ -624,7 +624,7 @@ trait PlanManagerHelper {
       val tasks = getTaskPlan(ints.head.task_id).sortBy(_.date_start)
       if (tasks.nonEmpty) {
         val consumedByTask = getConsumedHoursByTaskId(tasks.head.task_id).sortBy(_.date_consumed)
-        if (consumedByTask.nonEmpty) {
+        if (consumedByTask.nonEmpty && tasks.head.task_type == 0) {
           val consumedByTaskSum = Math.ceil(consumedByTask.map(_.amount).sum).toInt
           val hours = tasks.flatMap(x => getHoursOfInterval(x.date_start, x.date_finish))
           if (hours.nonEmpty && hours.length >= consumedByTaskSum) {
@@ -645,10 +645,10 @@ trait PlanManagerHelper {
           deleteInterval(id)
         }
         if (tasks.head.task_type != 0){
-          val task = tasks.head
-          val ints = getUserPlan(tasks.head.user_id, 0).filter(x => x.date_start <= task.date_start && x.date_finish <= task.date_finish)
-          if (ints.nonEmpty){
-            ints.sortBy(_.date_start).foreach(int => {
+          val task = ints.head
+          val intsChange = getUserPlan(task.user_id, 0).filter(x => x.date_start >= task.date_start).filter(_.task_type == 0)
+          if (intsChange.nonEmpty){
+            intsChange.sortBy(_.date_start).foreach(int => {
               deleteInterval(int.id)
               addInterval(int.task_id, int.user_id, int.date_start, int.hours_amount, int.task_type)
             })
