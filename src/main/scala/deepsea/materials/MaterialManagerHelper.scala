@@ -2,16 +2,18 @@ package deepsea.materials
 
 import com.mongodb.BasicDBObject
 import deepsea.App
+import deepsea.database.DBManager.RsIterator
 import deepsea.database.{DBManager, DatabaseManager}
 import deepsea.files.classes.FileAttachment
 import deepsea.issues.IssueManagerHelper
-import deepsea.materials.MaterialManager.{Material, MaterialNode, ProjectName}
+import deepsea.materials.MaterialManager._
+import deepsea.time.PlanManager.IssuePlan
 import org.aarboard.nextcloud.api.NextcloudConnector
 import org.mongodb.scala.model.Filters
-
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
 import scala.concurrent.duration.{Duration, SECONDS}
+import scala.io.Source
 
 trait MaterialManagerHelper extends IssueManagerHelper {
   def getNodes: List[MaterialNode] ={
@@ -43,6 +45,66 @@ trait MaterialManagerHelper extends IssueManagerHelper {
         }
       case _ => Option.empty[Material]
     }
+  }
+  def getEquipments(suppliers: List[Supplier]): List[Equipment] = {
+    val res = ListBuffer.empty[Equipment]
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val query = Source.fromResource("queries/equipments.sql").mkString
+        try {
+          val rs = s.executeQuery(query)
+          val id = rs.getInt("id")
+          res += Equipment(
+            id,
+            rs.getInt("sfi"),
+            rs.getString("name"),
+            rs.getString("department"),
+            rs.getString("respons_name"),
+            rs.getString("respons_surname"),
+            rs.getInt("itt"),
+            suppliers.filter(_.equipm_id == id)
+          )
+          rs.close()
+        }
+        catch {
+          case e: Exception =>
+            s.close()
+            c.close()
+        }
+        s.close()
+        c.close()
+      case _ =>
+    }
+    res.toList
+  }
+
+  def getSuppliers: List[Supplier] = {
+    val res = ListBuffer.empty[Supplier]
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val query = Source.fromResource("queries/suppliers.sql").mkString
+        try {
+          val rs = s.executeQuery(query)
+          res += Supplier(
+            rs.getInt("suppliers_id"),
+            rs.getInt("equipm_id"),
+            rs.getString("description"),
+            rs.getString("status")
+          )
+          rs.close()
+        }
+        catch {
+          case e: Exception =>
+            s.close()
+            c.close()
+        }
+        s.close()
+        c.close()
+      case _ =>
+    }
+    res.toList
   }
 
 }
