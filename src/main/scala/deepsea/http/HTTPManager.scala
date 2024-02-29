@@ -688,7 +688,7 @@ class HTTPManager extends Actor {
           askFor(ActorManager.materials, UpdateMaterialComplect(complectValue))
         },
 
-        (post & path("equipments")) {
+        (get & path("equipments")) {
           askFor(ActorManager.materials, GetEquipments())
         },
       )
