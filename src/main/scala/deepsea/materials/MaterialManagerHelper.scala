@@ -54,17 +54,19 @@ trait MaterialManagerHelper extends IssueManagerHelper {
         val query = Source.fromResource("queries/equipments.sql").mkString
         try {
           val rs = s.executeQuery(query)
-          val id = rs.getInt("id")
-          res += Equipment(
-            id,
-            rs.getInt("sfi"),
-            rs.getString("name"),
-            rs.getString("department"),
-            rs.getString("respons_name"),
-            rs.getString("respons_surname"),
-            rs.getInt("itt"),
-            suppliers.filter(_.equipm_id == id)
-          )
+          while (rs.next()){
+            val id = rs.getInt("id")
+            res += Equipment(
+              id,
+              rs.getInt("sfi"),
+              rs.getString("name"),
+              rs.getString("department"),
+              rs.getString("respons_name"),
+              rs.getString("respons_surname"),
+              rs.getInt("itt"),
+              suppliers.filter(_.equipm_id == id)
+            )
+          }
           rs.close()
         }
         catch {
@@ -87,12 +89,14 @@ trait MaterialManagerHelper extends IssueManagerHelper {
         val query = Source.fromResource("queries/suppliers.sql").mkString
         try {
           val rs = s.executeQuery(query)
-          res += Supplier(
-            rs.getInt("suppliers_id"),
-            rs.getInt("equipm_id"),
-            rs.getString("description"),
-            rs.getString("status")
-          )
+          while (rs.next()){
+            res += Supplier(
+              rs.getInt("suppliers_id"),
+              rs.getInt("equipm_id"),
+              rs.getString("description"),
+              rs.getString("status")
+            )
+          }
           rs.close()
         }
         catch {
