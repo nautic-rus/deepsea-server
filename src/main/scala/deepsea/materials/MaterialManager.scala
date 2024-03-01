@@ -98,7 +98,7 @@ object MaterialManager{
   case class UpdateMaterialComplect(complectValue: String)
   case class GetEquipments()
 
-  case class Equipment(id: Int, sfi: Int, name: String, department: String, respons_name: String, respons_surname: String, itt: Int, suppliers: List[Supplier])
+  case class Equipment(id: Int, sfi: Int, name: String, department: String, comment: String, respons_name: String, respons_surname: String, itt: Int, project_name: String, suppliers: List[Supplier])
   implicit val EquipmentDecoder: Decoder[Equipment] = deriveDecoder[Equipment]
   implicit val EquipmentEncoder: Encoder[Equipment] = deriveEncoder[Equipment]
 
