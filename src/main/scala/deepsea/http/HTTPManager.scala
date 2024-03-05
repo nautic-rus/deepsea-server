@@ -25,7 +25,7 @@ import deepsea.files.FileManager.{CreateDocumentCloudDirectory, CreateFile, Crea
 import deepsea.files.classes.FileAttachment
 import deepsea.http.HTTPManager.server
 import deepsea.issues.IssueManager._
-import deepsea.materials.MaterialManager.{AddMaterialComplect, GetEquipments, GetMaterialComplects, GetMaterialNodes, GetMaterials, GetMaterialsCode, GetWCDrawings, GetWCZones, GetWeightControl, RemoveMaterialComplect, RemoveWeightControl, SetWeightControl, UpdateMaterial, UpdateMaterialComplect, UpdateMaterialNode}
+import deepsea.materials.MaterialManager.{AddMaterialComplect, GetEquipments, GetSFIs, GetMaterialComplects, GetMaterialNodes, GetMaterials, GetMaterialsCode, GetWCDrawings, GetWCZones, GetWeightControl, RemoveMaterialComplect, RemoveWeightControl, SetWeightControl, UpdateMaterial, UpdateMaterialComplect, UpdateMaterialNode}
 import deepsea.mobile.MobileManager.{GetDrawingInfo, GetDrawings}
 import deepsea.osm.OsmManager.{AddPLS, GetPLS}
 import deepsea.rocket.RocketChatManager.SendNotification
