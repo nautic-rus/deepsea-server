@@ -96,7 +96,10 @@ object MaterialManager{
   case class AddMaterialComplect(project: String, name: String)
   case class RemoveMaterialComplect(id: String)
   case class UpdateMaterialComplect(complectValue: String)
+
+
   case class GetEquipments()
+  case class GetSFIs()
 
   case class Equipment(id: Int, sfi: Int, name: String, department: String, comment: String, respons_name: String, respons_surname: String, itt: Int, project_name: String, suppliers: List[Supplier])
   implicit val EquipmentDecoder: Decoder[Equipment] = deriveDecoder[Equipment]
@@ -105,6 +108,10 @@ object MaterialManager{
   case class Supplier(suppliers_id: Int, equipm_id: Int, description: String, status: String)
   implicit val SupplierDecoder: Decoder[Supplier] = deriveDecoder[Supplier]
   implicit val SupplierEncoder: Encoder[Supplier] = deriveEncoder[Supplier]
+
+  case class SFI(code: String, ru: String, eng: String)
+  implicit val SFIDecoder: Decoder[SFI] = deriveDecoder[SFI]
+  implicit val SFIEncoder: Encoder[SFI] = deriveEncoder[SFI]
 }
 class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper {
 
@@ -323,6 +330,8 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
 
     case GetEquipments() =>
       sender() ! getEquipments(getSuppliers).asJson.noSpaces
+    case GetSFIs() =>
+      sender() ! getSFIs.asJson.noSpaces
     case _ => None
   }
 }

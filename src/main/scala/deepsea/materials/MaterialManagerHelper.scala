@@ -113,4 +113,32 @@ trait MaterialManagerHelper extends IssueManagerHelper {
     res.toList
   }
 
+  def getSFIs: List[SFI] = {
+    val res = ListBuffer.empty[SFI]
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val query = "select * from sfi"
+        try {
+          val rs = s.executeQuery(query)
+          while (rs.next()) {
+            res += SFI(
+              rs.getString("code"),
+              rs.getString("ru"),
+              rs.getString("en")
+            )
+          }
+          rs.close()
+        }
+        catch {
+          case e: Exception =>
+            s.close()
+            c.close()
+        }
+        s.close()
+        c.close()
+      case _ =>
+    }
+    res.toList
+  }
 }
