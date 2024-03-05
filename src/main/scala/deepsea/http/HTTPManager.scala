@@ -692,7 +692,7 @@ class HTTPManager extends Actor {
           askFor(ActorManager.materials, GetEquipments())
         },
         (get & path("sfis")) {
-          askFor(ActorManager.materials, GetSFI())
+          askFor(ActorManager.materials, GetSFIs())
         },
       )
     }
