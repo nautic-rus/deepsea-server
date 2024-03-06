@@ -345,7 +345,7 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
               val stmt = pg.createStatement()
               try{
                 val date = new Date().getTime
-                val query = s"insert into equipments values (default, '${eq.name}', '${eq.description}', ${eq.sfi}, ${eq.project_id}, ${eq.responsible_id}, ${eq.department_id}, $date, ${eq.comment}, ${eq.status_id})"
+                val query = s"insert into equipments values (default, '${eq.name}', '${eq.description}', ${eq.sfi}, ${eq.project_id}, ${eq.responsible_id}, ${eq.department_id}, $date, '${eq.comment}', ${eq.status_id})"
                 stmt.execute(query)
                 "success"
               }
