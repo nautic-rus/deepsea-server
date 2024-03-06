@@ -100,10 +100,15 @@ object MaterialManager{
 
   case class GetEquipments()
   case class GetSFIs()
+  case class InsertEquipment(jsonValue: String)
 
   case class Equipment(id: Int, sfi: Int, name: String, department: String, comment: String, respons_name: String, respons_surname: String, itt: Int, project_name: String, suppliers: List[Supplier])
   implicit val EquipmentDecoder: Decoder[Equipment] = deriveDecoder[Equipment]
   implicit val EquipmentEncoder: Encoder[Equipment] = deriveEncoder[Equipment]
+
+  case class EquipmentAdd(name: String, description: String, sfi: String, project_id: Int, responsible_id: Int, department_id: Int, comment: String, status_id: Int)
+  implicit val EquipmentAddDecoder: Decoder[EquipmentAdd] = deriveDecoder[EquipmentAdd]
+  implicit val EquipmentAddEncoder: Encoder[EquipmentAdd] = deriveEncoder[EquipmentAdd]
 
   case class Supplier(suppliers_id: Int, equipm_id: Int, description: String, status: String)
   implicit val SupplierDecoder: Decoder[Supplier] = deriveDecoder[Supplier]
@@ -332,6 +337,29 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
       sender() ! getEquipments(getSuppliers).asJson.noSpaces
     case GetSFIs() =>
       sender() ! getSFIs.asJson.noSpaces
+    case InsertEquipment(jsonValue) =>
+      val res: String = decode[EquipmentAdd](jsonValue) match {
+        case Right(eq) =>
+          DBManager.GetPGConnection() match {
+            case Some(pg) =>
+              val stmt = pg.createStatement()
+              try{
+                val date = new Date().getTime
+                val query = s"insert into equipments values (default, '${eq.name}', '${eq.description}', ${eq.sfi}, ${eq.project_id}, ${eq.responsible_id}, ${eq.department_id}, $date, ${eq.comment}, ${eq.status_id})"
+                stmt.execute(query)
+                "success"
+              }
+              catch {
+                case e: Exception =>
+                  stmt.close()
+                  pg.close()
+                  "error: " + e.toString
+              }
+            case _ => "error: no database connection"
+          }
+        case Left(value) => "error: wrong post json value"
+      }
+      sender() ! res.asJson.noSpaces
     case _ => None
   }
 }
