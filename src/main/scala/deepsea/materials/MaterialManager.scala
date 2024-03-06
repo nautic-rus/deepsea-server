@@ -101,12 +101,13 @@ object MaterialManager{
   case class GetEquipments()
   case class GetSFIs()
   case class InsertEquipment(jsonValue: String)
+  case class DeleteEquipment(id: Int)
 
   case class Equipment(id: Int, sfi: Int, name: String, department: String, comment: String, respons_name: String, respons_surname: String, itt: Int, project_name: String, suppliers: List[Supplier])
   implicit val EquipmentDecoder: Decoder[Equipment] = deriveDecoder[Equipment]
   implicit val EquipmentEncoder: Encoder[Equipment] = deriveEncoder[Equipment]
 
-  case class EquipmentAdd(name: String, description: String, sfi: String, project_id: Int, responsible_id: Int, department_id: Int, comment: String, status_id: Int)
+  case class EquipmentAdd(id: Int, name: String, description: String, sfi: String, project_id: Int, responsible_id: Int, department_id: Int, comment: String, status_id: Int)
   implicit val EquipmentAddDecoder: Decoder[EquipmentAdd] = deriveDecoder[EquipmentAdd]
   implicit val EquipmentAddEncoder: Encoder[EquipmentAdd] = deriveEncoder[EquipmentAdd]
 
@@ -345,7 +346,12 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
               val stmt = pg.createStatement()
               try{
                 val date = new Date().getTime
-                val query = s"insert into equipments values (default, '${eq.name}', '${eq.description}', ${eq.sfi}, ${eq.project_id}, ${eq.responsible_id}, ${eq.department_id}, $date, '${eq.comment}', ${eq.status_id})"
+                val query = if (eq.id == 0) {
+                  s"insert into equipments values (default, '${eq.name}', '${eq.description}', ${eq.sfi}, ${eq.project_id}, ${eq.responsible_id}, ${eq.department_id}, $date, '${eq.comment}', ${eq.status_id})"
+                }
+                else{
+                  s"update equipments set name = '${eq.name}', descriptions = '${eq.description}', sfi = ${eq.sfi}, project_id = ${eq.project_id}, responsible_id = ${eq.responsible_id}, department_id = ${eq.department_id}, create_date = $date, '${eq.comment}', ${eq.status_id})"
+                }
                 stmt.execute(query)
                 "success"
               }
@@ -358,6 +364,24 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
             case _ => "error: no database connection"
           }
         case Left(value) => "error: wrong post json value"
+      }
+      sender() ! res.asJson.noSpaces
+    case DeleteEquipment(id) =>
+      val res = DBManager.GetPGConnection() match {
+        case Some(pg) =>
+          val stmt = pg.createStatement()
+          try {
+            val query = s"delete from equipments where id = $id"
+            stmt.execute(query)
+            "success"
+          }
+          catch {
+            case e: Exception =>
+              stmt.close()
+              pg.close()
+              "error: " + e.toString
+          }
+        case _ => "error: no database connection"
       }
       sender() ! res.asJson.noSpaces
     case _ => None
