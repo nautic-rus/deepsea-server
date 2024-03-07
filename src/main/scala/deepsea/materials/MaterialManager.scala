@@ -102,6 +102,9 @@ object MaterialManager{
   case class GetSFIs()
   case class InsertEquipment(jsonValue: String)
   case class DeleteEquipment(id: Int)
+  case class InsertSupplier(jsonValue: String)
+  case class DeleteSupplier(id: Int)
+
 
   case class Equipment(id: Int, sfi: Int, name: String, department: String, comment: String, respons_name: String, respons_surname: String, itt: Int, project_name: String, suppliers: List[Supplier])
   implicit val EquipmentDecoder: Decoder[Equipment] = deriveDecoder[Equipment]
@@ -114,6 +117,10 @@ object MaterialManager{
   case class Supplier(suppliers_id: Int, equipm_id: Int, description: String, status: String)
   implicit val SupplierDecoder: Decoder[Supplier] = deriveDecoder[Supplier]
   implicit val SupplierEncoder: Encoder[Supplier] = deriveEncoder[Supplier]
+
+  case class SupplierAdd(id: Int, approvement: Long, comment: String, status_id: Int, equ_id: Int, user_id: Int, name: String, manufacturer: String, description: String)
+  implicit val SupplierAddDecoder: Decoder[SupplierAdd] = deriveDecoder[SupplierAdd]
+  implicit val SupplierAddEncoder: Encoder[SupplierAdd] = deriveEncoder[SupplierAdd]
 
   case class SFI(code: String, ru: String, eng: String)
   implicit val SFIDecoder: Decoder[SFI] = deriveDecoder[SFI]
@@ -350,7 +357,7 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
                   s"insert into equipments values (default, '${eq.name}', '${eq.description}', ${eq.sfi}, ${eq.project_id}, ${eq.responsible_id}, ${eq.department_id}, $date, '${eq.comment}', ${eq.status_id})"
                 }
                 else{
-                  s"update equipments set name = '${eq.name}', descriptions = '${eq.description}', sfi = ${eq.sfi}, project_id = ${eq.project_id}, responsible_id = ${eq.responsible_id}, department_id = ${eq.department_id}, create_date = $date, '${eq.comment}', ${eq.status_id})"
+                  s"update equipments set name = '${eq.name}', descriptions = '${eq.description}', sfi = ${eq.sfi}, project_id = ${eq.project_id}, responsible_id = ${eq.responsible_id}, department_id = ${eq.department_id}, comment = '${eq.comment}', status_id = ${eq.status_id})"
                 }
                 stmt.execute(query)
                 "success"
@@ -372,6 +379,52 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
           val stmt = pg.createStatement()
           try {
             val query = s"delete from equipments where id = $id"
+            stmt.execute(query)
+            "success"
+          }
+          catch {
+            case e: Exception =>
+              stmt.close()
+              pg.close()
+              "error: " + e.toString
+          }
+        case _ => "error: no database connection"
+      }
+      sender() ! res.asJson.noSpaces
+
+    case InsertSupplier(jsonValue) =>
+      val res: String = decode[SupplierAdd](jsonValue) match {
+        case Right(sup) =>
+          DBManager.GetPGConnection() match {
+            case Some(pg) =>
+              val stmt = pg.createStatement()
+              try {
+                val query = if (sup.id == 0) {
+                  s"insert into suppliers values (default, ${sup.user_id}, ${sup.equ_id}, '${sup.name}', '${sup.description}', '${sup.comment}', ${sup.approvement}, ${sup.status_id}, '${sup.manufacturer}')"
+                }
+                else {
+                  s"update suppliers set user_id = ${sup.user_id}, equ_id = ${sup.equ_id}, name = '${sup.name}', description = '${sup.description}', comment = '${sup.comment}', approvement = ${sup.approvement}, status_id = ${sup.status_id}, manufacturer = '${sup.manufacturer}')"
+                }
+                stmt.execute(query)
+                "success"
+              }
+              catch {
+                case e: Exception =>
+                  stmt.close()
+                  pg.close()
+                  "error: " + e.toString
+              }
+            case _ => "error: no database connection"
+          }
+        case Left(value) => "error: wrong post json value"
+      }
+      sender() ! res.asJson.noSpaces
+    case DeleteSupplier(id) =>
+      val res = DBManager.GetPGConnection() match {
+        case Some(pg) =>
+          val stmt = pg.createStatement()
+          try {
+            val query = s"delete from suppliers where id = $id"
             stmt.execute(query)
             "success"
           }
