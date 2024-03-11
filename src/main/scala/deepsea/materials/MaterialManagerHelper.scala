@@ -60,7 +60,7 @@ trait MaterialManagerHelper extends IssueManagerHelper {
               id,
               rs.getInt("sfi"),
               rs.getString("name"),
-              rs.getString("description"),
+              rs.getString("descriptions"),
               rs.getString("department"),
               rs.getString("comment"),
               rs.getString("respons_name"),

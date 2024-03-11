@@ -1,5 +1,5 @@
 SELECT
-    eq.id, eq.sfi, eq.name, issue_departments.name as department, eq.comment as comment, us.name as respons_name, us.surname as respons_surname, CASE WHEN ef.id is null THEN 0 ELSE 1 END as ITT,
+    eq.id, eq.sfi, eq.name, eq.descriptions, issue_departments.name as department, eq.comment as comment, us.name as respons_name, us.surname as respons_surname, CASE WHEN ef.id is null THEN 0 ELSE 1 END as ITT,
     issue_projects.name as project_name
 FROM
     equipments eq

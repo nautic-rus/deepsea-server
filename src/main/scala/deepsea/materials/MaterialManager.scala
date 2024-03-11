@@ -357,7 +357,7 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
                   s"insert into equipments values (default, '${eq.name}', '${eq.description}', ${eq.sfi}, ${eq.project_id}, ${eq.responsible_id}, ${eq.department_id}, $date, '${eq.comment}', ${eq.status_id})"
                 }
                 else{
-                  s"update equipments set name = '${eq.name}', descriptions = '${eq.description}', sfi = ${eq.sfi}, project_id = ${eq.project_id}, responsible_id = ${eq.responsible_id}, department_id = ${eq.department_id}, comment = '${eq.comment}', status_id = ${eq.status_id})"
+                  s"update equipments set name = '${eq.name}', descriptions = '${eq.description}', sfi = ${eq.sfi}, project_id = ${eq.project_id}, responsible_id = ${eq.responsible_id}, department_id = ${eq.department_id}, comment = '${eq.comment}', status_id = ${eq.status_id} where id = ${eq.id}"
                 }
                 stmt.execute(query)
                 "success"
@@ -400,10 +400,10 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
               val stmt = pg.createStatement()
               try {
                 val query = if (sup.id == 0) {
-                  s"insert into suppliers values (default, ${sup.user_id}, ${sup.equ_id}, '${sup.name}', '${sup.description}', '${sup.comment}', ${sup.approvement}, ${sup.status_id}, '${sup.manufacturer}')"
+                  s"insert into suppliers values (default, ${sup.user_id}, ${sup.equ_id}, '${sup.name}', '${sup.description}', '${sup.comment}', ${sup.status_id}, '${sup.manufacturer}, ${sup.approvement}')"
                 }
                 else {
-                  s"update suppliers set user_id = ${sup.user_id}, equ_id = ${sup.equ_id}, name = '${sup.name}', description = '${sup.description}', comment = '${sup.comment}', approvement = ${sup.approvement}, status_id = ${sup.status_id}, manufacturer = '${sup.manufacturer}')"
+                  s"update suppliers set user_id = ${sup.user_id}, equ_id = ${sup.equ_id}, name = '${sup.name}', description = '${sup.description}', comment = '${sup.comment}', status_id = ${sup.status_id}, manufacturer = '${sup.manufacturer}', approvement = ${sup.approvement} where id = ${sup.id}"
                 }
                 stmt.execute(query)
                 "success"
