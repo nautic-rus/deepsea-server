@@ -694,7 +694,7 @@ class HTTPManager extends Actor {
         (post & path("equipment") & entity(as[String])) { (jsonValue) =>
           askFor(ActorManager.materials, InsertEquipment(jsonValue))
         },
-        (delete & path("equipment") & parameter("id")) { (id) =>
+        (get & path("deleteEquipment") & parameter("id")) { (id) =>
           askFor(ActorManager.materials, DeleteEquipment(id.toIntOption.getOrElse(0)))
         },
         (get & path("sfis")) {
@@ -703,7 +703,7 @@ class HTTPManager extends Actor {
         (post & path("supplier") & entity(as[String])) { (jsonValue) =>
           askFor(ActorManager.materials, InsertSupplier(jsonValue))
         },
-        (delete & path("supplier") & parameter("id")) { (id) =>
+        (get & path("deleteSupplier") & parameter("id")) { (id) =>
           askFor(ActorManager.materials, DeleteSupplier(id.toIntOption.getOrElse(0)))
         },
       )
