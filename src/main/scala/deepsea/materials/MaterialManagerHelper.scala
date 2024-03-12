@@ -71,14 +71,14 @@ trait MaterialManagerHelper extends IssueManagerHelper {
             )
           }
           rs.close()
+          s.close()
+          c.close()
         }
         catch {
           case e: Exception =>
             s.close()
             c.close()
         }
-        s.close()
-        c.close()
       case _ =>
     }
     res.toList
@@ -101,14 +101,14 @@ trait MaterialManagerHelper extends IssueManagerHelper {
             )
           }
           rs.close()
+          s.close()
+          c.close()
         }
         catch {
           case e: Exception =>
             s.close()
             c.close()
         }
-        s.close()
-        c.close()
       case _ =>
     }
     res.toList
@@ -130,14 +130,14 @@ trait MaterialManagerHelper extends IssueManagerHelper {
             )
           }
           rs.close()
+          s.close()
+          c.close()
         }
         catch {
           case e: Exception =>
             s.close()
             c.close()
         }
-        s.close()
-        c.close()
       case _ =>
     }
     res.toList

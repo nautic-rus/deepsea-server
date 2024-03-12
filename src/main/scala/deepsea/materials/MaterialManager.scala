@@ -360,6 +360,7 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
                   s"update equipments set name = '${eq.name}', descriptions = '${eq.description}', sfi = ${eq.sfi}, project_id = ${eq.project_id}, responsible_id = ${eq.responsible_id}, department_id = ${eq.department_id}, comment = '${eq.comment}', status_id = ${eq.status_id} where id = ${eq.id}"
                 }
                 stmt.execute(query)
+                pg.close()
                 "success"
               }
               catch {
@@ -380,6 +381,8 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
           try {
             val query = s"delete from equipments where id = $id"
             stmt.execute(query)
+            stmt.close()
+            pg.close()
             "success"
           }
           catch {
@@ -406,6 +409,8 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
                   s"update suppliers set user_id = ${sup.user_id}, equ_id = ${sup.equ_id}, name = '${sup.name}', description = '${sup.description}', comment = '${sup.comment}', status_id = ${sup.status_id}, manufacturer = '${sup.manufacturer}', approvement = ${sup.approvement} where id = ${sup.id}"
                 }
                 stmt.execute(query)
+                stmt.close()
+                pg.close()
                 "success"
               }
               catch {
@@ -426,6 +431,8 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
           try {
             val query = s"delete from suppliers where id = $id"
             stmt.execute(query)
+            stmt.close()
+            pg.close()
             "success"
           }
           catch {
