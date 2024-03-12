@@ -557,7 +557,7 @@ trait PlanManagerHelper {
               splitTask(int.date_start, int.user_id, int.hours_amount)
             }
             val userPlan = getUserPlan(int.user_id, int.date_start).filter(x => x.id != int.id).filter(_.task_type == 0)
-            val skipInts = skipIntervals(int.user_id)
+            val skipInts = skipIntervals(int.user_id).filter(_.id != int.id)
             var hourStart = int.date_start
             userPlan.sortBy(_.date_start).foreach(p => {
               val hourFinish = nextHourNWithSkip(hourStart, p.hours_amount - 1, skipInts)
@@ -574,7 +574,16 @@ trait PlanManagerHelper {
     }
     updateIssueIntervals(needToUpdateInts.toList)
   }
-
+  def deleteIntervalOnly(id: Int): Unit = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        s.execute(s"delete from plan where id = $id")
+        s.close()
+        c.close()
+      case _ => None
+    }
+  }
   def updateIssueIntervals(ids: List[Int]): Unit = {
     DBManager.GetPGConnection() match {
       case Some(conn) =>
@@ -637,21 +646,26 @@ trait PlanManagerHelper {
             })
           }
         }
-        else {
-          deleteInterval(id)
-        }
-        if (tasks.head.task_type != 0){
+        else if (ints.head.task_type != 0){
           val task = ints.head
-          val intsChange = getUserPlan(task.user_id, 0).filter(x => x.date_start >= task.date_start || x.date_finish >= task.date_start).filter(_.task_type == 0)
+          val intsChange = getUserPlan(task.user_id, 0).filter(x => x.task_type == 0 && x.date_start >= task.date_start || x.date_finish >= task.date_start).filter(_.task_type == 0)
           if (intsChange.nonEmpty){
-            val dateStart = intsChange.sortBy(_.date_start).map(_.date_start).headOption.getOrElse(new Date().getTime)
+            //val dateStart = intsChange.sortBy(_.date_start).map(_.date_start).headOption.getOrElse(new Date().getTime)
+            val dateStart = ints.head.date_start
             intsChange.sortBy(_.date_start).foreach(int => {
               deleteInterval(int.id)
             })
-            intsChange.sortBy(_.date_start).reverse.foreach(int => {
-              insertInterval(int.task_id, int.user_id, dateStart, int.hours_amount, int.task_type)
+            deleteIntervalOnly(id)
+            intsChange.sortBy(_.date_start).foreach(int => {
+              addInterval(int.task_id, int.user_id, dateStart, int.hours_amount, int.task_type)
             })
           }
+          else{
+            deleteInterval(ints.head.id)
+          }
+        }
+        else {
+          deleteInterval(id)
         }
       }
     }
