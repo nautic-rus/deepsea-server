@@ -3,7 +3,7 @@ SELECT
     issue_projects.name as project_name
 FROM
     equipments eq
-        LEFT JOIN users us ON  eq.responsible_id = us.id
-        LEFT JOIN issue_departments ON eq.department_id = issue_departments.id
-        LEFT JOIN equipments_files ef on eq.id = ef.equ_id
-        LEFT JOIN issue_projects ON eq.project_id = issue_projects.id
+LEFT JOIN users us ON  eq.responsible_id = us.id
+LEFT JOIN issue_departments ON eq.department_id = issue_departments.id
+LEFT JOIN equipments_files ef on eq.id = ef.equ_id
+LEFT JOIN issue_projects ON eq.project_id = issue_projects.id

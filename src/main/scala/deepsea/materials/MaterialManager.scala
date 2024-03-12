@@ -104,7 +104,13 @@ object MaterialManager{
   case class DeleteEquipment(id: Int)
   case class InsertSupplier(jsonValue: String)
   case class DeleteSupplier(id: Int)
+  case class GetEquipFiles(id: Int)
+  case class AddEquipFile(jsonValue: String)
+  case class DelEquipFile(id: Int)
 
+  case class GetSupFiles(id: Int)
+  case class AddSupFile(jsonValue: String)
+  case class DelSupFile(id: Int)
 
   case class Equipment(id: Int, sfi: Int, name: String, description: String, department: String, comment: String, respons_name: String, respons_surname: String, itt: Int, project_name: String, suppliers: List[Supplier])
   implicit val EquipmentDecoder: Decoder[Equipment] = deriveDecoder[Equipment]
@@ -125,6 +131,16 @@ object MaterialManager{
   case class SFI(code: String, ru: String, eng: String)
   implicit val SFIDecoder: Decoder[SFI] = deriveDecoder[SFI]
   implicit val SFIEncoder: Encoder[SFI] = deriveEncoder[SFI]
+
+  case class EquipFile(equ_id: Int, user_id: Int, url: String, rev: String, archived: Int, create_date: Long, type_name: String, id: Int, archived_date: Long)
+  implicit val EquipFileDecoder: Decoder[EquipFile] = deriveDecoder[EquipFile]
+  implicit val EquipFileEncoder: Encoder[EquipFile] = deriveEncoder[EquipFile]
+
+  case class SuppFile(supplier_id: Int, user_id: Int, url: String, rev: String, archived: Int, create_date: Long, type_name: String, id: Int, archived_date: Long)
+  implicit val SuppFileDecoder: Decoder[SuppFile] = deriveDecoder[SuppFile]
+  implicit val SuppFileEncoder: Encoder[SuppFile] = deriveEncoder[SuppFile]
+
+
 }
 class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper {
 
@@ -444,6 +460,24 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
         case _ => "error: no database connection"
       }
       sender() ! res.asJson.noSpaces
+    case GetEquipFiles(id) =>
+      sender() ! getEquipFiles(id).asJson.noSpaces
+    case AddEquipFile(jsonValue) =>
+      decode[EquipFile](jsonValue) match {
+        case Right(eq) => sender() ! addEquipFile(eq).asJson.noSpaces
+        case Left(value) => "error: wrong post json value"
+      }
+    case GetEquipFiles(id) =>
+      sender() ! delEquipFile(id).asJson.noSpaces
+    case GetSupFiles(id) =>
+      sender() ! getSupFiles(id).asJson.noSpaces
+    case AddSupFile(jsonValue) =>
+      decode[SuppFile](jsonValue) match {
+        case Right(sup) => sender() ! addSupFile(sup).asJson.noSpaces
+        case Left(value) => "error: wrong post json value"
+      }
+    case DelSupFile(id) =>
+      sender() ! delSupFile(id).asJson.noSpaces
     case _ => None
   }
 }

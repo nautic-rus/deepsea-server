@@ -10,6 +10,8 @@ import deepsea.materials.MaterialManager._
 import deepsea.time.PlanManager.IssuePlan
 import org.aarboard.nextcloud.api.NextcloudConnector
 import org.mongodb.scala.model.Filters
+
+import java.util.Date
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
 import scala.concurrent.duration.{Duration, SECONDS}
@@ -83,7 +85,6 @@ trait MaterialManagerHelper extends IssueManagerHelper {
     }
     res.toList
   }
-
   def getSuppliers: List[Supplier] = {
     val res = ListBuffer.empty[Supplier]
     DBManager.GetPGConnection() match {
@@ -113,7 +114,6 @@ trait MaterialManagerHelper extends IssueManagerHelper {
     }
     res.toList
   }
-
   def getSFIs: List[SFI] = {
     val res = ListBuffer.empty[SFI]
     DBManager.GetPGConnection() match {
@@ -130,6 +130,156 @@ trait MaterialManagerHelper extends IssueManagerHelper {
             )
           }
           rs.close()
+          s.close()
+          c.close()
+        }
+        catch {
+          case e: Exception =>
+            s.close()
+            c.close()
+        }
+      case _ =>
+    }
+    res.toList
+  }
+  def getEquipFiles(id: Int): List[EquipFile] = {
+    val res = ListBuffer.empty[EquipFile]
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val query = s"select * from equipments_files where supplier_id = $id or $id = 0"
+        try {
+          val rs = s.executeQuery(query)
+          while (rs.next()) {
+            res += EquipFile(
+              rs.getInt("equ_id"),
+              rs.getInt("user_id"),
+              rs.getString("url"),
+              rs.getString("rev"),
+              rs.getInt("archived"),
+              rs.getLong("create_date"),
+              rs.getString("type_name"),
+              rs.getInt("id"),
+              rs.getLong("archived_date"),
+            )
+          }
+          rs.close()
+          s.close()
+          c.close()
+        }
+        catch {
+          case e: Exception =>
+            s.close()
+            c.close()
+        }
+      case _ =>
+    }
+    res.toList
+  }
+  def addEquipFile(file: EquipFile): String = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val d = new Date().getTime
+        val query = s"insert into equipments_files (${file.equ_id}, ${file.user_id}, '${file.url}', '${file.rev}', ${file.archived}, $d, '${file.type_name}', default, 0)"
+        try {
+          s.execute(query)
+          s.close()
+          c.close()
+          "success"
+        }
+        catch {
+          case e: Exception =>
+            s.close()
+            c.close()
+            "error: " + e.toString
+        }
+      case _ => "error: no database connection"
+    }
+  }
+  def delEquipFile(id: Int): String = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val query = s"delete from equipments_files where equ_id = $id"
+        try {
+          s.execute(query)
+          s.close()
+          c.close()
+          "success"
+        }
+        catch {
+          case e: Exception =>
+            s.close()
+            c.close()
+            "error: " + e.toString
+        }
+      case _ => "error: no database connection"
+    }
+  }
+  def getSupFiles(id: Int): List[SuppFile] = {
+    val res = ListBuffer.empty[SuppFile]
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val query = s"select * from suppliers_files where supplier_id = $id or $id = 0"
+        try {
+          val rs = s.executeQuery(query)
+          while (rs.next()) {
+            res += SuppFile(
+              rs.getInt("supplier_id"),
+              rs.getInt("user_id"),
+              rs.getString("url"),
+              rs.getString("rev"),
+              rs.getInt("archived"),
+              rs.getLong("create_date"),
+              rs.getString("type_name"),
+              rs.getInt("id"),
+              rs.getLong("archived_date"),
+            )
+          }
+          rs.close()
+          s.close()
+          c.close()
+        }
+        catch {
+          case e: Exception =>
+            s.close()
+            c.close()
+        }
+      case _ =>
+    }
+    res.toList
+  }
+  def addSupFile(file: SuppFile): String = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val d = new Date().getTime
+        val query = s"insert into suppliers_files (${file.supplier_id}, ${file.user_id}, '${file.url}', '${file.rev}', ${file.archived}, $d, '${file.type_name}', default, 0)"
+        try {
+          s.execute(query)
+          s.close()
+          c.close()
+          "success"
+        }
+        catch {
+          case e: Exception =>
+            s.close()
+            c.close()
+            "error: " + e.toString
+        }
+      case _ => "error: no database connection"
+    }}
+  def delSupFile(id: Int): List[EquipFile] = {
+    val res = ListBuffer.empty[EquipFile]
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val d = new Date().getTime
+        val query = s"delete from suppliers_files where supplier_id = $id"
+        try {
+          s.execute(query)
           s.close()
           c.close()
         }
