@@ -403,7 +403,7 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
         case Some(pg) =>
           val stmt = pg.createStatement()
           try {
-            val query = s"delete from equipments where id = $id"
+            val query = s"update equipments set removed = 1 where id = $id"
             stmt.execute(query)
             stmt.close()
             pg.close()
@@ -453,7 +453,7 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
         case Some(pg) =>
           val stmt = pg.createStatement()
           try {
-            val query = s"delete from suppliers where id = $id"
+            val query = s"update suppliers set removed = 1 where id = $id"
             stmt.execute(query)
             stmt.close()
             pg.close()

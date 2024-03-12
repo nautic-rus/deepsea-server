@@ -1021,7 +1021,7 @@ trait PlanManagerHelper {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val query = s"select * from plan where date_start >= $splitDate and user_id = $userId and task_type = 0"
+        val query = s"select * from plan where date_start >= $splitDate and user_id = $userId"
         val plan = RsIterator(s.executeQuery(query)).map(rs => {
           PlanInterval(
             rs.getInt("id"),
@@ -1056,9 +1056,10 @@ trait PlanManagerHelper {
             amount
           }
 
+          val skip = plan.filter(_.task_type != 0)
 
-          plan.sortBy(_.date_start).foreach(p => {
-            val pN = p.copy(date_start = nextHourN(p.date_start, beforeStartReduce), date_finish = nextHourN(p.date_finish, beforeStartReduce))
+          plan.filter(_.task_type == 0).sortBy(_.date_start).foreach(p => {
+            val pN = p.copy(date_start = nextHourNWithSkip(p.date_start, beforeStartReduce, skip), date_finish = nextHourNWithSkip(p.date_finish, beforeStartReduce, skip))
             s.execute(s"update plan set date_start = ${pN.date_start}, date_finish = ${pN.date_finish} where id = ${p.id}")
 
             getInterval(pN.id).headOption match {

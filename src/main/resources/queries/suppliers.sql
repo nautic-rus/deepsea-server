@@ -3,3 +3,4 @@ SELECT
 FROM
     suppliers s
 LEFT JOIN suppliers_status ss ON s.status_id = ss.id
+WHERE s.removed = 0
