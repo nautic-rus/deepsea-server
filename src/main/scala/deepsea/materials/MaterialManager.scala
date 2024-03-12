@@ -136,7 +136,7 @@ object MaterialManager{
   implicit val EquipFileDecoder: Decoder[EquipFile] = deriveDecoder[EquipFile]
   implicit val EquipFileEncoder: Encoder[EquipFile] = deriveEncoder[EquipFile]
 
-  case class EquipFileAdd(equ_id: Int, user_id: Int, url: String, rev: String, type_name: String, archived_date: Long)
+  case class EquipFileAdd(equ_id: Int, url: String, rev: String, type_name: String, user_id: Int)
   implicit val EquipFileAddDecoder: Decoder[EquipFileAdd] = deriveDecoder[EquipFileAdd]
   implicit val EquipFileAddEncoder: Encoder[EquipFileAdd] = deriveEncoder[EquipFileAdd]
 
@@ -145,7 +145,7 @@ object MaterialManager{
   implicit val SuppFileDecoder: Decoder[SuppFile] = deriveDecoder[SuppFile]
   implicit val SuppFileEncoder: Encoder[SuppFile] = deriveEncoder[SuppFile]
 
-  case class SuppFileAdd(supplier_id: Int, user_id: Int, url: String, rev: String, type_name: String, archived_date: Long)
+  case class SuppFileAdd(supplier_id: Int, url: String, user_id: Int, rev: String, type_name: String)
   implicit val SuppFileAddDecoder: Decoder[SuppFileAdd] = deriveDecoder[SuppFileAdd]
   implicit val SuppFileAddEncoder: Encoder[SuppFileAdd] = deriveEncoder[SuppFileAdd]
 
@@ -377,15 +377,21 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
               val stmt = pg.createStatement()
               try{
                 val date = new Date().getTime
-                val query = if (eq.id == 0) {
-                  s"insert into equipments values (default, '${eq.name}', '${eq.description}', ${eq.sfi}, ${eq.project_id}, ${eq.responsible_id}, ${eq.department_id}, $date, '${eq.comment}', ${eq.status_id})"
+                var eqId = eq.id
+                if (eq.id == 0) {
+                  val query = s"insert into equipments values (default, '${eq.name}', '${eq.description}', ${eq.sfi}, ${eq.project_id}, ${eq.responsible_id}, ${eq.department_id}, $date, '${eq.comment}', ${eq.status_id}) returning id"
+                  val rs = stmt.executeQuery(query)
+                  while (rs.next()) {
+                    eqId = rs.getInt("id")
+                  }
+                  rs.close()
                 }
                 else{
-                  s"update equipments set name = '${eq.name}', descriptions = '${eq.description}', sfi = ${eq.sfi}, project_id = ${eq.project_id}, responsible_id = ${eq.responsible_id}, department_id = ${eq.department_id}, comment = '${eq.comment}', status_id = ${eq.status_id} where id = ${eq.id}"
+                  val query = s"update equipments set name = '${eq.name}', descriptions = '${eq.description}', sfi = ${eq.sfi}, project_id = ${eq.project_id}, responsible_id = ${eq.responsible_id}, department_id = ${eq.department_id}, comment = '${eq.comment}', status_id = ${eq.status_id} where id = ${eq.id}"
+                  stmt.execute(query)
                 }
-                stmt.execute(query)
                 pg.close()
-                "success"
+                eqId.toString
               }
               catch {
                 case e: Exception =>
@@ -420,22 +426,28 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
       sender() ! res.asJson.noSpaces
 
     case InsertSupplier(jsonValue) =>
-      val res: String = decode[SupplierAdd](jsonValue) match {
+      var res: String = decode[SupplierAdd](jsonValue) match {
         case Right(sup) =>
           DBManager.GetPGConnection() match {
             case Some(pg) =>
               val stmt = pg.createStatement()
               try {
-                val query = if (sup.id == 0) {
-                  s"insert into suppliers values (default, ${sup.user_id}, ${sup.equ_id}, '${sup.name}', '${sup.description}', '${sup.comment}', ${sup.status_id}, '${sup.manufacturer}, ${sup.approvement}')"
+                var supId = sup.id
+                if (sup.id == 0){
+                  val query = s"insert into suppliers values (default, ${sup.user_id}, ${sup.equ_id}, '${sup.name}', '${sup.description}', '${sup.comment}', ${sup.status_id}, '${sup.manufacturer}, ${sup.approvement}')"
+                  val rs = stmt.executeQuery(query)
+                  while (rs.next()) {
+                    supId = rs.getInt("id")
+                  }
+                  rs.close()
                 }
                 else {
-                  s"update suppliers set user_id = ${sup.user_id}, equ_id = ${sup.equ_id}, name = '${sup.name}', description = '${sup.description}', comment = '${sup.comment}', status_id = ${sup.status_id}, manufacturer = '${sup.manufacturer}', approvement = ${sup.approvement} where id = ${sup.id}"
+                  val query = s"update suppliers set user_id = ${sup.user_id}, equ_id = ${sup.equ_id}, name = '${sup.name}', description = '${sup.description}', comment = '${sup.comment}', status_id = ${sup.status_id}, manufacturer = '${sup.manufacturer}', approvement = ${sup.approvement} where id = ${sup.id}"
+                  stmt.execute(query)
                 }
-                stmt.execute(query)
                 stmt.close()
                 pg.close()
-                "success"
+                supId.toString
               }
               catch {
                 case e: Exception =>
@@ -471,18 +483,24 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
     case GetEquipFiles(id) =>
       sender() ! getEquipFiles(id).asJson.noSpaces
     case AddEquipFile(jsonValue) =>
-      decode[EquipFileAdd](jsonValue) match {
+      decode[List[EquipFileAdd]](jsonValue) match {
         case Right(eq) => sender() ! addEquipFile(eq).asJson.noSpaces
-        case Left(value) => "error: wrong post json value"
+        case Left(value) => decode[EquipFileAdd](jsonValue) match {
+          case Right(eq) => sender() ! addEquipFile(List(eq)).asJson.noSpaces
+          case Left(value) => "error: wrong post json value"
+        }
       }
     case GetEquipFiles(id) =>
       sender() ! delEquipFile(id).asJson.noSpaces
     case GetSupFiles(id) =>
       sender() ! getSupFiles(id).asJson.noSpaces
     case AddSupFile(jsonValue) =>
-      decode[SuppFileAdd](jsonValue) match {
+      decode[List[SuppFileAdd]](jsonValue) match {
         case Right(sup) => sender() ! addSupFile(sup).asJson.noSpaces
-        case Left(value) => "error: wrong post json value"
+        case Left(value) => decode[SuppFileAdd](jsonValue) match {
+          case Right(sup) => sender() ! addSupFile(List(sup)).asJson.noSpaces
+          case Left(value) => "error: wrong post json value"
+        }
       }
     case DelSupFile(id) =>
       sender() ! delSupFile(id).asJson.noSpaces

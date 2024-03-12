@@ -255,7 +255,7 @@ trait PlanManagerHelper {
       1.to(daysInMonth).foreach(d => {
         val dayIntervals = ListBuffer.empty[DayInterval]
         cal.set(year, month, d)
-        val hours = hoursOfDay(cal.getTime.getTime)
+        val hours = hoursOfDay(cal.getTime.getTime, ignoreShort = true)
         if (hours.nonEmpty){
           val intervals = plan.filter(x => x.user_id == user && intervalSameDay(hours.head, hours.last, x.date_start, x.date_finish))
           intervals.foreach(int => {
@@ -483,7 +483,12 @@ trait PlanManagerHelper {
     }
     else{
       val today = new Date()
-      val todayStart = new Date(today.getYear, today.getMonth, today.getDate, 0, 0, 0).getTime
+      val fromDate = new Date(from)
+      val todayStart = if (allowPast) {
+        new Date(fromDate.getYear, fromDate.getMonth, fromDate.getDate, 0, 0, 0).getTime
+      } else {
+        new Date(today.getYear, today.getMonth, today.getDate, 0, 0, 0).getTime
+      }
       if (from < todayStart && !allowPast) {
         -1
       }
@@ -657,7 +662,7 @@ trait PlanManagerHelper {
             })
             deleteIntervalOnly(id)
             intsChange.sortBy(_.date_start).foreach(int => {
-              addInterval(int.task_id, int.user_id, dateStart, int.hours_amount, int.task_type)
+              addInterval(int.task_id, int.user_id, dateStart, int.hours_amount, int.task_type, allowPast = true)
             })
           }
           else{
@@ -723,7 +728,7 @@ trait PlanManagerHelper {
         if (!inInterval(h, skip)) {
           hours += h
         }
-        h = nextHour(h)
+        h = nextHour(h, taskType != 0)
       }
 
       splitTask(nextHourNoPlan, userId)
@@ -1224,13 +1229,13 @@ trait PlanManagerHelper {
     }
     nH
   }
-  def nextHour(date: Long): Long = {
+  def nextHour(date: Long, ignoreShort: Boolean = false): Long = {
     var d = new Date(date + msOneHour)
     val hours = d.getHours
     if (hours == 12){
       d = new Date(date + msOneHour * 2)
     }
-    else if (isShort(d) && hours == 17) {
+    else if (!ignoreShort && isShort(d) && hours == 17) {
       d = new Date(date + msOneHour * 17)
     }
     else if (hours == 18){
@@ -1293,14 +1298,14 @@ trait PlanManagerHelper {
     val d = new Date(date)
     println(d.getHours + " " + d.getDate + "/" + (d.getMonth + 1))
   }
-  private def hoursOfDay(dateStart: Long): List[Long] = {
+  private def hoursOfDay(dateStart: Long, ignoreShort: Boolean = false): List[Long] = {
     val res = ListBuffer.empty[Long]
     val now = new Date(dateStart)
     val nowStart = new Date(now.getYear, now.getMonth, now.getDate, 8, 0, 0).getTime
     var nextHourNoPlan = nextHour(nowStart)
     while (sameDay(nextHourNoPlan, dateStart)){
       res += nextHourNoPlan
-      nextHourNoPlan = nextHour(nextHourNoPlan)
+      nextHourNoPlan = nextHour(nextHourNoPlan, ignoreShort)
     }
     res.toList
   }

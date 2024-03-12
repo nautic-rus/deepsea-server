@@ -177,14 +177,16 @@ trait MaterialManagerHelper extends IssueManagerHelper {
     }
     res.toList
   }
-  def addEquipFile(file: EquipFileAdd): String = {
+  def addEquipFile(files: List[EquipFileAdd]): String = {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val d = new Date().getTime
-        val query = s"insert into equipments_files (${file.equ_id}, ${file.user_id}, '${file.url}', '${file.rev}', 0, $d, '${file.type_name}', default, 0)"
         try {
-          s.execute(query)
+          files.foreach(file => {
+            val query = s"insert into equipments_files values (${file.equ_id}, ${file.user_id}, '${file.url}', '${file.rev}', 0, $d, '${file.type_name}', default, 0)"
+            s.execute(query)
+          })
           s.close()
           c.close()
           "success"
@@ -252,14 +254,16 @@ trait MaterialManagerHelper extends IssueManagerHelper {
     }
     res.toList
   }
-  def addSupFile(file: SuppFileAdd): String = {
+  def addSupFile(files: List[SuppFileAdd]): String = {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val d = new Date().getTime
-        val query = s"insert into suppliers_files (${file.supplier_id}, ${file.user_id}, '${file.url}', '${file.rev}', 0, $d, '${file.type_name}', default, 0)"
         try {
-          s.execute(query)
+          files.foreach(file => {
+            val query = s"insert into suppliers_files values (${file.supplier_id}, ${file.user_id}, '${file.url}', '${file.rev}', 0, $d, '${file.type_name}', default, 0)"
+            s.execute(query)
+          })
           s.close()
           c.close()
           "success"
