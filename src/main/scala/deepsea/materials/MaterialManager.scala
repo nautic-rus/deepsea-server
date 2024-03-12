@@ -112,7 +112,7 @@ object MaterialManager{
   case class AddSupFile(jsonValue: String)
   case class DelSupFile(id: Int)
 
-  case class Equipment(id: Int, sfi: Int, name: String, description: String, department: String, comment: String, respons_name: String, respons_surname: String, itt: Int, project_name: String, suppliers: List[Supplier])
+  case class Equipment(id: Int, sfi: Int, name: String, description: String, department: String, comment: String, responsible_id: Int, respons_name: String, respons_surname: String, itt: Int, project_name: String, suppliers: List[Supplier])
   implicit val EquipmentDecoder: Decoder[Equipment] = deriveDecoder[Equipment]
   implicit val EquipmentEncoder: Encoder[Equipment] = deriveEncoder[Equipment]
 
@@ -136,10 +136,18 @@ object MaterialManager{
   implicit val EquipFileDecoder: Decoder[EquipFile] = deriveDecoder[EquipFile]
   implicit val EquipFileEncoder: Encoder[EquipFile] = deriveEncoder[EquipFile]
 
+  case class EquipFileAdd(equ_id: Int, user_id: Int, url: String, rev: String, type_name: String, archived_date: Long)
+  implicit val EquipFileAddDecoder: Decoder[EquipFileAdd] = deriveDecoder[EquipFileAdd]
+  implicit val EquipFileAddEncoder: Encoder[EquipFileAdd] = deriveEncoder[EquipFileAdd]
+
+
   case class SuppFile(supplier_id: Int, user_id: Int, url: String, rev: String, archived: Int, create_date: Long, type_name: String, id: Int, archived_date: Long)
   implicit val SuppFileDecoder: Decoder[SuppFile] = deriveDecoder[SuppFile]
   implicit val SuppFileEncoder: Encoder[SuppFile] = deriveEncoder[SuppFile]
 
+  case class SuppFileAdd(supplier_id: Int, user_id: Int, url: String, rev: String, type_name: String, archived_date: Long)
+  implicit val SuppFileAddDecoder: Decoder[SuppFileAdd] = deriveDecoder[SuppFileAdd]
+  implicit val SuppFileAddEncoder: Encoder[SuppFileAdd] = deriveEncoder[SuppFileAdd]
 
 }
 class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper {
@@ -463,7 +471,7 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
     case GetEquipFiles(id) =>
       sender() ! getEquipFiles(id).asJson.noSpaces
     case AddEquipFile(jsonValue) =>
-      decode[EquipFile](jsonValue) match {
+      decode[EquipFileAdd](jsonValue) match {
         case Right(eq) => sender() ! addEquipFile(eq).asJson.noSpaces
         case Left(value) => "error: wrong post json value"
       }
@@ -472,7 +480,7 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
     case GetSupFiles(id) =>
       sender() ! getSupFiles(id).asJson.noSpaces
     case AddSupFile(jsonValue) =>
-      decode[SuppFile](jsonValue) match {
+      decode[SuppFileAdd](jsonValue) match {
         case Right(sup) => sender() ! addSupFile(sup).asJson.noSpaces
         case Left(value) => "error: wrong post json value"
       }
