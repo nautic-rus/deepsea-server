@@ -70,7 +70,7 @@ trait MaterialManagerHelper extends IssueManagerHelper {
               rs.getString("respons_surname"),
               if (rs.getInt("itt") > 0) 1 else 0,
               rs.getString("project_name"),
-              suppliers.filter(_.equipm_id == id)
+              suppliers.filter(_.equip_id == id)
             )
           }
           rs.close()
@@ -97,9 +97,14 @@ trait MaterialManagerHelper extends IssueManagerHelper {
           while (rs.next()){
             res += Supplier(
               rs.getInt("suppliers_id"),
-              rs.getInt("equipm_id"),
-              rs.getString("description"),
-              rs.getString("status")
+              rs.getInt("user_id"),
+              rs.getInt("equip_id"),
+              rs.getString("equip_name"),
+              rs.getString("equip_desc"),
+              rs.getString("equip_comment"),
+              rs.getString("equip_manufacturer"),
+              rs.getString("status"),
+              rs.getInt("approvement")
             )
           }
           rs.close()
