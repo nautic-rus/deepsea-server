@@ -491,7 +491,7 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
           case Left(value) => "error: wrong post json value"
         }
       }
-    case GetEquipFiles(id) =>
+    case DelEquipFile(id) =>
       sender() ! delEquipFile(id).asJson.noSpaces
     case GetSupFiles(id) =>
       sender() ! getSupFiles(id).asJson.noSpaces
