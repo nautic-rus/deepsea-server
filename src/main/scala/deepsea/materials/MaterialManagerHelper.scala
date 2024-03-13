@@ -209,7 +209,7 @@ trait MaterialManagerHelper extends IssueManagerHelper {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val query = s"delete from equipments_files where equ_id = $id"
+        val query = s"delete from equipments_files where id = $id"
         try {
           s.execute(query)
           s.close()
@@ -287,7 +287,7 @@ trait MaterialManagerHelper extends IssueManagerHelper {
       case Some(c) =>
         val s = c.createStatement()
         val d = new Date().getTime
-        val query = s"delete from suppliers_files where supplier_id = $id"
+        val query = s"delete from suppliers_files where id = $id"
         try {
           s.execute(query)
           s.close()
