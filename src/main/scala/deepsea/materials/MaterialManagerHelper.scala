@@ -68,7 +68,7 @@ trait MaterialManagerHelper extends IssueManagerHelper {
               rs.getInt("responsible_id"),
               rs.getString("respons_name"),
               rs.getString("respons_surname"),
-              rs.getInt("itt"),
+              if (rs.getInt("itt") > 0) 1 else 0,
               rs.getString("project_name"),
               suppliers.filter(_.equipm_id == id)
             )
