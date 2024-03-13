@@ -153,7 +153,7 @@ trait MaterialManagerHelper extends IssueManagerHelper {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val query = s"select * from equipments_files where equ_id = $id or $id = 0"
+        val query = s"select * from equipments_files where (equ_id = $id or $id = 0) and archived = 0"
         try {
           val rs = s.executeQuery(query)
           while (rs.next()) {
@@ -209,7 +209,8 @@ trait MaterialManagerHelper extends IssueManagerHelper {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val query = s"delete from equipments_files where id = $id"
+        val d = new Date().getTime
+        val query = s"update equipments_files set archived = 1, archived_date = $d where id = $id"
         try {
           s.execute(query)
           s.close()
@@ -230,7 +231,7 @@ trait MaterialManagerHelper extends IssueManagerHelper {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val query = s"select * from suppliers_files where supplier_id = $id or $id = 0"
+        val query = s"select * from suppliers_files where (supplier_id = $id or $id = 0) and archived = 0"
         try {
           val rs = s.executeQuery(query)
           while (rs.next()) {
@@ -287,7 +288,7 @@ trait MaterialManagerHelper extends IssueManagerHelper {
       case Some(c) =>
         val s = c.createStatement()
         val d = new Date().getTime
-        val query = s"delete from suppliers_files where id = $id"
+        val query = s"update suppliers_files set archived = 1, archived_date = $d where id = $id"
         try {
           s.execute(query)
           s.close()

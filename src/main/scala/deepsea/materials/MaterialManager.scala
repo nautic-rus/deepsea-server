@@ -145,7 +145,7 @@ object MaterialManager{
   implicit val SuppFileDecoder: Decoder[SuppFile] = deriveDecoder[SuppFile]
   implicit val SuppFileEncoder: Encoder[SuppFile] = deriveEncoder[SuppFile]
 
-  case class SuppFileAdd(supplier_id: Int, url: String, user_id: Int, rev: String, type_name: String)
+  case class SuppFileAdd(supplier_id: Int, url: String, rev: String, type_name: String, user_id: Int)
   implicit val SuppFileAddDecoder: Decoder[SuppFileAdd] = deriveDecoder[SuppFileAdd]
   implicit val SuppFileAddEncoder: Encoder[SuppFileAdd] = deriveEncoder[SuppFileAdd]
 
@@ -159,7 +159,7 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
 
   override def preStart(): Unit = {
     //self ! GetEquipFiles(0)
-    self ! GetEquipments()
+    //self ! GetEquipments()
 //    DatabaseManager.GetMongoConnection() match {
 //      case Some(mongo) =>
 //        Await.result(mongo.getCollection(collectionNodes).find[MaterialNode](equal("project", "210101")).toFuture(), Duration(30, SECONDS)) match {
