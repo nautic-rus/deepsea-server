@@ -158,7 +158,7 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
   val collectionHistory = "materials-n-h"
 
   override def preStart(): Unit = {
-    self ! GetEquipFiles(0)
+    //self ! GetEquipFiles(0)
     //self ! GetEquipments()
 //    DatabaseManager.GetMongoConnection() match {
 //      case Some(mongo) =>
