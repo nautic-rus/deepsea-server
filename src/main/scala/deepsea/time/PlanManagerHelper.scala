@@ -255,9 +255,12 @@ trait PlanManagerHelper {
       1.to(daysInMonth).foreach(d => {
         val dayIntervals = ListBuffer.empty[DayInterval]
         cal.set(year, month, d)
-        val hours = hoursOfDay(cal.getTime.getTime, ignoreShort = true)
+        var hours = hoursOfDay(cal.getTime.getTime)
         if (hours.nonEmpty){
           val intervals = plan.filter(x => x.user_id == user && intervalSameDay(hours.head, hours.last, x.date_start, x.date_finish))
+          if (intervals.exists(_.task_type != 0)){
+            hours = hoursOfDay(cal.getTime.getTime, ignoreShort = true)
+          }
           intervals.foreach(int => {
             val intervalHours = hours.filter(x => int.date_start <= x && x <= int.date_finish).filter(h => int.task_type != 0 || !inInterval(h, skip))
             dayIntervals += DayInterval(int.task_id, intervalHours.length, int.hours_amount, int.id, int.date_start, int.consumed, int.task_type)
