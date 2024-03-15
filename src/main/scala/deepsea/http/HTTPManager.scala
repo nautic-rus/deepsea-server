@@ -25,7 +25,7 @@ import deepsea.files.FileManager.{CreateDocumentCloudDirectory, CreateFile, Crea
 import deepsea.files.classes.FileAttachment
 import deepsea.http.HTTPManager.server
 import deepsea.issues.IssueManager._
-import deepsea.materials.MaterialManager.{AddEquipFile, AddMaterialComplect, AddSupFile, DelEquipFile, DelSupFile, DeleteEquipment, DeleteSupplier, GetEquipFiles, GetEquipments, GetMaterialComplects, GetMaterialNodes, GetMaterials, GetMaterialsCode, GetSFIs, GetSupFiles, GetWCDrawings, GetWCZones, GetWeightControl, InsertEquipment, InsertSupplier, RemoveMaterialComplect, RemoveWeightControl, SetWeightControl, UpdateMaterial, UpdateMaterialComplect, UpdateMaterialNode}
+import deepsea.materials.MaterialManager.{AddEquipFile, AddMaterialComplect, AddSupFile, DelEquipFile, DelRelatedTask, DelSupFile, DeleteEquipment, DeleteSupplier, GetEquipFiles, GetEquipments, GetMaterialComplects, GetMaterialNodes, GetMaterials, GetMaterialsCode, GetRelatedTasks, GetSFIs, GetSupFiles, GetWCDrawings, GetWCZones, GetWeightControl, InsertEquipment, InsertSupplier, RemoveMaterialComplect, RemoveWeightControl, SetWeightControl, UpdateMaterial, UpdateMaterialComplect, UpdateMaterialNode}
 import deepsea.mobile.MobileManager.{GetDrawingInfo, GetDrawings}
 import deepsea.osm.OsmManager.{AddPLS, GetPLS}
 import deepsea.rocket.RocketChatManager.SendNotification
@@ -725,6 +725,13 @@ class HTTPManager extends Actor {
         },
         (get & path("delSupFile") & parameter("id")) { (id) =>
           askFor(ActorManager.materials, DelSupFile(id.toIntOption.getOrElse(0)))
+        },
+
+        (get & path("relatedTasks") & parameter("id")) { (id) =>
+          askFor(ActorManager.materials, GetRelatedTasks(id.toIntOption.getOrElse(0)))
+        },
+        (get & path("delRelatedTask") & parameter("id")) { (id) =>
+          askFor(ActorManager.materials, DelRelatedTask(id.toIntOption.getOrElse(0)))
         },
       )
     }

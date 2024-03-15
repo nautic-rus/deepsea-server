@@ -303,4 +303,60 @@ trait MaterialManagerHelper extends IssueManagerHelper {
     }
     res.toList
   }
+
+
+  def getRelatedTasks(id: Int): List[RelatedTask] = {
+    val res = ListBuffer.empty[RelatedTask]
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val query = Source.fromResource("queries/related_tasks.sql").mkString.replace("&supplier_id", id.toString)
+        try {
+          val rs = s.executeQuery(query)
+          while (rs.next()) {
+            res += RelatedTask(
+              rs.getInt("id"),
+              rs.getInt("issue_id"),
+              rs.getString("issue_type"),
+              rs.getString("issue_name"),
+              rs.getString("started_by"),
+              rs.getString("responsible"),
+              rs.getString("assigned_to"),
+              rs.getString("status"),
+            )
+          }
+          rs.close()
+          s.close()
+          c.close()
+        }
+        catch {
+          case e: Exception =>
+            s.close()
+            c.close()
+        }
+      case _ =>
+    }
+    res.toList
+  }
+
+  def delRelatedTask(id: Int): String = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val query = s"delete from sup_task_relations where id = $id"
+        try {
+          s.execute(query)
+          s.close()
+          c.close()
+          "success"
+        }
+        catch {
+          case e: Exception =>
+            s.close()
+            c.close()
+            "error: " + e.toString
+        }
+      case _ => "error: no connection with database"
+    }
+  }
 }

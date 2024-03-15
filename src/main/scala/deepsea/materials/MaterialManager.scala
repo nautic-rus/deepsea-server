@@ -112,6 +112,9 @@ object MaterialManager{
   case class AddSupFile(jsonValue: String)
   case class DelSupFile(id: Int)
 
+  case class GetRelatedTasks(id: Int)
+  case class DelRelatedTask(id: Int)
+
   case class Equipment(id: Int, sfi: Int, name: String, description: String, department: String, comment: String, responsible_id: Int, respons_name: String, respons_surname: String, itt: Int, project_name: String, suppliers: List[Supplier])
   implicit val EquipmentDecoder: Decoder[Equipment] = deriveDecoder[Equipment]
   implicit val EquipmentEncoder: Encoder[Equipment] = deriveEncoder[Equipment]
@@ -148,6 +151,11 @@ object MaterialManager{
   case class SuppFileAdd(supplier_id: Int, url: String, rev: String, type_name: String, user_id: Int)
   implicit val SuppFileAddDecoder: Decoder[SuppFileAdd] = deriveDecoder[SuppFileAdd]
   implicit val SuppFileAddEncoder: Encoder[SuppFileAdd] = deriveEncoder[SuppFileAdd]
+
+
+  case class RelatedTask(id: Int, issue_id: Int, issue_typ: String, issue_name: String, started_by: String, responsible: String, assigned_to: String, status: String)
+  implicit val RelatedTaskDecoder: Decoder[RelatedTask] = deriveDecoder[RelatedTask]
+  implicit val RelatedTaskEncoder: Encoder[RelatedTask] = deriveEncoder[RelatedTask]
 
 }
 class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper {
@@ -505,6 +513,10 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
       }
     case DelSupFile(id) =>
       sender() ! delSupFile(id).asJson.noSpaces
+    case GetRelatedTasks(id) =>
+      sender() ! getRelatedTasks(id).asJson.noSpaces
+    case DelRelatedTask(id) =>
+      sender() ! delRelatedTask(id).asJson.noSpaces
     case _ => None
   }
 }
