@@ -115,6 +115,9 @@ object MaterialManager{
   case class GetRelatedTasks(id: Int)
   case class DelRelatedTask(id: Int)
 
+  case class GetSupplierHistory(id: Int)
+  case class AddSupplierHistory(jsonValue: String)
+
   case class Equipment(id: Int, sfi: Int, name: String, description: String, department: String, comment: String, responsible_id: Int, respons_name: String, respons_surname: String, itt: Int, project_name: String, suppliers: List[Supplier])
   implicit val EquipmentDecoder: Decoder[Equipment] = deriveDecoder[Equipment]
   implicit val EquipmentEncoder: Encoder[Equipment] = deriveEncoder[Equipment]
@@ -123,7 +126,7 @@ object MaterialManager{
   implicit val EquipmentAddDecoder: Decoder[EquipmentAdd] = deriveDecoder[EquipmentAdd]
   implicit val EquipmentAddEncoder: Encoder[EquipmentAdd] = deriveEncoder[EquipmentAdd]
 
-  case class Supplier(id: Int, user_id: Int, equip_id: Int, name: String, description: String, comment: String, manufacturer: String, status: String, approvement: Int)
+  case class Supplier(id: Int, user_id: Int, equip_id: Int, name: String, description: String, comment: String, manufacturer: String, status: String, approvement: Int, last_update: Long)
   implicit val SupplierDecoder: Decoder[Supplier] = deriveDecoder[Supplier]
   implicit val SupplierEncoder: Encoder[Supplier] = deriveEncoder[Supplier]
 
@@ -152,6 +155,9 @@ object MaterialManager{
   implicit val SuppFileAddDecoder: Decoder[SuppFileAdd] = deriveDecoder[SuppFileAdd]
   implicit val SuppFileAddEncoder: Encoder[SuppFileAdd] = deriveEncoder[SuppFileAdd]
 
+  case class SupplierHistory(name_value: String, prev_value: String, new_value: String, author: Int, supplier_id: Int, update_date: Long)
+  implicit val SupplierHistoryDecoder: Decoder[SupplierHistory] = deriveDecoder[SupplierHistory]
+  implicit val SupplierHistoryEncoder: Encoder[SupplierHistory] = deriveEncoder[SupplierHistory]
 
   case class RelatedTask(id: Int, issue_id: Int, issue_typ: String, issue_name: String, started_by: String, responsible: String, assigned_to: String, status: String)
   implicit val RelatedTaskDecoder: Decoder[RelatedTask] = deriveDecoder[RelatedTask]
@@ -435,6 +441,7 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
       sender() ! res.asJson.noSpaces
 
     case InsertSupplier(jsonValue) =>
+      val d = new Date().getTime
       val res: String = decode[SupplierAdd](jsonValue) match {
         case Right(sup) =>
           DBManager.GetPGConnection() match {
@@ -443,7 +450,7 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
               try {
                 var supId = sup.id
                 if (sup.id == 0){
-                  val query = s"insert into suppliers values (default, ${sup.user_id}, ${sup.equip_id}, '${sup.name}', '${sup.description}', '${sup.comment}', ${sup.status_id}, '${sup.manufacturer}, ${sup.approvement}') returning id"
+                  val query = s"insert into suppliers values (default, ${sup.user_id}, ${sup.equip_id}, '${sup.name}', '${sup.description}', '${sup.comment}', ${sup.status_id}, '${sup.manufacturer}, ${sup.approvement}', $d) returning id"
                   val rs = stmt.executeQuery(query)
                   while (rs.next()) {
                     supId = rs.getInt("id")
@@ -451,7 +458,7 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
                   rs.close()
                 }
                 else {
-                  val query = s"update suppliers set user_id = ${sup.user_id}, equ_id = ${sup.equip_id}, name = '${sup.name}', description = '${sup.description}', comment = '${sup.comment}', status_id = ${sup.status_id}, manufacturer = '${sup.manufacturer}', approvement = ${sup.approvement} where id = ${sup.id}"
+                  val query = s"update suppliers set user_id = ${sup.user_id}, equ_id = ${sup.equip_id}, name = '${sup.name}', description = '${sup.description}', comment = '${sup.comment}', status_id = ${sup.status_id}, manufacturer = '${sup.manufacturer}', approvement = ${sup.approvement}, last_update = $d where id = ${sup.id}"
                   stmt.execute(query)
                 }
                 stmt.close()
@@ -517,6 +524,13 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
       sender() ! getRelatedTasks(id).asJson.noSpaces
     case DelRelatedTask(id) =>
       sender() ! delRelatedTask(id).asJson.noSpaces
+    case AddSupplierHistory(jsonValue) =>
+      decode[SupplierHistory](jsonValue) match {
+        case Right(sup) => sender() ! addSupHistory(sup).asJson.noSpaces
+        case Left(value) => "error: wrong post json value"
+      }
+    case GetSupplierHistory(id) =>
+      sender() ! getSupplierHistory(id).asJson.noSpaces
     case _ => None
   }
 }

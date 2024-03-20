@@ -104,7 +104,8 @@ trait MaterialManagerHelper extends IssueManagerHelper {
               rs.getString("equip_comment"),
               rs.getString("equip_manufacturer"),
               rs.getString("status"),
-              rs.getInt("approvement")
+              rs.getInt("approvement"),
+              rs.getLong("last_update")
             )
           }
           rs.close()
@@ -291,6 +292,60 @@ trait MaterialManagerHelper extends IssueManagerHelper {
         val query = s"update suppliers_files set archived = 1, archived_date = $d where id = $id"
         try {
           s.execute(query)
+          s.close()
+          c.close()
+        }
+        catch {
+          case e: Exception =>
+            s.close()
+            c.close()
+        }
+      case _ =>
+    }
+    res.toList
+  }
+
+  def addSupHistory(h: SupplierHistory): String = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val d = new Date().getTime
+        try {
+          val query = s"insert into suppliers_history values (${h.supplier_id}, ${h.author}, '${h.name_value}', '${h.prev_value}', '${h.new_value}', $d, default)"
+          s.execute(query)
+          s.close()
+          c.close()
+          "success"
+        }
+        catch {
+          case e: Exception =>
+            s.close()
+            c.close()
+            "error: " + e.toString
+        }
+      case _ => "error: no database connection"
+    }
+  }
+
+  def getSupplierHistory(id: Int): List[SupplierHistory] = {
+    val res = ListBuffer.empty[SupplierHistory]
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val d = new Date().getTime
+        val query = s"select * from suppliers_history where supplier_id = $id"
+        try {
+          val rs = s.executeQuery(query)
+          while (rs.next()){
+            res += SupplierHistory(
+              rs.getString("value"),
+              rs.getString("old_value"),
+              rs.getString("new_value"),
+              rs.getInt("user_id"),
+              rs.getInt("supplier_id"),
+              rs.getLong("date"),
+            )
+          }
           s.close()
           c.close()
         }
