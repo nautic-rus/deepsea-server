@@ -104,7 +104,7 @@ trait MaterialManagerHelper extends IssueManagerHelper {
               rs.getString("equip_comment"),
               rs.getString("equip_manufacturer"),
               rs.getString("status"),
-              rs.getInt("approvement"),
+              rs.getLong("approvement"),
               rs.getLong("last_update")
             )
           }
