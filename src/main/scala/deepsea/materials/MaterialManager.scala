@@ -159,6 +159,10 @@ object MaterialManager{
   implicit val SupplierHistoryDecoder: Decoder[SupplierHistory] = deriveDecoder[SupplierHistory]
   implicit val SupplierHistoryEncoder: Encoder[SupplierHistory] = deriveEncoder[SupplierHistory]
 
+  case class SupplierHistoryAdd(value: String, old_value: String, new_value: String, user_id: Int, supplier_id: Int)
+  implicit val SupplierHistoryAddDecoder: Decoder[SupplierHistoryAdd] = deriveDecoder[SupplierHistoryAdd]
+  implicit val SupplierHistoryAddEncoder: Encoder[SupplierHistoryAdd] = deriveEncoder[SupplierHistoryAdd]
+
   case class RelatedTask(id: Int, issue_id: Int, issue_typ: String, issue_name: String, started_by: String, responsible: String, assigned_to: String, status: String)
   implicit val RelatedTaskDecoder: Decoder[RelatedTask] = deriveDecoder[RelatedTask]
   implicit val RelatedTaskEncoder: Encoder[RelatedTask] = deriveEncoder[RelatedTask]
@@ -503,7 +507,7 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
         case Right(eq) => sender() ! addEquipFile(eq).asJson.noSpaces
         case Left(value) => decode[EquipFileAdd](jsonValue) match {
           case Right(eq) => sender() ! addEquipFile(List(eq)).asJson.noSpaces
-          case Left(value) => "error: wrong post json value"
+          case Left(value) => sender() ! "error: wrong post json value"
         }
       }
     case DelEquipFile(id) =>
@@ -515,7 +519,7 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
         case Right(sup) => sender() ! addSupFile(sup).asJson.noSpaces
         case Left(value) => decode[SuppFileAdd](jsonValue) match {
           case Right(sup) => sender() ! addSupFile(List(sup)).asJson.noSpaces
-          case Left(value) => "error: wrong post json value"
+          case Left(value) => sender() ! "error: wrong post json value"
         }
       }
     case DelSupFile(id) =>
@@ -525,10 +529,10 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
     case DelRelatedTask(id) =>
       sender() ! delRelatedTask(id).asJson.noSpaces
     case AddSupplierHistory(jsonValue) =>
-      decode[SupplierHistory](jsonValue) match {
-        case Right(sup) => sender() ! addSupHistory(sup).asJson.noSpaces
+      sender() ! (decode[SupplierHistoryAdd](jsonValue) match {
+        case Right(sup) => addSupHistory(sup).asJson.noSpaces
         case Left(value) => "error: wrong post json value"
-      }
+      })
     case GetSupplierHistory(id) =>
       sender() ! getSupplierHistory(id).asJson.noSpaces
     case _ => None

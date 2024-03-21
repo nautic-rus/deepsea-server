@@ -305,13 +305,13 @@ trait MaterialManagerHelper extends IssueManagerHelper {
     res.toList
   }
 
-  def addSupHistory(h: SupplierHistory): String = {
+  def addSupHistory(h: SupplierHistoryAdd): String = {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
         val d = new Date().getTime
         try {
-          val query = s"insert into suppliers_history values (${h.supplier_id}, ${h.author}, '${h.name_value}', '${h.prev_value}', '${h.new_value}', $d, default)"
+          val query = s"insert into suppliers_history values (${h.supplier_id}, ${h.user_id}, '${h.value}', '${h.old_value}', '${h.new_value}', $d, default)"
           s.execute(query)
           s.close()
           c.close()
