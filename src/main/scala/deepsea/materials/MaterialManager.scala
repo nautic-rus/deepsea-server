@@ -573,7 +573,7 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
         case Right(supTask) =>
           Await.result(supTaskAdd(supTask), Duration(5, SECONDS)) match {
             case response: Int => response.asJson.noSpaces
-            case _ => "error: error in sql query"
+            case _ => "error: wrong sql query"
           }
         case Left(error) => "error: wrong post data"
       })
