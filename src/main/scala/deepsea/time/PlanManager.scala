@@ -3,7 +3,7 @@ package deepsea.time
 import akka.actor.Actor
 import deepsea.actors.ActorManager
 import deepsea.auth.AuthManager
-import deepsea.database.{DBManager, MongoCodecs}
+import deepsea.dbase.{DBManager, MongoCodecs}
 import deepsea.issues.IssueManager.AssignIssue
 import deepsea.issues.classes.IssueHistory
 import deepsea.materials.MaterialManager.MaterialHistory

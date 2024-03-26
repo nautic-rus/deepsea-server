@@ -1,8 +1,10 @@
-package deepsea.database
+package deepsea.dbase
 
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
-import deepsea.database.DatabaseManager.OracleConnection
+import deepsea.dbase.DatabaseManager.OracleConnection
 import org.mongodb.scala.{MongoClient, MongoDatabase}
+import slick.jdbc.JdbcBackend
+import slick.jdbc.JdbcBackend.Database
 
 import java.sql.{Connection, ResultSet}
 import scala.collection.mutable.ListBuffer
@@ -18,7 +20,7 @@ object DBManager extends MongoCodecs {
   private val oracleConnections = ListBuffer.empty[OracleConnection]
   private val mongoClient: MongoClient = MongoClient("mongodb://192.168.1.36")
 
-//  JSch.setConfig("StrictHostKeyChecking", "no")
+  //  JSch.setConfig("StrictHostKeyChecking", "no")
 //  val nextcloudSSH = new JSch()
 //  val nextcloudSSHSession: Session = nextcloudSSH.getSession("root", "89.108.125.21")
 //  nextcloudSSHSession.setPassword("Whatab0utus")
@@ -47,6 +49,8 @@ object DBManager extends MongoCodecs {
   configPG.setPassword("Ship1234")
   configPG.setMaximumPoolSize(20)
   val dsPG = new HikariDataSource(configPG)
+
+  val PostgresSQL: JdbcBackend.Database = Database.forDataSource(dsPG, Option(5))
 
   private val configPGFest = new HikariConfig()
   configPGFest.setDriverClassName("org.postgresql.Driver")

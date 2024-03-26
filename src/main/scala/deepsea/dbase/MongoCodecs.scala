@@ -1,4 +1,4 @@
-package deepsea.database
+package deepsea.dbase
 
 import deepsea.auth.AuthManager.{AdminRight, Department, Page, RightUser, Role, User, UserNotification, UserProject}
 import deepsea.fest.FestManager.{FestKaraoke, FestSauna, FestStories}

@@ -6,7 +6,7 @@ import akka.routing.RoundRobinPool
 import deepsea.actors.ActorManager.system
 import deepsea.actors.ActorStartupManager.{DatabaseManagerStarted, HTTPManagerStarted, Start}
 import deepsea.auth.AuthManager
-import deepsea.database.DatabaseManager
+import deepsea.dbase.DatabaseManager
 import deepsea.fest.FestManager
 import deepsea.files.FileManager
 import deepsea.http.HTTPManager

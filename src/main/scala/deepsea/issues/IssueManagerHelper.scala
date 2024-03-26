@@ -4,8 +4,8 @@ import deepsea.App
 import deepsea.actors.ActorManager
 import deepsea.auth.AuthManager.{Department, User}
 import deepsea.auth.AuthManagerHelper
-import deepsea.database.DBManager.RsIterator
-import deepsea.database.{DBManager, DatabaseManager, MongoCodecs}
+import deepsea.dbase.DBManager.RsIterator
+import deepsea.dbase.{DBManager, DatabaseManager, MongoCodecs}
 import deepsea.files.FileManager.{CloudFile, DocumentDirectories}
 import deepsea.files.FileManagerHelper
 import deepsea.files.classes.FileAttachment

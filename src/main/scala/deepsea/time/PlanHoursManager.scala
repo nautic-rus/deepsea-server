@@ -4,7 +4,7 @@ import akka.actor.{Actor, ActorSystem}
 import deepsea.App
 import deepsea.auth.AuthManager.User
 import deepsea.auth.AuthManagerHelper
-import deepsea.database.MongoCodecs
+import deepsea.dbase.MongoCodecs
 import deepsea.issues.IssueManagerHelper
 import deepsea.issues.classes.Issue
 import deepsea.time.PlanHoursManager.{AssignPlanHoursToUsers, ConsumePlanHours, ConsumeTodayPlanHours, DeleteUserTask, FillConsumed, GetConsumedHours, GetPlannedHours, GetUserPlanHours, InitPlanHours, PlanAlreadyPlannedIssues, PlanHour, PlanUserTask, SpecialDay, SavePlannedHours}

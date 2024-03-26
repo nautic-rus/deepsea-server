@@ -8,7 +8,7 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpEntity.{ChunkStreamPart, Chunked}
 import akka.http.scaladsl.model.Multipart.BodyPart
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.server.Directives.{path, _}
+import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.directives.ContentTypeResolver
 import akka.http.scaladsl.server.{ExceptionHandler, Route, StandardRoute}
 import akka.pattern.ask
@@ -19,13 +19,13 @@ import deepsea.App
 import deepsea.actors.ActorManager
 import deepsea.actors.ActorStartupManager.HTTPManagerStarted
 import deepsea.auth.AuthManager.{CreateUsersNotifications, DeleteAdminRight, DeleteRole, DeleteUser, EditAdminRight, EditRole, EditUser, EditUsersProject, GetAdminRightDetails, GetAdminRights, GetDepartmentDetails, GetDepartments, GetPages, GetRightDetails, GetRights, GetRoleDetails, GetRoleRights, GetRoles, GetUserDetails, GetUserVisibleProjects, GetUsers, GetUsersNotifications, GetUsersProject, JoinUsersProjects, Login, SaveRoleForAll, SendLogPass, ShareRights, StartRight, StartRole, StartUser, UpdateEmail, UpdateRocketLogin, UpdateUsersNotifications}
-import deepsea.database.DBManager
+import deepsea.dbase.DBManager
 import deepsea.fest.FestManager.{DeleteFestKaraoke, DeleteFestSauna, DeleteFestStories, GetBestPlayers, GetFestKaraoke, GetFestSauna, GetFestStories, GetMarks, GetTeamsWon, SetBestPlayer, SetFestKaraoke, SetFestSauna, SetFestStories, SetMarks, SetTeamsWon}
 import deepsea.files.FileManager.{CreateDocumentCloudDirectory, CreateFile, CreateMaterialCloudDirectory, GetCloudFiles, GetDocumentFiles, GetFileFromCloud, GetFileFromMongo, GetPdSpList, MongoFile, UploadFileToMongo}
 import deepsea.files.classes.FileAttachment
 import deepsea.http.HTTPManager.server
 import deepsea.issues.IssueManager._
-import deepsea.materials.MaterialManager.{AddEquipFile, AddMaterialComplect, AddSupFile, AddSupplierHistory, DelEquipFile, DelRelatedTask, DelSupFile, DeleteEquipment, DeleteSupplier, GetEquipFiles, GetEquipments, GetMaterialComplects, GetMaterialNodes, GetMaterials, GetMaterialsCode, GetRelatedTasks, GetSFIs, GetSupFiles, GetSupplierHistory, GetWCDrawings, GetWCZones, GetWeightControl, InsertEquipment, InsertSupplier, RemoveMaterialComplect, RemoveWeightControl, SetWeightControl, UpdateMaterial, UpdateMaterialComplect, UpdateMaterialNode}
+import deepsea.materials.MaterialManager.{AddEquipFile, AddMaterialComplect, AddSupFile, AddSupplierHistory, DelEquipFile, DelRelatedTask, DelSupFile, DeleteEquipment, DeleteSupplier, GetEquipFiles, GetEquipments, GetMaterialComplects, GetMaterialNodes, GetMaterials, GetMaterialsCode, GetRelatedTasks, GetSFIs, GetSupFiles, GetSupplierHistory, GetWCDrawings, GetWCZones, GetWeightControl, InsertEquipment, InsertSupplier, RemoveMaterialComplect, RemoveWeightControl, SetWeightControl, SupTaskAdd, UpdateMaterial, UpdateMaterialComplect, UpdateMaterialNode}
 import deepsea.mobile.MobileManager.{GetDrawingInfo, GetDrawings}
 import deepsea.osm.OsmManager.{AddPLS, GetPLS}
 import deepsea.rocket.RocketChatManager.SendNotification
@@ -366,6 +366,7 @@ class HTTPManager extends Actor {
         (get & path("notifyDocUpload") & parameter("taskId") & parameter("kind") & parameter("comment") & parameter("count")) { (taskId, kind, comment, count) =>
           askFor(ActorManager.issue, NotifyDocUpload(taskId, kind, comment, count))
         },
+
 
         //FILE MANAGER COMMANDS
         //      (post & path("createFileUrl") & entity(as[Multipart.FormData])){ formData =>
@@ -739,6 +740,10 @@ class HTTPManager extends Actor {
         },
         (post & path("addSupHistory") & entity(as[String])) { (jsonValue) =>
           askFor(ActorManager.materials, AddSupplierHistory(jsonValue))
+        },
+
+        (post & path("supTaskAdd") & entity(as[String])) { (supTask) =>
+          askFor(ActorManager.materials, SupTaskAdd(supTask))
         },
       )
     }

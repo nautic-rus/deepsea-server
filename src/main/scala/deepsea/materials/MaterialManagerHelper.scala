@@ -2,15 +2,18 @@ package deepsea.materials
 
 import com.mongodb.BasicDBObject
 import deepsea.App
-import deepsea.database.DBManager.RsIterator
-import deepsea.database.{DBManager, DatabaseManager}
+import deepsea.dbase.DBManager.RsIterator
+import deepsea.dbase.{DBManager, DatabaseManager}
 import deepsea.files.classes.FileAttachment
 import deepsea.issues.IssueManagerHelper
 import deepsea.materials.MaterialManager._
 import deepsea.time.PlanManager.IssuePlan
 import org.aarboard.nextcloud.api.NextcloudConnector
 import org.mongodb.scala.model.Filters
-
+import slick.lifted.TableQuery
+import scala.language.postfixOps
+import slick.jdbc.PostgresProfile.api._
+import slick.lifted.{ProvenShape, TableQuery}
 import java.util.Date
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
@@ -304,7 +307,6 @@ trait MaterialManagerHelper extends IssueManagerHelper {
     }
     res.toList
   }
-
   def addSupHistory(h: SupplierHistoryAdd): String = {
     DBManager.GetPGConnection() match {
       case Some(c) =>
@@ -326,7 +328,6 @@ trait MaterialManagerHelper extends IssueManagerHelper {
       case _ => "error: no database connection"
     }
   }
-
   def getSupplierHistory(id: Int): List[SupplierHistory] = {
     val res = ListBuffer.empty[SupplierHistory]
     DBManager.GetPGConnection() match {
@@ -358,8 +359,6 @@ trait MaterialManagerHelper extends IssueManagerHelper {
     }
     res.toList
   }
-
-
   def getRelatedTasks(id: Int): List[RelatedTask] = {
     val res = ListBuffer.empty[RelatedTask]
     DBManager.GetPGConnection() match {
@@ -393,7 +392,6 @@ trait MaterialManagerHelper extends IssueManagerHelper {
     }
     res.toList
   }
-
   def delRelatedTask(id: Int): String = {
     DBManager.GetPGConnection() match {
       case Some(c) =>
@@ -413,5 +411,10 @@ trait MaterialManagerHelper extends IssueManagerHelper {
         }
       case _ => "error: no connection with database"
     }
+  }
+
+  def supTaskAdd(supTask: SupTaskRelations): String = {
+    DBManager.PostgresSQL.run(TableQuery[SupTaskRelationsTable] += supTask)
+    "success"
   }
 }

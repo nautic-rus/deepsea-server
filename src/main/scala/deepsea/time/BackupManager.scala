@@ -4,7 +4,7 @@ import akka.actor.{Actor, ActorSystem}
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import deepsea.App
 import deepsea.actors.ActorManager
-import deepsea.database.DBManager
+import deepsea.dbase.DBManager
 import deepsea.mail.MailManager.Mail
 import deepsea.time.BackupManager.{BackupForan, NullHostKeyVerifier}
 import net.schmizz.sshj.SSHClient

@@ -2,8 +2,8 @@ package deepsea.time
 
 import deepsea.actors.ActorManager
 import deepsea.auth.AuthManagerHelper
-import deepsea.database.DBManager
-import deepsea.database.DBManager.RsIterator
+import deepsea.dbase.DBManager
+import deepsea.dbase.DBManager.RsIterator
 import deepsea.issues.IssueManager.IssueProject
 import deepsea.issues.IssueManagerHelper
 import deepsea.mail.MailManager.Mail

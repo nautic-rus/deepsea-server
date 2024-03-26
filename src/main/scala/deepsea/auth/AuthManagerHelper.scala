@@ -2,8 +2,8 @@ package deepsea.auth
 
 import deepsea.actors.ActorManager
 import deepsea.auth.AuthManager.{AdminRight, Department, Page, RightUser, Role, RolePage, User, UserNotification, UserProject}
-import deepsea.database.DBManager.RsIterator
-import deepsea.database.{DBManager, MongoCodecs}
+import deepsea.dbase.DBManager.RsIterator
+import deepsea.dbase.{DBManager, MongoCodecs}
 import deepsea.issues.{IssueManager, IssueManagerHelper}
 import deepsea.issues.IssueManager.IssueProject
 import deepsea.mail.MailManager.Mail

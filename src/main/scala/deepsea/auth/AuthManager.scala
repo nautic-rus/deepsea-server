@@ -4,7 +4,7 @@ import akka.actor.Actor
 import com.sun.mail.imap.Rights
 import deepsea.actors.ActorManager
 import deepsea.auth.AuthManager.{AdminRight, CreateUsersNotifications, DeleteAdminRight, DeleteRole, DeleteUser, Department, EditAdminRight, EditRole, EditUser, EditUsersProject, GetAdminRightDetails, GetAdminRights, GetDepartmentDetails, GetDepartments, GetPages, GetRightDetails, GetRights, GetRoleDetails, GetRoleRights, GetRoles, GetUser, GetUserDetails, GetUserVisibleProjects, GetUsers, GetUsersNotifications, GetUsersProject, JoinUsersProjects, Login, Page, RightUser, Role, SaveRoleForAll, SendLogPass, ShareRights, StartRight, StartRole, StartUser, UpdateEmail, UpdateRocketLogin, UpdateUsersNotifications, User, UserNotification}
-import deepsea.database.{DBManager, MongoCodecs}
+import deepsea.dbase.{DBManager, MongoCodecs}
 import deepsea.issues.IssueManager.IssueProject
 import deepsea.issues.{IssueManager, IssueManagerHelper}
 import deepsea.mail.MailManager.Mail
@@ -280,7 +280,7 @@ class AuthManager extends Actor with AuthManagerHelper with IssueManagerHelper w
           sender() ! result.asJson.noSpaces
         case _ => sender() ! "error".asJson.noSpaces
       }
-    case JoinUsersProjects() => sender() ! joinUsersProjects.asJson.noSpaces
+    case JoinUsersProjects() => sender() ! joinUsersProjects().asJson.noSpaces
     case GetUsersProject(id) => sender() ! getUsersProject(id).asJson.noSpaces
     case GetUserVisibleProjects(id) => sender() ! getUserVisibleProjects(id).asJson.noSpaces
     case SendLogPass(id) => sender() ! sendLogPass(id).asJson.noSpaces

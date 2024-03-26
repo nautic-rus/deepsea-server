@@ -3,8 +3,8 @@ package deepsea.time
 import akka.actor.Actor
 import com.mongodb.BasicDBObject
 import com.mongodb.client.model.{ReplaceOptions, UpdateOptions}
-import deepsea.database.DBManager.GetFireBaseConnection
-import deepsea.database.{DBManager, DatabaseManager, MongoCodecs}
+import deepsea.dbase.DBManager.GetFireBaseConnection
+import deepsea.dbase.{DBManager, DatabaseManager, MongoCodecs}
 import deepsea.files.FileManager.{TreeDirectory, treeFileDirectoriesCollection}
 import deepsea.materials.MaterialManager.{MaterialNode, MaterialNodeHistory}
 import deepsea.time.TimeControlManager.{AddSpyWatch, AddUserWatch, GetSpyWatches, GetTime, GetUserTimeControl, GetUserWatches, SpyWatch, TimeControlInterval, UserWatch}

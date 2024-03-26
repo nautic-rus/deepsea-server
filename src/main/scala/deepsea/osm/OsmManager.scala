@@ -1,7 +1,7 @@
 package deepsea.osm
 
 import akka.actor.Actor
-import deepsea.database.{DatabaseManager, MongoCodecs}
+import deepsea.dbase.{DatabaseManager, MongoCodecs}
 import deepsea.osm.OsmManager.{AddPLS, GetPLS, ParkingLocationSheet}
 import deepsea.time.TimeControlManager.SpyWatch
 import org.mongodb.scala.MongoCollection

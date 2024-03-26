@@ -1,4 +1,4 @@
-package deepsea.database
+package deepsea.dbase
 
 import akka.actor.Actor
 import akka.pattern.ask
@@ -6,7 +6,7 @@ import akka.util.Timeout
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import deepsea.actors.ActorManager
 import deepsea.actors.ActorStartupManager.DatabaseManagerStarted
-import deepsea.database.DBManager._
+import deepsea.dbase.DBManager._
 import org.mongodb.scala.{MongoClient, MongoDatabase}
 
 import java.sql.{Connection, DriverManager}
@@ -21,29 +21,7 @@ object DatabaseManager extends MongoCodecs {
   case class GetOracleConnectionFromPool()
   case class GetFireBaseConnectionFromPool()
   case class OracleConnection(project: String, ds: HikariDataSource)
-
-//  def DBManager.GetPGConnection(): Option[Connection] ={
-//    try{
-//      Await.result(ActorManager.dataBase ? GetConnectionFromPool(), timeout.duration) match {
-//        case response: Connection => Option(response)
-//        case _ => Option.empty
-//      }
-//    }
-//    catch {
-//      case e: Throwable => Option.empty
-//    }
-//  }
-//  def GetMongoConnection(): Option[MongoDatabase] = {
-//    try{
-//      Await.result(ActorManager.dataBase ? GetMongoConnectionFromPool(), timeout.duration) match {
-//        case response: MongoDatabase => Option(response)
-//        case _ => Option.empty
-//      }
-//    }
-//    catch {
-//      case e: Throwable => Option.empty
-//    }
-//  }
+  
   def GetOracleConnection(): Option[Connection] ={
     try{
       Await.result(ActorManager.dataBase ? GetOracleConnectionFromPool(), timeout.duration) match {
@@ -65,9 +43,6 @@ object DatabaseManager extends MongoCodecs {
     catch {
       case e: Throwable => Option.empty
     }
-  }
-  def ReleaseConnection(connection: Connection){
-    ActorManager.dataBase ! ReleaseConnectionFromPool(connection)
   }
 }
 class DatabaseManager extends Actor{

@@ -3,8 +3,8 @@ package deepsea.files
 import akka.http.scaladsl.server.directives.ContentTypeResolver
 import com.sun.mail.iap.ByteArray
 import deepsea.App
-import deepsea.database.DBManager.RsIterator
-import deepsea.database.{DBManager, DatabaseManager}
+import deepsea.dbase.DBManager.RsIterator
+import deepsea.dbase.{DBManager, DatabaseManager}
 import deepsea.files.FileManager.MongoFile
 import deepsea.files.classes.FileAttachment
 import deepsea.issues.IssueManagerHelper

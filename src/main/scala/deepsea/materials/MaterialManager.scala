@@ -1,39 +1,30 @@
 package deepsea.materials
 
-import akka.actor.Actor
+import akka.actor.{Actor, ActorSystem}
+import akka.http.scaladsl.model.headers
 import com.mongodb.BasicDBObject
-import com.mongodb.client.model.Filters
-import deepsea.database.{DBManager, DatabaseManager, MongoCodecs}
+import deepsea.dbase.{DBManager, MongoCodecs}
 import deepsea.materials.MaterialManager._
-import io.circe.{jawn, parser}
-import org.bson.Document
-import play.api.libs.json.{JsValue, Json}
-import io.circe.{Decoder, Encoder}
-import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}
-import org.bson.codecs.configuration.CodecRegistry
-import org.mongodb.scala.MongoClient.DEFAULT_CODEC_REGISTRY
-import org.mongodb.scala.{MongoCollection, MongoDatabase}
-import org.mongodb.scala.bson.codecs.Macros._
-import org.mongodb.scala.model.Filters.{and, equal}
-import scala.concurrent.Await
-import scala.concurrent.duration.{Duration, FiniteDuration, SECONDS}
-import io.circe.parser._
-import io.circe.{Decoder, Encoder}
-import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
-import io.circe.syntax.EncoderOps
-import io.circe._
 import io.circe.generic.JsonCodec
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.parser._
-import io.circe.generic.auto._
-import io.circe.syntax._
-import io.circe.generic.semiauto._
-import scala.collection.mutable.ListBuffer
-import scala.concurrent.Await
-import scala.concurrent.duration.{Duration, SECONDS}
-import io.circe.syntax._
-import org.mongodb.scala.result.InsertOneResult
+import io.circe.syntax.EncoderOps
+import io.circe.{Decoder, Encoder}
+import org.mongodb.scala.MongoCollection
+import org.mongodb.scala.model.Filters.{and, equal}
+import play.api.libs.json.{Json, __}
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.{Failure, Success}
 import java.util.{Date, UUID}
+import scala.collection.mutable.ListBuffer
+import scala.concurrent.{Await, ExecutionContextExecutor, Future}
+import scala.concurrent.duration.{Duration, SECONDS}
+
+import scala.language.postfixOps
+import slick.jdbc.PostgresProfile.api._
+import slick.lifted.{ProvenShape, TableQuery}
+import scala.io.Source
 
 object MaterialManager{
   case class GetMaterials(project: String)
@@ -146,7 +137,6 @@ object MaterialManager{
   implicit val EquipFileAddDecoder: Decoder[EquipFileAdd] = deriveDecoder[EquipFileAdd]
   implicit val EquipFileAddEncoder: Encoder[EquipFileAdd] = deriveEncoder[EquipFileAdd]
 
-
   case class SuppFile(supplier_id: Int, user_id: Int, url: String, rev: String, archived: Int, create_date: Long, type_name: String, id: Int, archived_date: Long)
   implicit val SuppFileDecoder: Decoder[SuppFile] = deriveDecoder[SuppFile]
   implicit val SuppFileEncoder: Encoder[SuppFile] = deriveEncoder[SuppFile]
@@ -167,6 +157,70 @@ object MaterialManager{
   implicit val RelatedTaskDecoder: Decoder[RelatedTask] = deriveDecoder[RelatedTask]
   implicit val RelatedTaskEncoder: Encoder[RelatedTask] = deriveEncoder[RelatedTask]
 
+
+  case class SpecMaterial(code: String, name: String, descr: String, units: String, weight: Double, supplier: String, statem_id: Int, dir_id: Int, user_id: Int, label: String, last_upd: Long, note: String, manufacturer: String)
+  class SpecMaterialTable(tag: Tag) extends Table[SpecMaterial](tag, "materials") {
+    val code = column[String]("stock_code")
+    val name = column[String]("name")
+    val descr = column[String]("description")
+    val units = column[String]("unit")
+    val weight = column[Double]("weight")
+    val supplier = column[String]("supplier")
+    val statem_id = column[Int]("statement_id")
+    val dir_id = column[Int]("directory_id")
+    val user_id = column[Int]("user_id")
+    val label = column[String]("default_label")
+    val last_upd = column[Long]("last_update")
+    val note = column[String]("note")
+    val manufacturer = column[String]("manufacturer")
+    override def * = (code, name, descr, units, weight, supplier, statem_id, dir_id, user_id, label, last_upd, note, manufacturer) <> ((SpecMaterial.apply _).tupled, SpecMaterial.unapply)
+  }
+  implicit val SpecMaterialDecoder: Decoder[SpecMaterial] = deriveDecoder[SpecMaterial]
+  implicit val SpecMaterialEncoder: Encoder[SpecMaterial] = deriveEncoder[SpecMaterial]
+
+
+  case class MaterialDirectory(id: Int, name: String, parent_id: Int, user_id: Int, date: Long, old_code: String)
+  class MaterialDirectoryTable(tag: Tag) extends Table[MaterialDirectory](tag, "materials_directory") {
+    val id = column[Int]("id", O.AutoInc)
+    val name = column[String]("name")
+    val parent_id = column[Int]("parent_id")
+    val user_id = column[Int]("user_id")
+    val date = column[Long]("date")
+    val old_code = column[String]("old_code")
+    override def * = (id, name, parent_id, user_id, date, old_code) <> ((MaterialDirectory.apply _).tupled, MaterialDirectory.unapply)
+  }
+  implicit val MaterialDirectoryDecoder: Decoder[MaterialDirectory] = deriveDecoder[MaterialDirectory]
+  implicit val MaterialDirectoryEncoder: Encoder[MaterialDirectory] = deriveEncoder[MaterialDirectory]
+
+  case class MaterialStatement(id: Int, name: String, project_id: Int, code: String, parent_id: Int)
+  class MaterialStatementTable(tag: Tag) extends Table[MaterialStatement](tag, "materials_statements") {
+    val id = column[Int]("id", O.AutoInc)
+    val name = column[String]("name")
+    val project_id = column[Int]("project_id")
+    val code = column[String]("code")
+    val parent_id = column[Int]("parent_id")
+    override def * = (id, name, project_id, code, parent_id) <> ((MaterialStatement.apply _).tupled, MaterialStatement.unapply)
+  }
+  implicit val MaterialStatementDecoder: Decoder[MaterialStatement] = deriveDecoder[MaterialStatement]
+  implicit val MaterialStatementEncoder: Encoder[MaterialStatement] = deriveEncoder[MaterialStatement]
+
+
+  case class GetSpecMaterials()
+  case class UpdateMaterials()
+
+  case class SupTaskRelations(id: Int, suppliers_id: Int, task_id: Int)
+  class SupTaskRelationsTable(tag: Tag) extends Table[SupTaskRelations](tag, "sup_task_relations") {
+    val id = column[Int]("id", O.AutoInc)
+    val suppliers_id = column[Int]("suppliers_id")
+    val task_id = column[Int]("task_id")
+    override def * = (id, suppliers_id, task_id) <> ((SupTaskRelations.apply _).tupled, SupTaskRelations.unapply)
+  }
+  implicit val SupTaskRelationsDecoder: Decoder[SupTaskRelations] = deriveDecoder[SupTaskRelations]
+  implicit val SupTaskRelationsEncoder: Encoder[SupTaskRelations] = deriveEncoder[SupTaskRelations]
+
+
+  case class SupTaskAdd(jsonValue: String)
+
 }
 class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper {
 
@@ -175,46 +229,13 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
   val collectionNodesHistory = "materials-n-nodes-h"
   val collectionHistory = "materials-n-h"
 
+
   override def preStart(): Unit = {
+
     //self ! GetEquipFiles(0)
-    self ! GetEquipments()
-//    DatabaseManager.GetMongoConnection() match {
-//      case Some(mongo) =>
-//        Await.result(mongo.getCollection(collectionNodes).find[MaterialNode](equal("project", "210101")).toFuture(), Duration(30, SECONDS)) match {
-//          case nodes =>
-//            val nodeCollection: MongoCollection[MaterialNode] = mongo.getCollection(collectionNodes)
-//
-//            nodes.foreach(n => {
-//              val node = n.copy(project = "200101")
-//              Await.result(nodeCollection.insertOne(node).toFuture(), Duration(30, SECONDS))
-//            })
-//
-//            sender() ! nodes.toList.asJson.noSpaces
-//          case _ => List.empty[MaterialNode]
-//        }
-//      case _ => List.empty[MaterialNode]
-//    }
-//    DatabaseManager.GetMongoConnection() match {
-//      case Some(mongo) =>
-//        Await.result(mongo.getCollection(collection).find[Material](new BasicDBObject("project", "210101")).toFuture(), Duration(30, SECONDS)) match {
-//          case dbMaterials =>
-//            val errors = ListBuffer.empty[String]
-//            dbMaterials.toList.groupBy(_.code).toList.foreach(g => {
-//              if (g._2.length > 1){
-//                errors += g._1
-//              }
-//            })
-//            val materials: MongoCollection[Material] = mongo.getCollection(collection)
-//            dbMaterials.foreach(mat => {
-//              val material = mat.copy(id = UUID.randomUUID().toString, project = "200101")
-//              Await.result(materials.insertOne(material).toFuture(), Duration(30, SECONDS))
-//            })
-//            sender() ! dbMaterials.toList.asJson.noSpaces
-//          case _ => List.empty[Material]
-//        }
-//      case _ => List.empty[Material]
-//    }
-    //self ! GetMaterials("200101")
+    //self ! GetEquipments()
+    //self ! GetSpecMaterials()
+    //self ! UpdateMaterials()
   }
   override def receive: Receive = {
     case GetMaterialNodes(project) =>
@@ -535,6 +556,113 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
       })
     case GetSupplierHistory(id) =>
       sender() ! getSupplierHistory(id).asJson.noSpaces
+    case GetSpecMaterials() =>
+      sender() ! getSpecMaterials.onComplete {
+        case Success(value) => value.asJson.noSpaces
+        case Failure(exception) => exception.toString
+      }
+    case UpdateMaterials() =>
+      getMaterialDirectories.onComplete{
+        case Success(directories) =>
+          val origMaterials = getMaterials.filter(_.project == "200101")
+          val labels = decode[List[SpecMaterial]](Source.fromResource("materials_label.json").mkString) match {
+            case Right(value) => value
+            case Left(value) => List.empty[SpecMaterial]
+          }
+          val upd = new Date().getTime
+          getMaterialStatements.onComplete {
+            case Success(statements) =>
+              origMaterials.map(m => {
+                val stId = labels.find(_.code == m.code) match {
+                  case Some(value) => value.statem_id
+                  case _ => 0
+                }
+                val dirId = directories.sortBy(_.old_code.length).findLast(x => m.code.contains(x)) match {
+                  case Some(value) => value.id
+                  case _ => 0
+                }
+                val userId = labels.find(_.code == m.code) match {
+                  case Some(value) => value.user_id
+                  case _ => 0
+                }
+                val label = labels.find(_.code == m.code) match {
+                  case Some(value) => value.label
+                  case _ => ""
+                }
+
+                SpecMaterial(
+                  m.code,
+                  m.name,
+                  m.description,
+                  m.units,
+                  m.singleWeight,
+                  m.provider,
+                  stId,
+                  dirId,
+                  userId,
+                  label,
+                  upd,
+                  m.note,
+                  m.manufacturer
+                )
+              }).map(x =>
+                DBManager.PostgresSQL.run(TableQuery[SpecMaterialTable] += x)
+              )
+              val q = 0
+            case Failure(exception) => exception.toString
+          }
+        case Failure(exception) => exception.toString
+      }
+    case SupTaskAdd(jsonValue) =>
+      val res = decode[SupTaskRelations](jsonValue) match {
+        case Right(supTask) => supTaskAdd(supTask)
+        case Left(error) => "error: wrong post data"
+      }
+      sender() ! res.asJson.noSpaces
     case _ => None
+  }
+  def getSpecMaterials: Future[List[SpecMaterial]] = {
+    DBManager.PostgresSQL.run(TableQuery[SpecMaterialTable].result).map(_.toList)
+  }
+  def getMaterialDirectories: Future[List[MaterialDirectory]] = {
+    DBManager.PostgresSQL.run(TableQuery[MaterialDirectoryTable].result).map(_.toList)
+  }
+  def getMaterialStatements: Future[List[MaterialStatement]] = {
+    DBManager.PostgresSQL.run(TableQuery[MaterialStatementTable].result).map(_.toList)
+  }
+  def updateDirectories(): Unit = {
+    getSpecMaterials.onComplete {
+      case Success(specMaterials) =>
+        val withLabels = specMaterials
+        val origMaterials = getMaterials
+        val origDirectories = getNodes.filter(_.project == "200101")
+
+        val root = origDirectories.filter(_.data.length == 3)
+        val s2 = origDirectories.filter(_.data.length == 6)
+        val s3 = origDirectories.filter(_.data.length == 9)
+        val s4 = origDirectories.filter(_.data.length == 12)
+
+
+        val table = TableQuery[MaterialDirectoryTable]
+
+        //root.map(r => DBManager.PostgresSQL.run((table returning table.map(_.id)) += MaterialDirectory(0, r.label, 0, 0, 0, r.data)))
+
+        getMaterialDirectories.onComplete{
+          case Success(directories) =>
+            s4.map(r => {
+              directories.filter(x => x.old_code.length == r.data.length - 3).find(d => r.data.contains(d.old_code)) match {
+                case Some(parent) =>
+                  DBManager.PostgresSQL.run(table += MaterialDirectory(0, r.label, parent.id, 0, 0, r.data))
+                case _ => None
+
+              }
+            })
+            val qw = 0
+          case Failure(exception) => println(exception)
+        }
+
+
+      case Failure(exception) => exception.toString
+    }
   }
 }

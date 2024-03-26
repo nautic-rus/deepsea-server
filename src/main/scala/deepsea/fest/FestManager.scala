@@ -1,7 +1,7 @@
 package deepsea.fest
 
 import akka.actor.Actor
-import deepsea.database.{DBManager, MongoCodecs}
+import deepsea.dbase.{DBManager, MongoCodecs}
 import deepsea.fest.FestManager._
 import deepsea.fest.classes.{BestPlayer, Mark, TeamWon}
 import deepsea.files.FileManager.{TreeFile, treeFilesCollection}

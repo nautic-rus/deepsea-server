@@ -8,7 +8,7 @@ import akka.util.ByteString
 import com.jcraft.jsch.{ChannelExec, JSch}
 import deepsea.App
 import deepsea.actors.ActorManager
-import deepsea.database.DBManager
+import deepsea.dbase.DBManager
 import deepsea.time.PlanHoursManager.ConsumeTodayPlanHours
 import deepsea.time.TimeAndWeatherManager._
 import play.api.libs.json.{JsArray, Json, OWrites}

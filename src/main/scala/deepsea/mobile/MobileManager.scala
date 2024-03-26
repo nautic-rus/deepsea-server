@@ -2,7 +2,7 @@ package deepsea.mobile
 
 import akka.actor.Actor
 import com.mongodb.BasicDBObject
-import deepsea.database.{DBManager, DatabaseManager, MongoCodecs}
+import deepsea.dbase.{DBManager, DatabaseManager, MongoCodecs}
 import deepsea.materials.MaterialManager.{GetMaterials, Material}
 import deepsea.mobile.MobileManager.{Drawing, DrawingInfo, GetDrawingInfo, GetDrawings, OrizInfo}
 import io.circe.syntax.EncoderOps

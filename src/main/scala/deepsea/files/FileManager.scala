@@ -3,7 +3,7 @@ package deepsea.files
 import akka.actor.Actor
 import com.mongodb.BasicDBObject
 import deepsea.App
-import deepsea.database.{DBManager, DatabaseManager, MongoCodecs}
+import deepsea.dbase.{DBManager, DatabaseManager, MongoCodecs}
 import deepsea.files.FileManager._
 import deepsea.files.classes.FileAttachment
 import deepsea.issues.IssueManagerHelper

@@ -3,8 +3,8 @@ package deepsea.time
 import akka.protobufv3.internal.Empty
 import deepsea.actors.ActorManager
 import deepsea.auth.AuthManagerHelper
-import deepsea.database.DBManager
-import deepsea.database.DBManager.{RsIterator, check}
+import deepsea.dbase.DBManager
+import deepsea.dbase.DBManager.{RsIterator, check}
 import deepsea.issues.IssueManager.UpdateDates
 import deepsea.time.PlanHoursManager.{PlanHour, SpecialDay}
 import deepsea.time.PlanManager._
