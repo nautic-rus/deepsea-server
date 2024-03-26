@@ -572,9 +572,9 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
       decode[SupTaskRelations](jsonValue) match {
         case Right(supTask) => supTaskAdd(supTask).onComplete {
           case Success(value) => sender() ! value.asJson.noSpaces
-          case Failure(exception) => sender() ! "error:" + exception.toString
+          case Failure(exception) => sender() ! ("error:" + exception.toString)
         }
-        case Left(error) =>  sender() ! "error: wrong post data"
+        case Left(error) =>  sender() ! ("error: wrong post data")
       }
     case _ => None
   }
