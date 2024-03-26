@@ -11,12 +11,14 @@ import deepsea.time.PlanManager.IssuePlan
 import org.aarboard.nextcloud.api.NextcloudConnector
 import org.mongodb.scala.model.Filters
 import slick.lifted.TableQuery
+
 import scala.language.postfixOps
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.{ProvenShape, TableQuery}
+
 import java.util.Date
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.Await
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.{Duration, SECONDS}
 import scala.io.Source
 
@@ -413,8 +415,8 @@ trait MaterialManagerHelper extends IssueManagerHelper {
     }
   }
 
-  def supTaskAdd(supTask: SupTaskRelations): String = {
-    DBManager.PostgresSQL.run(TableQuery[SupTaskRelationsTable] += supTask)
-    "success"
+  def supTaskAdd(supTask: SupTaskRelations): Future[Int] = {
+    val table = TableQuery[SupTaskRelationsTable]
+    DBManager.PostgresSQL.run((table returning (table.map(_.id))) += supTask)
   }
 }

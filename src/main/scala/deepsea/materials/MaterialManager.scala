@@ -160,7 +160,7 @@ object MaterialManager{
 
   case class SpecMaterial(code: String, name: String, descr: String, units: String, weight: Double, supplier: String, statem_id: Int, dir_id: Int, user_id: Int, label: String, last_upd: Long, note: String, manufacturer: String)
   class SpecMaterialTable(tag: Tag) extends Table[SpecMaterial](tag, "materials") {
-    val code = column[String]("stock_code")
+    val code = column[String]("stock_code", O.PrimaryKey)
     val name = column[String]("name")
     val descr = column[String]("description")
     val units = column[String]("unit")
@@ -206,6 +206,7 @@ object MaterialManager{
 
 
   case class GetSpecMaterials()
+  case class GetSpecDirectories()
   case class UpdateMaterials()
 
   case class SupTaskRelations(id: Int, suppliers_id: Int, task_id: Int)
@@ -235,7 +236,7 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
     //self ! GetEquipFiles(0)
     //self ! GetEquipments()
     //self ! GetSpecMaterials()
-    //self ! UpdateMaterials()
+    self ! UpdateMaterials()
   }
   override def receive: Receive = {
     case GetMaterialNodes(project) =>
@@ -561,64 +562,20 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
         case Success(value) => value.asJson.noSpaces
         case Failure(exception) => exception.toString
       }
-    case UpdateMaterials() =>
-      getMaterialDirectories.onComplete{
-        case Success(directories) =>
-          val origMaterials = getMaterials.filter(_.project == "200101")
-          val labels = decode[List[SpecMaterial]](Source.fromResource("materials_label.json").mkString) match {
-            case Right(value) => value
-            case Left(value) => List.empty[SpecMaterial]
-          }
-          val upd = new Date().getTime
-          getMaterialStatements.onComplete {
-            case Success(statements) =>
-              origMaterials.map(m => {
-                val stId = labels.find(_.code == m.code) match {
-                  case Some(value) => value.statem_id
-                  case _ => 0
-                }
-                val dirId = directories.sortBy(_.old_code.length).findLast(x => m.code.contains(x)) match {
-                  case Some(value) => value.id
-                  case _ => 0
-                }
-                val userId = labels.find(_.code == m.code) match {
-                  case Some(value) => value.user_id
-                  case _ => 0
-                }
-                val label = labels.find(_.code == m.code) match {
-                  case Some(value) => value.label
-                  case _ => ""
-                }
-
-                SpecMaterial(
-                  m.code,
-                  m.name,
-                  m.description,
-                  m.units,
-                  m.singleWeight,
-                  m.provider,
-                  stId,
-                  dirId,
-                  userId,
-                  label,
-                  upd,
-                  m.note,
-                  m.manufacturer
-                )
-              }).map(x =>
-                DBManager.PostgresSQL.run(TableQuery[SpecMaterialTable] += x)
-              )
-              val q = 0
-            case Failure(exception) => exception.toString
-          }
+    case GetSpecDirectories() =>
+      sender() ! getMaterialDirectories.onComplete {
+        case Success(value) => value.asJson.noSpaces
         case Failure(exception) => exception.toString
       }
+
     case SupTaskAdd(jsonValue) =>
-      val res = decode[SupTaskRelations](jsonValue) match {
-        case Right(supTask) => supTaskAdd(supTask)
-        case Left(error) => "error: wrong post data"
+      decode[SupTaskRelations](jsonValue) match {
+        case Right(supTask) => supTaskAdd(supTask).onComplete {
+          case Success(value) => sender() ! value.asJson.noSpaces
+          case Failure(exception) => sender() ! "error:" + exception.toString
+        }
+        case Left(error) =>  sender() ! "error: wrong post data"
       }
-      sender() ! res.asJson.noSpaces
     case _ => None
   }
   def getSpecMaterials: Future[List[SpecMaterial]] = {
@@ -662,6 +619,62 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
         }
 
 
+      case Failure(exception) => exception.toString
+    }
+  }
+  def updateMaterials(): Unit = {
+    getMaterialDirectories.onComplete{
+      case Success(directories) =>
+        val origMaterials = getMaterials.filter(_.project == "200101")
+        val labels = decode[List[SpecMaterial]](Source.fromResource("materials_label.json").mkString) match {
+          case Right(value) => value
+          case Left(value) => List.empty[SpecMaterial]
+        }
+        val upd = new Date().getTime
+        getMaterialStatements.onComplete {
+          case Success(statements) =>
+            origMaterials.map(m => {
+              val rootName = directories.sortBy(_.old_code.length).reverse.findLast(x => m.code.contains(x)) match {
+                case Some(value) => value.name
+                case _ => ""
+              }
+              val stId = statements.find(x => x.name.contains(rootName)) match {
+                case Some(value) => value.id
+                case _ => 0
+              }
+              val dirId = directories.sortBy(_.old_code.length).findLast(x => m.code.contains(x.old_code)) match {
+                case Some(value) => value.id
+                case _ => 0
+              }
+              val userId = labels.find(_.code == m.code) match {
+                case Some(value) => value.user_id
+                case _ => 0
+              }
+              val label = labels.find(_.code == m.code) match {
+                case Some(value) => value.label
+                case _ => ""
+              }
+              SpecMaterial(
+                m.code,
+                m.name,
+                m.description,
+                m.units,
+                m.singleWeight,
+                m.provider,
+                stId,
+                dirId,
+                49,
+                label,
+                upd,
+                m.note,
+                m.manufacturer
+              )
+            }).filter(_.statem_id != 0).filter(_.dir_id != 0).map(specMaterial =>
+              DBManager.PostgresSQL.run(TableQuery[SpecMaterialTable] += specMaterial)
+            )
+            val q = 0
+          case Failure(exception) => exception.toString
+        }
       case Failure(exception) => exception.toString
     }
   }

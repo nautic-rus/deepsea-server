@@ -25,7 +25,7 @@ import deepsea.files.FileManager.{CreateDocumentCloudDirectory, CreateFile, Crea
 import deepsea.files.classes.FileAttachment
 import deepsea.http.HTTPManager.server
 import deepsea.issues.IssueManager._
-import deepsea.materials.MaterialManager.{AddEquipFile, AddMaterialComplect, AddSupFile, AddSupplierHistory, DelEquipFile, DelRelatedTask, DelSupFile, DeleteEquipment, DeleteSupplier, GetEquipFiles, GetEquipments, GetMaterialComplects, GetMaterialNodes, GetMaterials, GetMaterialsCode, GetRelatedTasks, GetSFIs, GetSupFiles, GetSupplierHistory, GetWCDrawings, GetWCZones, GetWeightControl, InsertEquipment, InsertSupplier, RemoveMaterialComplect, RemoveWeightControl, SetWeightControl, SupTaskAdd, UpdateMaterial, UpdateMaterialComplect, UpdateMaterialNode}
+import deepsea.materials.MaterialManager.{AddEquipFile, AddMaterialComplect, AddSupFile, AddSupplierHistory, DelEquipFile, DelRelatedTask, DelSupFile, DeleteEquipment, DeleteSupplier, GetEquipFiles, GetEquipments, GetMaterialComplects, GetMaterialNodes, GetMaterials, GetMaterialsCode, GetRelatedTasks, GetSFIs, GetSpecDirectories, GetSpecMaterials, GetSupFiles, GetSupplierHistory, GetWCDrawings, GetWCZones, GetWeightControl, InsertEquipment, InsertSupplier, RemoveMaterialComplect, RemoveWeightControl, SetWeightControl, SupTaskAdd, UpdateMaterial, UpdateMaterialComplect, UpdateMaterialNode}
 import deepsea.mobile.MobileManager.{GetDrawingInfo, GetDrawings}
 import deepsea.osm.OsmManager.{AddPLS, GetPLS}
 import deepsea.rocket.RocketChatManager.SendNotification
@@ -741,6 +741,13 @@ class HTTPManager extends Actor {
         (post & path("addSupHistory") & entity(as[String])) { (jsonValue) =>
           askFor(ActorManager.materials, AddSupplierHistory(jsonValue))
         },
+        (get & path("specMaterials")) {
+          askFor(ActorManager.materials, GetSpecMaterials())
+        },
+        (get & path("specMaterials")) {
+          askFor(ActorManager.materials, GetSpecDirectories())
+        },
+
 
         (post & path("supTaskAdd") & entity(as[String])) { (supTask) =>
           askFor(ActorManager.materials, SupTaskAdd(supTask))
