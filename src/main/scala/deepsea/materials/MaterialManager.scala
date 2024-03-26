@@ -569,13 +569,14 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
       }
 
     case SupTaskAdd(jsonValue) =>
-      decode[SupTaskRelations](jsonValue) match {
-        case Right(supTask) => supTaskAdd(supTask).onComplete {
-          case Success(value) => sender() ! value.asJson.noSpaces
-          case Failure(exception) => sender() ! ("error:" + exception.toString)
-        }
-        case Left(error) =>  sender() ! ("error: wrong post data")
-      }
+      sender() ! (decode[SupTaskRelations](jsonValue) match {
+        case Right(supTask) =>
+          Await.result(supTaskAdd(supTask), Duration(5, SECONDS)) match {
+            case response: Int => response.asJson.noSpaces
+            case _ => "error: error in sql query"
+          }
+        case Left(error) => "error: wrong post data"
+      })
     case _ => None
   }
   def getSpecMaterials: Future[List[SpecMaterial]] = {
