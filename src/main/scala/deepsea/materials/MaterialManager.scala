@@ -20,10 +20,11 @@ import java.util.{Date, UUID}
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{Await, ExecutionContextExecutor, Future}
 import scala.concurrent.duration.{Duration, SECONDS}
-
 import scala.language.postfixOps
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.{ProvenShape, TableQuery}
+
+import java.util.concurrent.TimeUnit
 import scala.io.Source
 
 object MaterialManager{
@@ -558,16 +559,15 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
     case GetSupplierHistory(id) =>
       sender() ! getSupplierHistory(id).asJson.noSpaces
     case GetSpecMaterials() =>
-      sender() ! getSpecMaterials.onComplete {
-        case Success(value) => value.asJson.noSpaces
-        case Failure(exception) => exception.toString
-      }
+      sender() ! (Await.result(getSpecMaterials, Duration(5, SECONDS)) match {
+        case response: List[SpecMaterial] => response.asJson.noSpaces
+        case _ => "error: wrong sql query"
+      })
     case GetSpecDirectories() =>
-      sender() ! getMaterialDirectories.onComplete {
-        case Success(value) => value.asJson.noSpaces
-        case Failure(exception) => exception.toString
-      }
-
+      sender() ! (Await.result(getMaterialDirectories, Duration(5, SECONDS)) match {
+        case response: List[MaterialDirectory] => response.asJson.noSpaces
+        case _ => "error: wrong sql query"
+      })
     case SupTaskAdd(jsonValue) =>
       sender() ! (decode[SupTaskRelations](jsonValue) match {
         case Right(supTask) =>

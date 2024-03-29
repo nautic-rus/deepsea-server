@@ -744,7 +744,7 @@ class HTTPManager extends Actor {
         (get & path("specMaterials")) {
           askFor(ActorManager.materials, GetSpecMaterials())
         },
-        (get & path("specMaterials")) {
+        (get & path("specDirectories")) {
           askFor(ActorManager.materials, GetSpecDirectories())
         },
 
