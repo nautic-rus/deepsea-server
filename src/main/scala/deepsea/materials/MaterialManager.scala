@@ -118,7 +118,7 @@ object MaterialManager{
   implicit val EquipmentAddDecoder: Decoder[EquipmentAdd] = deriveDecoder[EquipmentAdd]
   implicit val EquipmentAddEncoder: Encoder[EquipmentAdd] = deriveEncoder[EquipmentAdd]
 
-  case class Supplier(id: Int, user_id: Int, equip_id: Int, name: String, description: String, comment: String, manufacturer: String, status: String, approvement: Long, last_update: Long)
+  case class Supplier(id: Int, user_id: Int, equip_id: Int, name: String, sup_id: Int, description: String, comment: String, manufacturer: String, status: String, approvement: Long, last_update: Long)
   implicit val SupplierDecoder: Decoder[Supplier] = deriveDecoder[Supplier]
   implicit val SupplierEncoder: Encoder[Supplier] = deriveEncoder[Supplier]
 
@@ -159,7 +159,7 @@ object MaterialManager{
   implicit val RelatedTaskEncoder: Encoder[RelatedTask] = deriveEncoder[RelatedTask]
 
 
-  case class SpecMaterial(code: String, name: String, descr: String, units: String, weight: Double, supplier: String, statem_id: Int, dir_id: Int, user_id: Int, label: String, last_upd: Long, note: String, manufacturer: String)
+  case class SpecMaterial(code: String, name: String, descr: String, units: String, weight: Double, supplier: String, statem_id: Int, dir_id: Int, user_id: Int, label: String, last_upd: Long, note: String, manufacturer: String, coef: Double)
   class SpecMaterialTable(tag: Tag) extends Table[SpecMaterial](tag, "materials") {
     val code = column[String]("stock_code", O.PrimaryKey)
     val name = column[String]("name")
@@ -174,7 +174,8 @@ object MaterialManager{
     val last_upd = column[Long]("last_update")
     val note = column[String]("note")
     val manufacturer = column[String]("manufacturer")
-    override def * = (code, name, descr, units, weight, supplier, statem_id, dir_id, user_id, label, last_upd, note, manufacturer) <> ((SpecMaterial.apply _).tupled, SpecMaterial.unapply)
+    val coef = column[Double]("coef")
+    override def * = (code, name, descr, units, weight, supplier, statem_id, dir_id, user_id, label, last_upd, note, manufacturer, coef) <> ((SpecMaterial.apply _).tupled, SpecMaterial.unapply)
   }
   implicit val SpecMaterialDecoder: Decoder[SpecMaterial] = deriveDecoder[SpecMaterial]
   implicit val SpecMaterialEncoder: Encoder[SpecMaterial] = deriveEncoder[SpecMaterial]
@@ -208,7 +209,9 @@ object MaterialManager{
 
   case class GetSpecMaterials()
   case class GetSpecDirectories()
+  case class GetSpecStatements()
   case class UpdateMaterials()
+  case class AddSpecMaterial(json: String)
 
   case class SupTaskRelations(id: Int, suppliers_id: Int, task_id: Int)
   class SupTaskRelationsTable(tag: Tag) extends Table[SupTaskRelations](tag, "sup_task_relations") {
@@ -221,7 +224,19 @@ object MaterialManager{
   implicit val SupTaskRelationsEncoder: Encoder[SupTaskRelations] = deriveEncoder[SupTaskRelations]
 
 
+  case class SupName(id: Int, name: String)
+  class SupNameTable(tag: Tag) extends Table[SupName](tag, "suppliers_name") {
+    val id = column[Int]("id", O.AutoInc)
+    val name = column[String]("name")
+    override def * = (id, name) <> ((SupName.apply _).tupled, SupName.unapply)
+  }
+  implicit val SupNameDecoder: Decoder[SupName] = deriveDecoder[SupName]
+  implicit val SupNameEncoder: Encoder[SupName] = deriveEncoder[SupName]
+
+
+
   case class SupTaskAdd(jsonValue: String)
+  case class GetSupNames()
 
 }
 class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper {
@@ -237,7 +252,7 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
     //self ! GetEquipFiles(0)
     //self ! GetEquipments()
     //self ! GetSpecMaterials()
-    self ! UpdateMaterials()
+    //self ! UpdateMaterials()
   }
   override def receive: Receive = {
     case GetMaterialNodes(project) =>
@@ -568,6 +583,11 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
         case response: List[MaterialDirectory] => response.asJson.noSpaces
         case _ => "error: wrong sql query"
       })
+    case GetSpecStatements() =>
+      sender() ! (Await.result(getMaterialStatements, Duration(5, SECONDS)) match {
+        case response: List[MaterialStatement] => response.asJson.noSpaces
+        case _ => "error: wrong sql query"
+      })
     case SupTaskAdd(jsonValue) =>
       sender() ! (decode[SupTaskRelations](jsonValue) match {
         case Right(supTask) =>
@@ -577,10 +597,28 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
           }
         case Left(error) => "error: wrong post data"
       })
+    case AddSpecMaterial(jsonValue) =>
+      sender() ! (decode[SpecMaterial](jsonValue) match {
+        case Right(value) =>
+          addSpecMaterial(value)
+          "success"
+        case Left(error) => "error: wrong post data"
+      })
+    case GetSupNames() =>
+      sender() ! (Await.result(getSupNames, Duration(5, SECONDS)) match {
+        case response: List[SupName] => response.asJson.noSpaces
+        case _ => "error: wrong sql query"
+      })
     case _ => None
+  }
+  def getSupNames: Future[List[SupName]] = {
+    DBManager.PostgresSQL.run(TableQuery[SupNameTable].result).map(_.toList)
   }
   def getSpecMaterials: Future[List[SpecMaterial]] = {
     DBManager.PostgresSQL.run(TableQuery[SpecMaterialTable].result).map(_.toList)
+  }
+  def addSpecMaterial(specMaterial: SpecMaterial) = {
+    DBManager.PostgresSQL.run(TableQuery[SpecMaterialTable] += specMaterial)
   }
   def getMaterialDirectories: Future[List[MaterialDirectory]] = {
     DBManager.PostgresSQL.run(TableQuery[MaterialDirectoryTable].result).map(_.toList)
@@ -618,8 +656,6 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
             val qw = 0
           case Failure(exception) => println(exception)
         }
-
-
       case Failure(exception) => exception.toString
     }
   }
@@ -668,7 +704,8 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
                 label,
                 upd,
                 m.note,
-                m.manufacturer
+                m.manufacturer,
+                m.coefficient
               )
             }).filter(_.statem_id != 0).filter(_.dir_id != 0).map(specMaterial =>
               DBManager.PostgresSQL.run(TableQuery[SpecMaterialTable] += specMaterial)
