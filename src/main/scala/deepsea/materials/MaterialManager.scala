@@ -122,7 +122,7 @@ object MaterialManager{
   implicit val SupplierDecoder: Decoder[Supplier] = deriveDecoder[Supplier]
   implicit val SupplierEncoder: Encoder[Supplier] = deriveEncoder[Supplier]
 
-  case class SupplierAdd(id: Int, approvement: Long, comment: String, status_id: Int, equip_id: Int, user_id: Int, name: String, manufacturer: String, description: String)
+  case class SupplierAdd(id: Int, approvement: Long, comment: String, status_id: Int, equip_id: Int, user_id: Int, sup_id: Int, manufacturer: String, description: String)
   implicit val SupplierAddDecoder: Decoder[SupplierAdd] = deriveDecoder[SupplierAdd]
   implicit val SupplierAddEncoder: Encoder[SupplierAdd] = deriveEncoder[SupplierAdd]
 
@@ -493,7 +493,7 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
               try {
                 var supId = sup.id
                 if (sup.id == 0){
-                  val query = s"insert into suppliers values (default, ${sup.user_id}, ${sup.equip_id}, '${sup.name}', '${sup.description}', '${sup.comment}', ${sup.status_id}, '${sup.manufacturer}, ${sup.approvement}', $d) returning id"
+                  val query = s"insert into suppliers values (default, ${sup.user_id}, ${sup.equip_id}, '${sup.description}', '${sup.comment}', ${sup.status_id}, '${sup.manufacturer}, ${sup.approvement}', 0, $d, ${sup.sup_id}, '') returning id"
                   val rs = stmt.executeQuery(query)
                   while (rs.next()) {
                     supId = rs.getInt("id")
@@ -501,7 +501,7 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
                   rs.close()
                 }
                 else {
-                  val query = s"update suppliers set user_id = ${sup.user_id}, equ_id = ${sup.equip_id}, name = '${sup.name}', description = '${sup.description}', comment = '${sup.comment}', status_id = ${sup.status_id}, manufacturer = '${sup.manufacturer}', approvement = ${sup.approvement}, last_update = $d where id = ${sup.id}"
+                  val query = s"update suppliers set user_id = ${sup.user_id}, equ_id = ${sup.equip_id}, suppliers_name_id = '${sup.sup_id}', description = '${sup.description}', comment = '${sup.comment}', status_id = ${sup.status_id}, manufacturer = '${sup.manufacturer}', approvement = ${sup.approvement}, last_update = $d where id = ${sup.id}"
                   stmt.execute(query)
                 }
                 stmt.close()
