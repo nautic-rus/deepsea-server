@@ -237,6 +237,7 @@ object MaterialManager{
 
   case class SupTaskAdd(jsonValue: String)
   case class GetSupNames()
+  case class AddSupName(jsonValue: String)
 
 }
 class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper {
@@ -608,6 +609,15 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
       sender() ! (Await.result(getSupNames, Duration(5, SECONDS)) match {
         case response: List[SupName] => response.asJson.noSpaces
         case _ => "error: wrong sql query"
+      })
+    case AddSupName(jsonValue) =>
+      sender() ! (decode[SupName](jsonValue) match {
+        case Right(value) =>
+          Await.result(addSupName(value), Duration(5, SECONDS)) match {
+            case response: Int => response.asJson.noSpaces
+            case _ => "error: wrong sql query"
+          }
+        case Left(error) => "error: wrong post data"
       })
     case _ => None
   }

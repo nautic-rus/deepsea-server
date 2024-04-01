@@ -756,6 +756,9 @@ class HTTPManager extends Actor {
         (get & path("supNames")) {
           askFor(ActorManager.materials, GetSupNames())
         },
+        (get & path("addSupName")) {
+          askFor(ActorManager.materials, GetSupNames())
+        },
 
         (post & path("supTaskAdd") & entity(as[String])) { (supTask) =>
           askFor(ActorManager.materials, SupTaskAdd(supTask))

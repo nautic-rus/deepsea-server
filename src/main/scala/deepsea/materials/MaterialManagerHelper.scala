@@ -420,4 +420,8 @@ trait MaterialManagerHelper extends IssueManagerHelper {
     val table = TableQuery[SupTaskRelationsTable]
     DBManager.PostgresSQL.run((table returning (table.map(_.id))) += supTask)
   }
+  def addSupName(supName: SupName): Future[Int] = {
+    val table = TableQuery[SupNameTable]
+    DBManager.PostgresSQL.run((table returning (table.map(_.id))) += supName)
+  }
 }
