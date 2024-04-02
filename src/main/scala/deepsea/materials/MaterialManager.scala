@@ -493,7 +493,7 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
               try {
                 var supId = sup.id
                 if (sup.id == 0){
-                  val query = s"insert into suppliers values (default, ${sup.user_id}, ${sup.equip_id}, '${sup.description}', '${sup.comment}', ${sup.status_id}, '${sup.manufacturer}, ${sup.approvement}', 0, $d, ${sup.sup_id}, '') returning id"
+                  val query = s"insert into suppliers values (default, ${sup.user_id}, ${sup.equip_id}, '${sup.description}', '${sup.comment}', ${sup.status_id}, '${sup.manufacturer}', ${sup.approvement}, 0, $d, ${sup.sup_id}, '') returning id"
                   val rs = stmt.executeQuery(query)
                   while (rs.next()) {
                     supId = rs.getInt("id")
