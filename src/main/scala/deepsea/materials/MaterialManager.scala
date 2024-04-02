@@ -254,6 +254,7 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
     //self ! GetEquipments()
     //self ! GetSpecMaterials()
     //self ! UpdateMaterials()
+
   }
   override def receive: Receive = {
     case GetMaterialNodes(project) =>
@@ -501,7 +502,7 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
                   rs.close()
                 }
                 else {
-                  val query = s"update suppliers set user_id = ${sup.user_id}, equ_id = ${sup.equip_id}, suppliers_name_id = '${sup.sup_id}', description = '${sup.description}', comment = '${sup.comment}', status_id = ${sup.status_id}, manufacturer = '${sup.manufacturer}', approvement = ${sup.approvement}, last_update = $d where id = ${sup.id}"
+                  val query = s"update suppliers set user_id = ${sup.user_id}, equ_id = ${sup.equip_id}, description = '${sup.description}', comment = '${sup.comment}', status_id = ${sup.status_id}, manufacturer = '${sup.manufacturer}', approvement = ${sup.approvement}, last_update = $d where id = ${sup.id}"
                   stmt.execute(query)
                 }
                 stmt.close()
