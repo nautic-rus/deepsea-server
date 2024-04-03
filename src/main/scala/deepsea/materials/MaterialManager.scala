@@ -210,6 +210,7 @@ object MaterialManager{
   case class GetSpecMaterials()
   case class GetSpecDirectories()
   case class GetSpecStatements()
+  case class GetSupStatuses()
   case class UpdateMaterials()
   case class AddSpecMaterial(json: String)
 
@@ -233,6 +234,15 @@ object MaterialManager{
   implicit val SupNameDecoder: Decoder[SupName] = deriveDecoder[SupName]
   implicit val SupNameEncoder: Encoder[SupName] = deriveEncoder[SupName]
 
+
+  case class SupStatus(id: Int, name: String)
+  class SupStatusTable(tag: Tag) extends Table[SupStatus](tag, "suppliers_status") {
+    val name = column[String]("name")
+    val id = column[Int]("id", O.AutoInc)
+    override def * = (id, name) <> ((SupStatus.apply _).tupled, SupStatus.unapply)
+  }
+  implicit val SupStatusDecoder: Decoder[SupStatus] = deriveDecoder[SupStatus]
+  implicit val SupStatusEncoder: Encoder[SupStatus] = deriveEncoder[SupStatus]
 
 
   case class SupTaskAdd(jsonValue: String)
@@ -590,6 +600,11 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
         case response: List[MaterialStatement] => response.asJson.noSpaces
         case _ => "error: wrong sql query"
       })
+    case GetSupStatuses() =>
+      sender() ! (Await.result(getSupStatuses, Duration(5, SECONDS)) match {
+        case response: List[SupStatus] => response.asJson.noSpaces
+        case _ => "error: wrong sql query"
+      })
     case SupTaskAdd(jsonValue) =>
       sender() ! (decode[SupTaskRelations](jsonValue) match {
         case Right(supTask) =>
@@ -636,6 +651,9 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
   }
   def getMaterialStatements: Future[List[MaterialStatement]] = {
     DBManager.PostgresSQL.run(TableQuery[MaterialStatementTable].result).map(_.toList)
+  }
+  def getSupStatuses: Future[List[SupStatus]] = {
+    DBManager.PostgresSQL.run(TableQuery[SupStatusTable].result).map(_.toList)
   }
   def updateDirectories(): Unit = {
     getSpecMaterials.onComplete {
