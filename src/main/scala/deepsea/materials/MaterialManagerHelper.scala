@@ -238,7 +238,7 @@ trait MaterialManagerHelper extends IssueManagerHelper {
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val query = s"select * from suppliers_files where (supplier_id = $id or $id = 0) and archived = 0"
+        val query = s"select * from suppliers_files where (supplier_id = $id or $id = 0)"
         try {
           val rs = s.executeQuery(query)
           while (rs.next()) {

@@ -648,6 +648,8 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
           }
         case Left(error) => "error: wrong post data".asJson.noSpaces
       })
+    case UpdateMaterials() =>
+      updateMaterials()
     case _ => None
   }
   def getSupNames: Future[List[SupName]] = {
@@ -722,27 +724,117 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
       case Failure(exception) => exception.toString
     }
   }
+  def updateMaterialsLang(): Unit = {
+    val origMaterials = getMaterials.filter(_.project == "210101")
+    val materials = Await.result(getSpecMaterials, Duration(15, SECONDS)) match {
+      case response: List[SpecMaterial] => response
+      case _ => List.empty[SpecMaterial]
+    }
+    val statems = Await.result(getMaterialStatements, Duration(15, SECONDS)) match {
+      case response: List[MaterialStatement] => response
+      case _ => List.empty[MaterialStatement]
+    }
+    val projectStatems = statems.filter(_.project_id == 2)
+    materials.foreach(m => {
+      if (projectStatems.contains(m.statem_id)){
+        origMaterials.find(_.code == m.code) match {
+          case Some(value) =>
+            val named = m.copy(name = value.name(), descr = value.description())
+            DBManager.PostgresSQL.run(TableQuery[SpecMaterialTable].update(named))
+          case _ => None
+        }
+      }
+    })
+  }
+
   def updateMaterials(): Unit = {
     getMaterialDirectories.onComplete{
       case Success(directories) =>
-        val origMaterials = getMaterials.filter(_.project == "200101")
+        val origMaterials = getMaterials
+        val origNodes = getNodes
         val labels = decode[List[SpecMaterial]](Source.fromResource("materials_label.json").mkString) match {
           case Right(value) => value
           case Left(value) => List.empty[SpecMaterial]
         }
+        val issueProjects = getIssueProjects
         val upd = new Date().getTime
+        val updDirectories: List[MaterialDirectory] = Await.result(getMaterialDirectories, Duration(15, SECONDS)) match {
+          case response: List[MaterialDirectory] => response
+          case _ => List.empty[MaterialDirectory]
+        }
         getMaterialStatements.onComplete {
           case Success(statements) =>
             origMaterials.map(m => {
-              val rootName = directories.sortBy(_.old_code.length).reverse.findLast(x => m.code.contains(x)) match {
-                case Some(value) => value.name
-                case _ => ""
+              val rootNames = origNodes.filter(x =>  x.project == m.project && m.code.contains(x.data)).sortBy(_.data.length)
+              rootNames.foreach(rn => {
+                updDirectories.find(_.old_code == rn.data) match {
+                  case Some(dir) => None
+                  case _ =>
+                    val ind = rootNames.indexOf(rn)
+                    val parentId = if (ind == 0) 0 else{
+                      val prev = rootNames(ind - 1)
+                      updDirectories.find(_.old_code == prev.data) match {
+                        case Some(value) => value.id
+                        case _ => -1
+                      }
+                    }
+                    if (parentId == -1){
+                      val error = 0
+                    }
+                    val projectId = issueProjects.find(_.rkd == m.project) match {
+                      case Some(value) => value.id
+                      case _ => 0
+                    }
+                    Await.result(DBManager.PostgresSQL.run(TableQuery[MaterialDirectoryTable] += MaterialDirectory(0, rn.label, parentId, 0, 0, rn.data, projectId, 0)), Duration(5, SECONDS))
+                }
+              })
+
+
+              val stId = updDirectories.filter(_.old_code != "").sortBy(_.old_code.length).filter(x => x.project_id == (if (m.project == "210101") 2 else 1)).find(x => m.code.contains(x.old_code)) match {
+                case Some(dir) =>
+                  var dirTop = dir
+                  while (dirTop.parent_id != 0){
+                    dirTop = updDirectories.find(_.id == dirTop.parent_id).get
+                  }
+                  statements.find(x => x.name.contains(dirTop.name) || dirTop.name.contains(x.name)) match {
+                    case Some(stmt) => stmt.id
+                    case _ =>
+                      if (m.project == "200101"){
+                        100000
+                      }
+                      else if (m.project == "210101"){
+                        100001
+                      }
+                      else{
+                        0
+                      }
+                  }
+                case _ => updDirectories.filter(_.old_code != "").sortBy(_.old_code.length).find(x => m.code.contains(x.old_code)) match {
+                  case Some(dir) =>
+                    var dirTop = dir
+                    while (dirTop.parent_id != 0){
+                      dirTop = updDirectories.find(_.id == dirTop.parent_id).get
+                    }
+                    statements.find(x => x.name.contains(dirTop.name) || dirTop.name.contains(x.name)) match {
+                      case Some(stmt) => stmt.id
+                      case _ =>
+                        if (m.project == "200101"){
+                          100000
+                        }
+                        else if (m.project == "210101"){
+                          100001
+                        }
+                        else{
+                          0
+                        }
+                    }
+                  case _ => 0
+                }
               }
-              val stId = statements.find(x => x.name.contains(rootName)) match {
-                case Some(value) => value.id
-                case _ => 0
+              if (stId == 0){
+                val error = 1
               }
-              val dirId = directories.sortBy(_.old_code.length).findLast(x => m.code.contains(x.old_code)) match {
+              val dirId = updDirectories.sortBy(_.old_code.length).findLast(x => m.code.contains(x.old_code)) match {
                 case Some(value) => value.id
                 case _ => 0
               }
