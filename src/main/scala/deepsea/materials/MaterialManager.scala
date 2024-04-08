@@ -210,6 +210,15 @@ object MaterialManager{
   implicit val MaterialStatementDecoder: Decoder[MaterialStatement] = deriveDecoder[MaterialStatement]
   implicit val MaterialStatementEncoder: Encoder[MaterialStatement] = deriveEncoder[MaterialStatement]
 
+  case class SupMatRelations(id: Int, supplier_id: Int, materials_id: Int)
+  class SupMatRelationsTable(tag: Tag) extends Table[SupMatRelations](tag, "sup_mat_relations") {
+    val id = column[Int]("id", O.AutoInc, O.PrimaryKey)
+    val supplier_id = column[Int]("supplier_id")
+    val materials_id = column[Int]("materials_id")
+    override def * = (id, supplier_id, materials_id) <> ((SupMatRelations.apply _).tupled, SupMatRelations.unapply)
+  }
+  implicit val SupMatRelationsDecoder: Decoder[SupMatRelations] = deriveDecoder[SupMatRelations]
+  implicit val SupMatRelationsEncoder: Encoder[SupMatRelations] = deriveEncoder[SupMatRelations]
 
   case class GetSpecMaterials()
   case class GetSpecDirectories()
@@ -254,6 +263,8 @@ object MaterialManager{
   case class SupTaskAdd(jsonValue: String)
   case class GetSupNames()
   case class AddSupName(jsonValue: String)
+  case class GetSupMatRelations()
+  case class AddSupMatRelation(jsonValue: String)
 
 }
 class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper {
@@ -648,8 +659,20 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
           }
         case Left(error) => "error: wrong post data".asJson.noSpaces
       })
+    case GetSupMatRelations() =>
+      sender() ! (Await.result(getSupMatRelations, Duration(5, SECONDS)) match {
+        case response: List[SupMatRelations] => response.asJson.noSpaces
+        case _ => "error: wrong sql query".asJson.noSpaces
+      })
+    case AddSupMatRelation(jsonValue) =>
+      sender() ! (decode[SupMatRelations](jsonValue) match {
+        case Right(value) =>
+          addSupMatRelation(value)
+          "success".asJson.noSpaces
+        case Left(error) => "error: wrong post data".asJson.noSpaces
+      })
     case UpdateMaterials() =>
-      updateMaterials()
+      //updateMaterials()
     case _ => None
   }
   def getSupNames: Future[List[SupName]] = {
@@ -690,6 +713,12 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
   }
   def getSupStatuses: Future[List[SupStatus]] = {
     DBManager.PostgresSQL.run(TableQuery[SupStatusTable].result).map(_.toList)
+  }
+  def getSupMatRelations: Future[List[SupMatRelations]] = {
+    DBManager.PostgresSQL.run(TableQuery[SupMatRelationsTable].result).map(_.toList)
+  }
+  def addSupMatRelation(supMatRelation: SupMatRelations) = {
+    DBManager.PostgresSQL.run(TableQuery[SupMatRelationsTable].insertOrUpdate(supMatRelation))
   }
   def updateDirectories(): Unit = {
     getSpecMaterials.onComplete {
