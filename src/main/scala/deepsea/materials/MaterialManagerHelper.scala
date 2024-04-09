@@ -424,4 +424,39 @@ trait MaterialManagerHelper extends IssueManagerHelper {
     val table = TableQuery[SupNameTable]
     DBManager.PostgresSQL.run((table returning (table.map(_.id))) += supName)
   }
+
+  def getEqSupMatRelations(supId: String): List[EqSupMatRelations] = {
+    val res = ListBuffer.empty[EqSupMatRelations]
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val query = Source.fromResource("queries/supmatrelations.sql").mkString.replace("&supId", supId)
+        try {
+          val rs = s.executeQuery(query)
+          while (rs.next()) {
+            res += EqSupMatRelations(
+              rs.getInt("materials_id"),
+              rs.getString("name"),
+              rs.getString("stock_code"),
+              rs.getString("doc_number"),
+              rs.getInt("issue_id"),
+              rs.getInt("equ_id"),
+              rs.getString("dep_name"),
+              rs.getString("foran")
+            )
+          }
+          rs.close()
+          s.close()
+          c.close()
+        }
+        catch {
+          case e: Exception =>
+            s.close()
+            c.close()
+        }
+      case _ =>
+    }
+    res.toList
+  }
+
 }

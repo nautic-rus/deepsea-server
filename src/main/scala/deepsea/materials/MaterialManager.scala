@@ -220,6 +220,10 @@ object MaterialManager{
   implicit val SupMatRelationsDecoder: Decoder[SupMatRelations] = deriveDecoder[SupMatRelations]
   implicit val SupMatRelationsEncoder: Encoder[SupMatRelations] = deriveEncoder[SupMatRelations]
 
+  case class EqSupMatRelations(materials_id: Int, name: String, stock_code: String, doc_number: String, issue_id: Int, equ_id: Int, dep_name: String, foran: String)
+  implicit val EqSupMatRelationsDecoder: Decoder[EqSupMatRelations] = deriveDecoder[EqSupMatRelations]
+  implicit val EqSupMatRelationsEncoder: Encoder[EqSupMatRelations] = deriveEncoder[EqSupMatRelations]
+
   case class GetSpecMaterials()
   case class GetSpecDirectories()
   case class GetSpecStatements()
@@ -265,6 +269,7 @@ object MaterialManager{
   case class AddSupName(jsonValue: String)
   case class GetSupMatRelations()
   case class AddSupMatRelation(jsonValue: String)
+  case class GetEqSupMatRelations(supId: String)
 
 }
 class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper {
@@ -671,6 +676,8 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
           "success".asJson.noSpaces
         case Left(error) => "error: wrong post data".asJson.noSpaces
       })
+    case GetEqSupMatRelations(supId) =>
+      sender() ! getEqSupMatRelations(supId).asJson.noSpaces
     case UpdateMaterials() =>
       //updateMaterials()
     case _ => None
