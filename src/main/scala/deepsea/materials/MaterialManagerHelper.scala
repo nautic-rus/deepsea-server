@@ -438,8 +438,8 @@ trait MaterialManagerHelper extends IssueManagerHelper {
               rs.getInt("materials_id"),
               rs.getString("name"),
               rs.getString("stock_code"),
-              rs.getString("doc_number"),
-              rs.getInt("issue_id"),
+              Option(rs.getString("doc_number")).getOrElse(""),
+              Option(rs.getInt("issue_id")).getOrElse(0),
               rs.getInt("equ_id"),
               rs.getString("dep_name"),
               rs.getString("foran")
