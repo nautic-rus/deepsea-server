@@ -198,14 +198,15 @@ object MaterialManager{
   implicit val MaterialDirectoryDecoder: Decoder[MaterialDirectory] = deriveDecoder[MaterialDirectory]
   implicit val MaterialDirectoryEncoder: Encoder[MaterialDirectory] = deriveEncoder[MaterialDirectory]
 
-  case class MaterialStatement(id: Int, name: String, project_id: Int, code: String, parent_id: Int)
+  case class MaterialStatement(id: Int, name: String, project_id: Int, code: String, parent_id: Int, doc_number: String)
   class MaterialStatementTable(tag: Tag) extends Table[MaterialStatement](tag, "materials_statements") {
     val id = column[Int]("id", O.AutoInc)
     val name = column[String]("name")
     val project_id = column[Int]("project_id")
     val code = column[String]("code")
     val parent_id = column[Int]("parent_id")
-    override def * = (id, name, project_id, code, parent_id) <> ((MaterialStatement.apply _).tupled, MaterialStatement.unapply)
+    val doc_number = column[String]("doc_number")
+    override def * = (id, name, project_id, code, parent_id, doc_number) <> ((MaterialStatement.apply _).tupled, MaterialStatement.unapply)
   }
   implicit val MaterialStatementDecoder: Decoder[MaterialStatement] = deriveDecoder[MaterialStatement]
   implicit val MaterialStatementEncoder: Encoder[MaterialStatement] = deriveEncoder[MaterialStatement]
