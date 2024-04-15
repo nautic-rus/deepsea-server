@@ -50,10 +50,7 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
 //              Option(rs.getString("visible_pages").split(",").toList).getOrElse(List.empty[String]),
               Option(rs.getString("shared_access").split(",").toList).getOrElse(List.empty[String]),
               groups,
-              roles.find(x => groups.contains(x.name)) match {
-                case Some(role) => role.rights.filter(_ != "")
-                case _ => userRights.filter(_.userId == userId).map(_.role).filter(_ != "")
-              },
+              (roles.filter(x => groups.contains(x.name)).flatMap(_.rights) ++ userRights.filter(_.userId == userId).map(_.role)).filter(_.nonEmpty).distinct,
               "",
               Option(rs.getInt("id_department")).getOrElse(0),
               Option(rs.getInt("removed")).getOrElse(0),
