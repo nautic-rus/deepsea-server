@@ -110,11 +110,11 @@ object MaterialManager{
   case class GetSupplierHistory(id: Int)
   case class AddSupplierHistory(jsonValue: String)
 
-  case class Equipment(id: Int, sfi: Int, name: String, description: String, department: String, comment: String, responsible_id: Int, respons_name: String, respons_surname: String, itt: Int, project_name: String, suppliers: List[Supplier])
+  case class Equipment(id: Int, sfi: Int, name: String, description: String, department: String, comment: String, responsible_id: Int, respons_name: String, respons_surname: String, itt: Int, project_name: String, sfi_unit: String, parent_id: Int, suppliers: List[Supplier])
   implicit val EquipmentDecoder: Decoder[Equipment] = deriveDecoder[Equipment]
   implicit val EquipmentEncoder: Encoder[Equipment] = deriveEncoder[Equipment]
 
-  case class EquipmentAdd(id: Int, name: String, description: String, sfi: String, project_id: Int, responsible_id: Int, department_id: Int, comment: String, status_id: Int)
+  case class EquipmentAdd(id: Int, name: String, description: String, sfi: String, project_id: Int, responsible_id: Int, department_id: Int, comment: String, status_id: Int, sfi_unit: String, parent_id: Int)
   implicit val EquipmentAddDecoder: Decoder[EquipmentAdd] = deriveDecoder[EquipmentAdd]
   implicit val EquipmentAddEncoder: Encoder[EquipmentAdd] = deriveEncoder[EquipmentAdd]
 
@@ -471,7 +471,7 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
                 val date = new Date().getTime
                 var eqId = eq.id
                 if (eq.id == 0) {
-                  val query = s"insert into equipments values (default, '${eq.name}', '${eq.description}', ${eq.sfi}, ${eq.project_id}, ${eq.responsible_id}, ${eq.department_id}, $date, '${eq.comment}', ${eq.status_id}) returning id"
+                  val query = s"insert into equipments values (default, '${eq.name}', '${eq.description}', ${eq.sfi}, ${eq.project_id}, ${eq.responsible_id}, ${eq.department_id}, $date, '${eq.comment}', ${eq.status_id}, '${eq.sfi_unit}', ${eq.parent_id}) returning id"
                   val rs = stmt.executeQuery(query)
                   while (rs.next()) {
                     eqId = rs.getInt("id")
@@ -479,7 +479,7 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
                   rs.close()
                 }
                 else{
-                  val query = s"update equipments set name = '${eq.name}', descriptions = '${eq.description}', sfi = ${eq.sfi}, project_id = ${eq.project_id}, responsible_id = ${eq.responsible_id}, department_id = ${eq.department_id}, comment = '${eq.comment}', status_id = ${eq.status_id} where id = ${eq.id}"
+                  val query = s"update equipments set name = '${eq.name}', descriptions = '${eq.description}', sfi = ${eq.sfi}, project_id = ${eq.project_id}, responsible_id = ${eq.responsible_id}, department_id = ${eq.department_id}, comment = '${eq.comment}', status_id = ${eq.status_id}, sfi_unit = '${eq.sfi_unit}', parent_id = ${eq.parent_id} where id = ${eq.id}"
                   stmt.execute(query)
                 }
                 pg.close()
