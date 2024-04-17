@@ -57,8 +57,8 @@ class StorageManager extends Actor with StorageHelper {
     DBManager.PostgresSQL.run(TableQuery[StorageFileTable].schema.createIfNotExists)
   }
   override def receive: Receive = {
-    case GetStorageUnits() => getStorageUnits.asJson.noSpaces
-    case GetStorageFiles() => getStorageFiles.asJson.noSpaces
+    case GetStorageUnits() => sender() ! getStorageUnits.asJson.noSpaces
+    case GetStorageFiles() => sender() ! getStorageFiles.asJson.noSpaces
     case UpdateStorageUnit(json) =>
       sender() ! (decode[StorageUnit](json) match {
         case Right(value) => updateStorageUnit(value).asJson.noSpaces
