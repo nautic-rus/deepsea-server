@@ -29,18 +29,20 @@ import deepsea.materials.MaterialManager.{AddEquipFile, AddMaterialComplect, Add
 import deepsea.mobile.MobileManager.{GetDrawingInfo, GetDrawings}
 import deepsea.osm.OsmManager.{AddPLS, GetPLS}
 import deepsea.rocket.RocketChatManager.SendNotification
+import deepsea.storage.StorageManager.{GetStorageFiles, GetStorageUnits, UpdateStorageFile, UpdateStorageUnit}
 import deepsea.time.LicenseManager.GetForanLicenses
 import deepsea.time.PlanHoursManager.{ConsumePlanHours, DeleteUserTask, GetConsumedHours, GetPlannedHours, GetUserPlanHours, PlanUserTask, SavePlannedHours}
 import deepsea.time.TimeAndWeatherManager.GetTimeAndWeather
 import deepsea.time.TimeControlManager.{AddSpyWatch, AddUserWatch, GetSpyWatches, GetTime, GetUserTimeControl, GetUserWatches}
 import deepsea.time.PlanManager._
+import io.circe.syntax.EncoderOps
 import org.apache.log4j.{LogManager, Logger}
 import play.api.libs.json.{JsValue, Json}
 
 import java.io.{File, FileInputStream, InputStream}
 import java.nio.ByteBuffer
-import java.nio.file.{Files, Path}
-import java.util.{Date, UUID}
+import java.nio.file.{Files, Path, Paths}
+import java.util.{Calendar, Date, UUID}
 import java.util.concurrent.TimeUnit
 import scala.concurrent.{Await, ExecutionContextExecutor, Future}
 import scala.io.Source
@@ -774,9 +776,54 @@ class HTTPManager extends Actor {
         (get & path("eqSupMatRelations") & parameter("supId")) { (supId) =>
           askFor(ActorManager.materials, GetEqSupMatRelations(supId))
         },
-
         (post & path("supTaskAdd") & entity(as[String])) { (supTask) =>
           askFor(ActorManager.materials, SupTaskAdd(supTask))
+        },
+
+        (withoutSizeLimit & post & path("store-file") & entity(as[Multipart.FormData])){ (formData) =>
+          var fileName = ""
+          var fileUrl = ""
+          val done: Future[Done] = formData.parts.mapAsync(1) {
+            case b: BodyPart if b.name == "file" =>
+              fileName = b.filename.get
+              var pathId = UUID.randomUUID().toString.substring(0, 8)
+              val c = Calendar.getInstance()
+              val date = List(c.get(Calendar.DAY_OF_MONTH), c.get(Calendar.MONTH) + 1, c.get(Calendar.YEAR)).mkString("-")
+              var path = Paths.get(App.Cloud.Directory, date, pathId).toString
+              var file = new File(path)
+              while (file.exists()){
+                pathId = UUID.randomUUID().toString.substring(0, 8)
+                path = Paths.get(App.Cloud.Directory, date, pathId).toString
+                file = new File(path)
+              }
+              file.mkdirs()
+              file = new File(Paths.get(App.Cloud.Directory, date, pathId, fileName).toString)
+              fileUrl = App.HTTPServer.RestUrl + "/s-files/" + date + "/" + pathId + "/" + fileName
+              b.entity.dataBytes.runWith(FileIO.toPath(file.toPath))
+              Future.successful(Done)
+            case _ => Future.successful(Done)
+          }.runWith(Sink.ignore)
+          onSuccess(done) { _ =>
+            complete(HttpEntity(fileUrl.asJson.noSpaces))
+          }
+        },
+        (get & path("s-files" / Segment / Segment / Segment)){ (date, pathId, name) =>
+          getFromFile(App.Cloud.Directory + "/" + date + "/" + pathId + "/" + name)
+        },
+        (get & path("s-files-download" / Segment  / Segment / Segment)){ (date, pathId, name) =>
+          getFromFile(new File(App.Cloud.Directory + "/" + date + "/" + pathId + "/" + name), ContentTypes.NoContentType)
+        },
+        (get & path("storageUnits")) {
+          askFor(ActorManager.storage, GetStorageUnits())
+        },
+        (post & path("updateStorageUnit") & entity(as[String])) { (storageUnit) =>
+          askFor(ActorManager.storage, UpdateStorageUnit(storageUnit))
+        },
+        (get & path("storageFiles")) {
+          askFor(ActorManager.storage, GetStorageFiles())
+        },
+        (post & path("updateStorageFile") & entity(as[String])) { (storageFile) =>
+          askFor(ActorManager.storage, UpdateStorageFile(storageFile))
         },
       )
     }

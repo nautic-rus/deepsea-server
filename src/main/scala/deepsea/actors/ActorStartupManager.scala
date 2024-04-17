@@ -16,6 +16,7 @@ import deepsea.materials.MaterialManager
 import deepsea.mobile.MobileManager
 import deepsea.osm.OsmManager
 import deepsea.rocket.RocketChatManager
+import deepsea.storage.StorageManager
 import deepsea.time.{BackupManager, LicenseManager, PlanHoursManager, PlanManager, TimeAndWeatherManager, TimeControlManager}
 
 import scala.concurrent.duration.DurationInt
@@ -53,5 +54,6 @@ class ActorStartupManager extends Actor{
       ActorManager.osmManager = system.actorOf(RoundRobinPool(1).props(Props[OsmManager]))
       ActorManager.planHours = system.actorOf(RoundRobinPool(1).props(Props[PlanHoursManager]))
       ActorManager.plan = system.actorOf(RoundRobinPool(1).props(Props[PlanManager]))
+      ActorManager.storage = system.actorOf(RoundRobinPool(1).props(Props[StorageManager]))
   }
 }

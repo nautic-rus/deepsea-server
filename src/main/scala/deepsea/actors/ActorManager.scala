@@ -29,6 +29,7 @@ object ActorManager {
   var osmManager: ActorRef = _
   var planHours: ActorRef = _
   var plan: ActorRef = _
+  var storage: ActorRef = _
 
   def init(): Unit ={
     system = ActorSystem()
