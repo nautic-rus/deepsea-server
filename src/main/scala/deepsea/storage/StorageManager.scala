@@ -20,7 +20,7 @@ object StorageManager{
   case class GetStorageFiles()
   case class UpdateStorageFile(json: String)
   case class StorageUnit(id: Int, name: String, descr: String, code: String, order: String,
-                         status: String, user: Int, date_created: Long)
+                         status: String, user: Int, date_created: Long, removed: Int)
   class StorageUnitTable(tag: Tag) extends Table[StorageUnit](tag, "storage_unit") {
     val id = column[Int]("id", O.AutoInc, O.PrimaryKey)
     val name = column[String]("name")
@@ -30,18 +30,21 @@ object StorageManager{
     val status = column[String]("status")
     val user = column[Int]("user")
     val date_created = column[Long]("date_created")
-    override def * = (id, name, descr, code, order, status, user, date_created) <> ((StorageUnit.apply _).tupled, StorageUnit.unapply)
+    val removed = column[Int]("removed", O.Default(0))
+    override def * = (id, name, descr, code, order, status, user, date_created, removed) <> ((StorageUnit.apply _).tupled, StorageUnit.unapply)
   }
   implicit val StorageUnitDecoder: Decoder[StorageUnit] = deriveDecoder[StorageUnit]
   implicit val StorageUnitEncoder: Encoder[StorageUnit] = deriveEncoder[StorageUnit]
 
-  case class StorageFile(id: Int, name: String, url: String, kind: String)
+  case class StorageFile(id: Int, name: String, url: String, kind: String, unit_id: Int, removed: Int)
   case class StorageFileTable(tag: Tag) extends Table[StorageFile](tag, "storage_file") {
     val id = column[Int]("id", O.AutoInc, O.PrimaryKey)
     val name = column[String]("name")
     val url = column[String]("url")
     val kind = column[String]("kind")
-    override def * = (id, name, url, kind) <> ((StorageFile.apply _).tupled, StorageFile.unapply)
+    val unit_id = column[Int]("unit_id")
+    val removed = column[Int]("removed")
+    override def * = (id, name, url, kind, unit_id, removed) <> ((StorageFile.apply _).tupled, StorageFile.unapply)
   }
   implicit val StorageFileDecoder: Decoder[StorageFile] = deriveDecoder[StorageFile]
   implicit val StorageFileEncoder: Encoder[StorageFile] = deriveEncoder[StorageFile]
