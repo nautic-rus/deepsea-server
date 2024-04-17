@@ -14,10 +14,10 @@ import scala.concurrent.duration.{Duration, SECONDS}
 
 trait StorageHelper {
   def updateStorageUnit(storageUnit: StorageUnit): Unit = {
-    DBManager.PostgresSQL.run(TableQuery[StorageUnitTable].insertOrUpdate(storageUnit))
+    Await.result(DBManager.PostgresSQL.run(TableQuery[StorageUnitTable].insertOrUpdate(storageUnit)), Duration(5, SECONDS))
   }
   def updateStorageFile(storageFile: StorageFile): Unit = {
-    DBManager.PostgresSQL.run(TableQuery[StorageFileTable].insertOrUpdate(storageFile))
+    Await.result(DBManager.PostgresSQL.run(TableQuery[StorageFileTable].insertOrUpdate(storageFile)), Duration(5, SECONDS))
   }
   def getStorageUnits: List[StorageUnit] = {
     Await.result(DBManager.PostgresSQL.run(TableQuery[StorageUnitTable].result.map(_.toList)), Duration(5, SECONDS)) match {
