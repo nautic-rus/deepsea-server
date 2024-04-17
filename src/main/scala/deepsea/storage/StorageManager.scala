@@ -1,6 +1,7 @@
 package deepsea.storage
 
 import akka.actor.Actor
+import deepsea.dbase.DBManager
 import deepsea.storage.StorageManager._
 import io.circe.{Decoder, Encoder, jawn}
 import io.circe.syntax.EncoderOps
@@ -48,6 +49,10 @@ object StorageManager{
 
 }
 class StorageManager extends Actor with StorageHelper {
+  override def preStart(): Unit = {
+    DBManager.PostgresSQL.run(TableQuery[StorageUnitTable].schema.createIfNotExists)
+    DBManager.PostgresSQL.run(TableQuery[StorageFileTable].schema.createIfNotExists)
+  }
   override def receive: Receive = {
     case GetStorageUnits() => getStorageUnits.asJson.noSpaces
     case GetStorageFiles() => getStorageFiles.asJson.noSpaces
