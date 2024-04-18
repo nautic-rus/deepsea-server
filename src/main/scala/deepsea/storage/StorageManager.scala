@@ -40,7 +40,7 @@ object StorageManager{
   implicit val StorageUnitDecoder: Decoder[StorageUnit] = deriveDecoder[StorageUnit]
   implicit val StorageUnitEncoder: Encoder[StorageUnit] = deriveEncoder[StorageUnit]
 
-  case class StorageFile(id: Int, name: String, url: String, kind: String, unit_id: Int, removed: Int)
+  case class StorageFile(id: Int, name: String, url: String, kind: String, unit_id: Int, removed: Int, date_created: Long)
   case class StorageFileTable(tag: Tag) extends Table[StorageFile](tag, "storage_file") {
     val id = column[Int]("id", O.AutoInc, O.PrimaryKey)
     val name = column[String]("name")
@@ -48,7 +48,8 @@ object StorageManager{
     val kind = column[String]("kind")
     val unit_id = column[Int]("unit_id")
     val removed = column[Int]("removed")
-    override def * = (id, name, url, kind, unit_id, removed) <> ((StorageFile.apply _).tupled, StorageFile.unapply)
+    val date_created = column[Long]("date_created")
+    override def * = (id, name, url, kind, unit_id, removed, date_created) <> ((StorageFile.apply _).tupled, StorageFile.unapply)
   }
   implicit val StorageFileDecoder: Decoder[StorageFile] = deriveDecoder[StorageFile]
   implicit val StorageFileEncoder: Encoder[StorageFile] = deriveEncoder[StorageFile]
