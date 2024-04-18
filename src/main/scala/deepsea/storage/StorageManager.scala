@@ -20,7 +20,7 @@ object StorageManager{
   case class GetStorageFiles()
   case class UpdateStorageFile(json: String)
   case class StorageUnit(id: Int, name: String, descr: String, code: String, order: String, supplier: String,
-                         status: String, user: Int, date_created: Long, date_supply: Long, pack_list: String, comment: String, removed: Int)
+                         status: String, user: Int, date_created: Long, date_supply: Long, pack_list: String, comment: String, removed: Int, count: Int)
   class StorageUnitTable(tag: Tag) extends Table[StorageUnit](tag, "storage_unit") {
     val id = column[Int]("id", O.AutoInc, O.PrimaryKey)
     val name = column[String]("name")
@@ -35,7 +35,8 @@ object StorageManager{
     val pack_list = column[String]("pack_list")
     val comment = column[String]("comment")
     val removed = column[Int]("removed", O.Default(0))
-    override def * = (id, name, descr, code, order, supplier, status, user, date_created, date_supply, pack_list, comment, removed) <> ((StorageUnit.apply _).tupled, StorageUnit.unapply)
+    val count = column[Int]("count")
+    override def * = (id, name, descr, code, order, supplier, status, user, date_created, date_supply, pack_list, comment, removed, count) <> ((StorageUnit.apply _).tupled, StorageUnit.unapply)
   }
   implicit val StorageUnitDecoder: Decoder[StorageUnit] = deriveDecoder[StorageUnit]
   implicit val StorageUnitEncoder: Encoder[StorageUnit] = deriveEncoder[StorageUnit]
