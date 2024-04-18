@@ -19,19 +19,23 @@ object StorageManager{
   case class UpdateStorageUnit(json: String)
   case class GetStorageFiles()
   case class UpdateStorageFile(json: String)
-  case class StorageUnit(id: Int, name: String, descr: String, code: String, order: String,
-                         status: String, user: Int, date_created: Long, removed: Int)
+  case class StorageUnit(id: Int, name: String, descr: String, code: String, order: String, supplier: String,
+                         status: String, user: Int, date_created: Long, date_supply: Long, pack_list: String, comment: String, removed: Int)
   class StorageUnitTable(tag: Tag) extends Table[StorageUnit](tag, "storage_unit") {
     val id = column[Int]("id", O.AutoInc, O.PrimaryKey)
     val name = column[String]("name")
     val descr = column[String]("descr")
     val code = column[String]("code")
     val order = column[String]("order")
+    val supplier = column[String]("supplier")
     val status = column[String]("status")
     val user = column[Int]("user")
     val date_created = column[Long]("date_created")
+    val date_supply = column[Long]("date_supply")
+    val pack_list = column[String]("pack_list")
+    val comment = column[String]("comment")
     val removed = column[Int]("removed", O.Default(0))
-    override def * = (id, name, descr, code, order, status, user, date_created, removed) <> ((StorageUnit.apply _).tupled, StorageUnit.unapply)
+    override def * = (id, name, descr, code, order, supplier, status, user, date_created, date_supply, pack_list, comment, removed) <> ((StorageUnit.apply _).tupled, StorageUnit.unapply)
   }
   implicit val StorageUnitDecoder: Decoder[StorageUnit] = deriveDecoder[StorageUnit]
   implicit val StorageUnitEncoder: Encoder[StorageUnit] = deriveEncoder[StorageUnit]
