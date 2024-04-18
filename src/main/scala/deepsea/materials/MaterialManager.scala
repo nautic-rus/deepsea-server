@@ -471,7 +471,7 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
                 val date = new Date().getTime
                 var eqId = eq.id
                 if (eq.id == 0) {
-                  val query = s"insert into equipments values (default, '${eq.name}', '${eq.description}', ${eq.sfi}, ${eq.project_id}, ${eq.responsible_id}, ${eq.department_id}, $date, '${eq.comment}', ${eq.status_id}, '${eq.sfi_unit}', ${eq.parent_id}) returning id"
+                  val query = s"insert into equipments values (default, '${eq.name}', '${eq.description}', ${eq.sfi}, ${eq.project_id}, ${eq.responsible_id}, ${eq.department_id}, $date, '${eq.comment}', ${eq.status_id}, 0, '${eq.sfi_unit}', ${eq.parent_id}) returning id"
                   val rs = stmt.executeQuery(query)
                   while (rs.next()) {
                     eqId = rs.getInt("id")
