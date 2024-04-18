@@ -17,6 +17,7 @@ import io.circe.{Decoder, Encoder}
 object StorageManager{
   case class GetStorageUnits()
   case class UpdateStorageUnit(json: String)
+  case class GetNewStorageUnit()
   case class GetStorageFiles()
   case class UpdateStorageFile(json: String)
   case class StorageUnit(id: Int, name: String, descr: String, code: String, order: String, supplier: String,
@@ -55,7 +56,6 @@ object StorageManager{
   implicit val StorageFileDecoder: Decoder[StorageFile] = deriveDecoder[StorageFile]
   implicit val StorageFileEncoder: Encoder[StorageFile] = deriveEncoder[StorageFile]
 
-
 }
 class StorageManager extends Actor with StorageHelper {
   override def preStart(): Unit = {
@@ -65,6 +65,7 @@ class StorageManager extends Actor with StorageHelper {
   override def receive: Receive = {
     case GetStorageUnits() => sender() ! getStorageUnits.asJson.noSpaces
     case GetStorageFiles() => sender() ! getStorageFiles.asJson.noSpaces
+    case GetNewStorageUnit() => sender() ! newStorageUnit.asJson.noSpaces
     case UpdateStorageUnit(json) =>
       sender() ! (decode[StorageUnit](json) match {
         case Right(value) => updateStorageUnit(value).asJson.noSpaces
