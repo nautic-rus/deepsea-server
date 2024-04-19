@@ -61,13 +61,13 @@ object StorageManager{
   implicit val StorageFileEncoder: Encoder[StorageFile] = deriveEncoder[StorageFile]
 
 
-  case class StorageLocation(id: Int, unit_id: Int, name: String, place: String, count: Int, removed: Int)
+  case class StorageLocation(id: Int, unit_id: Int, name: String, place: String, count: String, removed: Int)
   case class StorageLocationTable(tag: Tag) extends Table[StorageLocation](tag, "storage_location") {
     val id = column[Int]("id", O.AutoInc, O.PrimaryKey)
     val unit_id = column[Int]("unit_id")
     val name = column[String]("name")
     val place = column[String]("place")
-    val count = column[Int]("count")
+    val count = column[String]("count")
     val removed = column[Int]("removed")
     override def * = (id, unit_id, name, place, count, removed) <> ((StorageLocation.apply _).tupled, StorageLocation.unapply)
   }
