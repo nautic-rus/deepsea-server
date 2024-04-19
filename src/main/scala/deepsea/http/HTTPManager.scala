@@ -29,7 +29,7 @@ import deepsea.materials.MaterialManager.{AddEquipFile, AddMaterialComplect, Add
 import deepsea.mobile.MobileManager.{GetDrawingInfo, GetDrawings}
 import deepsea.osm.OsmManager.{AddPLS, GetPLS}
 import deepsea.rocket.RocketChatManager.SendNotification
-import deepsea.storage.StorageManager.{GetNewStorageUnit, GetStorageFiles, GetStorageLocations, GetStorageUnits, UpdateStorageFile, UpdateStorageUnit}
+import deepsea.storage.StorageManager.{GetNewStorageUnit, GetStorageFiles, GetStorageLocations, GetStorageUnits, UpdateStorageFile, UpdateStorageLocation, UpdateStorageUnit}
 import deepsea.time.LicenseManager.GetForanLicenses
 import deepsea.time.PlanHoursManager.{ConsumePlanHours, DeleteUserTask, GetConsumedHours, GetPlannedHours, GetUserPlanHours, PlanUserTask, SavePlannedHours}
 import deepsea.time.TimeAndWeatherManager.GetTimeAndWeather
@@ -827,6 +827,9 @@ class HTTPManager extends Actor {
         },
         (get & path("storageLocations")) {
           askFor(ActorManager.storage, GetStorageLocations())
+        },
+        (post & path("updateStorageLocation") & entity(as[String])) { (json) =>
+          askFor(ActorManager.storage, UpdateStorageLocation(json))
         },
         (post & path("updateStorageFile") & entity(as[String])) { (storageFile) =>
           askFor(ActorManager.storage, UpdateStorageFile(storageFile))
