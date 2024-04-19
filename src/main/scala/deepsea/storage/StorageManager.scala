@@ -78,6 +78,7 @@ class StorageManager extends Actor with StorageHelper {
   override def preStart(): Unit = {
     DBManager.PostgresSQL.run(TableQuery[StorageUnitTable].schema.createIfNotExists)
     DBManager.PostgresSQL.run(TableQuery[StorageFileTable].schema.createIfNotExists)
+    DBManager.PostgresSQL.run(TableQuery[StorageLocationTable].schema.createIfNotExists)
   }
   override def receive: Receive = {
     case GetStorageUnits() => sender() ! getStorageUnits.asJson.noSpaces
