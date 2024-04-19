@@ -2,7 +2,7 @@ package deepsea.storage
 
 import deepsea.dbase.DBManager
 import deepsea.materials.MaterialManager.{MaterialStatement, SupTaskRelationsTable}
-import deepsea.storage.StorageManager.{StorageFile, StorageFileTable, StorageUnit, StorageUnitTable}
+import deepsea.storage.StorageManager.{StorageFile, StorageFileTable, StorageLocation, StorageLocationTable, StorageUnit, StorageUnitTable}
 import io.circe.syntax.EncoderOps
 import slick.lifted.TableQuery
 import slick.jdbc.PostgresProfile.api._
@@ -32,7 +32,9 @@ trait StorageHelper {
       "",
       "",
       0,
-      1
+      1,
+      "",
+      0
     )
     val table = TableQuery[StorageUnitTable]
 
@@ -56,6 +58,15 @@ trait StorageHelper {
     Await.result(DBManager.PostgresSQL.run(TableQuery[StorageFileTable].result.map(_.toList)), Duration(5, SECONDS)) match {
       case response: List[StorageFile] => response
       case _ => List.empty[StorageFile]
+    }
+  }
+  def updateStorageLocations(value: StorageLocation): Unit = {
+    Await.result(DBManager.PostgresSQL.run(TableQuery[StorageLocationTable].insertOrUpdate(value)), Duration(5, SECONDS))
+  }
+  def getStorageLocations: List[StorageLocation] = {
+    Await.result(DBManager.PostgresSQL.run(TableQuery[StorageLocationTable].result.map(_.toList)), Duration(5, SECONDS)) match {
+      case response: List[StorageLocation] => response
+      case _ => List.empty[StorageLocation]
     }
   }
 }

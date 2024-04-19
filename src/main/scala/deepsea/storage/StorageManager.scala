@@ -19,9 +19,11 @@ object StorageManager{
   case class UpdateStorageUnit(json: String)
   case class GetNewStorageUnit()
   case class GetStorageFiles()
+  case class GetStorageLocations()
+  case class UpdateStorageLocation(json: String)
   case class UpdateStorageFile(json: String)
   case class StorageUnit(id: Int, name: String, descr: String, code: String, order: String, supplier: String,
-                         status: String, user: Int, date_created: Long, date_supply: Long, pack_list: String, comment: String, removed: Int, count: Int)
+                         status: String, user: Int, date_created: Long, date_supply: Long, pack_list: String, comment: String, removed: Int, count: Int, invoice_name: String, invoice_date: Long)
   class StorageUnitTable(tag: Tag) extends Table[StorageUnit](tag, "storage_unit") {
     val id = column[Int]("id", O.AutoInc, O.PrimaryKey)
     val name = column[String]("name")
@@ -37,7 +39,9 @@ object StorageManager{
     val comment = column[String]("comment")
     val removed = column[Int]("removed", O.Default(0))
     val count = column[Int]("count")
-    override def * = (id, name, descr, code, order, supplier, status, user, date_created, date_supply, pack_list, comment, removed, count) <> ((StorageUnit.apply _).tupled, StorageUnit.unapply)
+    val invoice_name = column[String]("invoice_name")
+    val invoice_date = column[Long]("invoice_date")
+    override def * = (id, name, descr, code, order, supplier, status, user, date_created, date_supply, pack_list, comment, removed, count, invoice_name, invoice_date) <> ((StorageUnit.apply _).tupled, StorageUnit.unapply)
   }
   implicit val StorageUnitDecoder: Decoder[StorageUnit] = deriveDecoder[StorageUnit]
   implicit val StorageUnitEncoder: Encoder[StorageUnit] = deriveEncoder[StorageUnit]
@@ -56,6 +60,19 @@ object StorageManager{
   implicit val StorageFileDecoder: Decoder[StorageFile] = deriveDecoder[StorageFile]
   implicit val StorageFileEncoder: Encoder[StorageFile] = deriveEncoder[StorageFile]
 
+
+  case class StorageLocation(id: Int, unit_id: Int, name: String, place: String, count: Int, removed: Int)
+  case class StorageLocationTable(tag: Tag) extends Table[StorageLocation](tag, "storage_location") {
+    val id = column[Int]("id", O.AutoInc, O.PrimaryKey)
+    val unit_id = column[Int]("unit_id")
+    val name = column[String]("name")
+    val place = column[String]("place")
+    val count = column[Int]("count")
+    val removed = column[Int]("removed")
+    override def * = (id, unit_id, name, place, count, removed) <> ((StorageLocation.apply _).tupled, StorageLocation.unapply)
+  }
+  implicit val StorageLocationDecoder: Decoder[StorageLocation] = deriveDecoder[StorageLocation]
+  implicit val StorageLocationEncoder: Encoder[StorageLocation] = deriveEncoder[StorageLocation]
 }
 class StorageManager extends Actor with StorageHelper {
   override def preStart(): Unit = {
@@ -74,6 +91,12 @@ class StorageManager extends Actor with StorageHelper {
     case UpdateStorageFile(json) =>
       sender() ! (decode[StorageFile](json) match {
         case Right(value) => updateStorageFile(value).asJson.noSpaces
+        case Left(value) => "error: wrong post json value".asJson.noSpaces
+      })
+    case GetStorageLocations() => sender() ! getStorageLocations.asJson.noSpaces
+    case UpdateStorageLocation(json) =>
+      sender() ! (decode[StorageLocation](json) match {
+        case Right(value) => updateStorageLocations(value).asJson.noSpaces
         case Left(value) => "error: wrong post json value".asJson.noSpaces
       })
     case _ => None
