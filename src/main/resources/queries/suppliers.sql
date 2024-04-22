@@ -9,7 +9,11 @@ SELECT
     s.manufacturer as equip_manufacturer,
     ss.name as status,
     s.approvement,
-    s.last_update
+    s.last_update,
+    s.model,
+    s.ele_param,
+    s.mech_param,
+    s.weight
 FROM
     suppliers s
 LEFT JOIN suppliers_status ss ON s.status_id = ss.id

@@ -118,11 +118,11 @@ object MaterialManager{
   implicit val EquipmentAddDecoder: Decoder[EquipmentAdd] = deriveDecoder[EquipmentAdd]
   implicit val EquipmentAddEncoder: Encoder[EquipmentAdd] = deriveEncoder[EquipmentAdd]
 
-  case class Supplier(id: Int, user_id: Int, equip_id: Int, name: String, sup_id: Int, description: String, comment: String, manufacturer: String, status: String, approvement: Long, last_update: Long)
+  case class Supplier(id: Int, user_id: Int, equip_id: Int, name: String, sup_id: Int, description: String, comment: String, manufacturer: String, status: String, approvement: Long, last_update: Long, model: String, ele_param: String, mech_param: String, weight: Double)
   implicit val SupplierDecoder: Decoder[Supplier] = deriveDecoder[Supplier]
   implicit val SupplierEncoder: Encoder[Supplier] = deriveEncoder[Supplier]
 
-  case class SupplierAdd(id: Int, approvement: Long, comment: String, status_id: Int, equip_id: Int, user_id: Int, sup_id: Int, manufacturer: String, description: String)
+  case class SupplierAdd(id: Int, approvement: Long, comment: String, status_id: Int, equip_id: Int, user_id: Int, sup_id: Int, manufacturer: String, description: String, model: String, ele_param: String, mech_param: String, weight: Double)
   implicit val SupplierAddDecoder: Decoder[SupplierAdd] = deriveDecoder[SupplierAdd]
   implicit val SupplierAddEncoder: Encoder[SupplierAdd] = deriveEncoder[SupplierAdd]
 
@@ -527,7 +527,7 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
               try {
                 var supId = sup.id
                 if (sup.id == 0){
-                  val query = s"insert into suppliers values (default, ${sup.user_id}, ${sup.equip_id}, '${sup.description}', '${sup.comment}', ${sup.status_id}, '${sup.manufacturer}', ${sup.approvement}, 0, $d, ${sup.sup_id}, '') returning id"
+                  val query = s"insert into suppliers values (default, ${sup.user_id}, ${sup.equip_id}, '${sup.description}', '${sup.comment}', ${sup.status_id}, '${sup.manufacturer}', ${sup.approvement}, 0, $d, ${sup.sup_id}, '${sup.model}', '${sup.ele_param}', '${sup.mech_param}', ${sup.weight}) returning id"
                   val rs = stmt.executeQuery(query)
                   while (rs.next()) {
                     supId = rs.getInt("id")

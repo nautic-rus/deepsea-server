@@ -113,7 +113,11 @@ trait MaterialManagerHelper extends IssueManagerHelper {
               rs.getString("equip_manufacturer"),
               rs.getString("status"),
               rs.getLong("approvement"),
-              rs.getLong("last_update")
+              rs.getLong("last_update"),
+              rs.getString("model"),
+              rs.getString("ele_param"),
+              rs.getString("mech_param"),
+              rs.getDouble("weight")
             )
           }
           rs.close()
