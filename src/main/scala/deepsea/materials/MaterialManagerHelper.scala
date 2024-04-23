@@ -117,7 +117,8 @@ trait MaterialManagerHelper extends IssueManagerHelper {
               rs.getString("model"),
               rs.getString("ele_param"),
               rs.getString("mech_param"),
-              rs.getDouble("weight")
+              rs.getDouble("weight"),
+              rs.getInt("status_id"),
             )
           }
           rs.close()

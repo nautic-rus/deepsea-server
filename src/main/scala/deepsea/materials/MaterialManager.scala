@@ -118,7 +118,7 @@ object MaterialManager{
   implicit val EquipmentAddDecoder: Decoder[EquipmentAdd] = deriveDecoder[EquipmentAdd]
   implicit val EquipmentAddEncoder: Encoder[EquipmentAdd] = deriveEncoder[EquipmentAdd]
 
-  case class Supplier(id: Int, user_id: Int, equip_id: Int, name: String, sup_id: Int, description: String, comment: String, manufacturer: String, status: String, approvement: Long, last_update: Long, model: String, ele_param: String, mech_param: String, weight: Double)
+  case class Supplier(id: Int, user_id: Int, equip_id: Int, name: String, sup_id: Int, description: String, comment: String, manufacturer: String, status: String, approvement: Long, last_update: Long, model: String, ele_param: String, mech_param: String, weight: Double, status_id: Int)
   implicit val SupplierDecoder: Decoder[Supplier] = deriveDecoder[Supplier]
   implicit val SupplierEncoder: Encoder[Supplier] = deriveEncoder[Supplier]
 
@@ -519,7 +519,7 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
 
     case InsertSupplier(jsonValue) =>
       val d = new Date().getTime
-      val res: String = decode[SupplierAdd](jsonValue) match {
+      val res: String = decode[Supplier](jsonValue) match {
         case Right(sup) =>
           DBManager.GetPGConnection() match {
             case Some(pg) =>

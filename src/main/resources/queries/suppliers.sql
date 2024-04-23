@@ -13,7 +13,8 @@ SELECT
     s.model,
     s.ele_param,
     s.mech_param,
-    s.weight
+    s.weight,
+    s.status_id
 FROM
     suppliers s
 LEFT JOIN suppliers_status ss ON s.status_id = ss.id
