@@ -91,6 +91,7 @@ object MaterialManager{
 
 
   case class GetEquipments()
+  case class GetEquipment(id: String)
   case class GetSFIs()
   case class InsertEquipment(jsonValue: String)
   case class DeleteEquipment(id: Int)
@@ -459,6 +460,8 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
 
     case GetEquipments() =>
       sender() ! getEquipments(getSuppliers).asJson.noSpaces
+    case GetEquipment(id) =>
+      sender() ! getEquipment(id.toIntOption.getOrElse(0), getSuppliers).asJson.noSpaces
     case GetSFIs() =>
       sender() ! getSFIs.asJson.noSpaces
     case InsertEquipment(jsonValue) =>

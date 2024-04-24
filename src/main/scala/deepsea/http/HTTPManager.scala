@@ -25,7 +25,7 @@ import deepsea.files.FileManager.{CreateDocumentCloudDirectory, CreateFile, Crea
 import deepsea.files.classes.FileAttachment
 import deepsea.http.HTTPManager.server
 import deepsea.issues.IssueManager._
-import deepsea.materials.MaterialManager.{AddEquipFile, AddMaterialComplect, AddSupFile, AddSupMatRelation, AddSupName, AddSupplierHistory, DelEquipFile, DelRelatedTask, DelSupFile, DeleteEquipment, DeleteSupplier, GetEqSupMatRelations, GetEquipFiles, GetEquipments, GetMaterialComplects, GetMaterialNodes, GetMaterials, GetMaterialsCode, GetRelatedTasks, GetSFIs, GetSpecDirectories, GetSpecMaterials, GetSpecStatements, GetSupFiles, GetSupMatRelations, GetSupNames, GetSupStatuses, GetSupplierHistory, GetWCDrawings, GetWCZones, GetWeightControl, InsertEquipment, InsertSupplier, RemoveMaterialComplect, RemoveWeightControl, SetWeightControl, SupTaskAdd, UpdateMaterial, UpdateMaterialComplect, UpdateMaterialDirectory, UpdateMaterialNode, UpdateSpecMaterial}
+import deepsea.materials.MaterialManager.{AddEquipFile, AddMaterialComplect, AddSupFile, AddSupMatRelation, AddSupName, AddSupplierHistory, DelEquipFile, DelRelatedTask, DelSupFile, DeleteEquipment, DeleteSupplier, GetEqSupMatRelations, GetEquipFiles, GetEquipment, GetEquipments, GetMaterialComplects, GetMaterialNodes, GetMaterials, GetMaterialsCode, GetRelatedTasks, GetSFIs, GetSpecDirectories, GetSpecMaterials, GetSpecStatements, GetSupFiles, GetSupMatRelations, GetSupNames, GetSupStatuses, GetSupplierHistory, GetWCDrawings, GetWCZones, GetWeightControl, InsertEquipment, InsertSupplier, RemoveMaterialComplect, RemoveWeightControl, SetWeightControl, SupTaskAdd, UpdateMaterial, UpdateMaterialComplect, UpdateMaterialDirectory, UpdateMaterialNode, UpdateSpecMaterial}
 import deepsea.mobile.MobileManager.{GetDrawingInfo, GetDrawings}
 import deepsea.osm.OsmManager.{AddPLS, GetPLS}
 import deepsea.rocket.RocketChatManager.SendNotification
@@ -693,6 +693,9 @@ class HTTPManager extends Actor {
 
         (get & path("equipments")) {
           askFor(ActorManager.materials, GetEquipments())
+        },
+        (get & path("equipment") & parameter("id")) { (id) =>
+          askFor(ActorManager.materials, GetEquipment(id))
         },
         (post & path("equipment") & entity(as[String])) { (jsonValue) =>
           askFor(ActorManager.materials, InsertEquipment(jsonValue))

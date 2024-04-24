@@ -93,6 +93,46 @@ trait MaterialManagerHelper extends IssueManagerHelper {
     }
     res.toList
   }
+  def getEquipment(id: Int, suppliers: List[Supplier]): List[Equipment] = {
+    val res = ListBuffer.empty[Equipment]
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val query = Source.fromResource("queries/equipments.sql").mkString + " and eq.id = " + id
+        try {
+          val rs = s.executeQuery(query)
+          while (rs.next()){
+            val id = rs.getInt("id")
+            res += Equipment(
+              id,
+              rs.getInt("sfi"),
+              rs.getString("name"),
+              rs.getString("descriptions"),
+              rs.getString("department"),
+              rs.getString("comment"),
+              rs.getInt("responsible_id"),
+              rs.getString("respons_name"),
+              rs.getString("respons_surname"),
+              if (rs.getInt("itt") > 0) 1 else 0,
+              rs.getString("project_name"),
+              rs.getString("sfi_unit"),
+              rs.getInt("parent_id"),
+              suppliers.filter(_.equip_id == id)
+            )
+          }
+          rs.close()
+          s.close()
+          c.close()
+        }
+        catch {
+          case e: Exception =>
+            s.close()
+            c.close()
+        }
+      case _ =>
+    }
+    res.toList
+  }
   def getSuppliers: List[Supplier] = {
     val res = ListBuffer.empty[Supplier]
     DBManager.GetPGConnection() match {
