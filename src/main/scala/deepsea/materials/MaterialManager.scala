@@ -535,7 +535,7 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
                   rs.close()
                 }
                 else {
-                  val query = s"update suppliers set user_id = ${sup.user_id}, equ_id = ${sup.equip_id}, description = '${sup.description}', comment = '${sup.comment}', status_id = ${sup.status_id}, manufacturer = '${sup.manufacturer}', approvement = ${sup.approvement}, last_update = $d where id = ${sup.id}"
+                  val query = s"update suppliers set user_id = ${sup.user_id}, equ_id = ${sup.equip_id}, description = '${sup.description}', comment = '${sup.comment}', status_id = ${sup.status_id}, manufacturer = '${sup.manufacturer}', approvement = ${sup.approvement}, last_update = $d, suppliers_name_id = ${sup.sup_id}, model = '${sup.model}', ele_param = '${sup.ele_param}', mech_param = '${sup.mech_param}', weight = '${sup.weight}' where id = ${sup.id}"
                   stmt.execute(query)
                 }
                 stmt.close()
