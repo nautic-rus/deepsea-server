@@ -285,7 +285,7 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
   override def preStart(): Unit = {
 
     //self ! GetEquipFiles(0)
-    //self ! GetEquipments()
+    self ! GetEquipments()
     //self ! GetSpecMaterials()
     //self ! UpdateMaterials()
 

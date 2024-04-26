@@ -3,7 +3,8 @@ SELECT
     (select count(*) from equipments_files eqf where eqf.equ_id = eq.id) as ITT,
     issue_projects.name as project_name,
     eq.sfi_unit as sfi_unit,
-    eq.parent_id as parent_id
+    eq.parent_id as parent_id,
+    eq.create_date as create_date
 FROM
     equipments eq
 LEFT JOIN users us ON  eq.responsible_id = us.id
