@@ -77,6 +77,7 @@ trait MaterialManagerHelper extends IssueManagerHelper {
               rs.getString("project_name"),
               rs.getString("sfi_unit"),
               rs.getInt("parent_id"),
+              rs.getLong("create_date"),
               suppliers.filter(_.equip_id == id)
             )
           }
@@ -117,6 +118,7 @@ trait MaterialManagerHelper extends IssueManagerHelper {
               rs.getString("project_name"),
               rs.getString("sfi_unit"),
               rs.getInt("parent_id"),
+              rs.getLong("create_date"),
               suppliers.filter(_.equip_id == id)
             )
           }

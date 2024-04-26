@@ -111,7 +111,7 @@ object MaterialManager{
   case class GetSupplierHistory(id: Int)
   case class AddSupplierHistory(jsonValue: String)
 
-  case class Equipment(id: Int, sfi: Int, name: String, description: String, department: String, comment: String, responsible_id: Int, respons_name: String, respons_surname: String, itt: Int, project_name: String, sfi_unit: String, parent_id: Int, suppliers: List[Supplier])
+  case class Equipment(id: Int, sfi: Int, name: String, description: String, department: String, comment: String, responsible_id: Int, respons_name: String, respons_surname: String, itt: Int, project_name: String, sfi_unit: String, parent_id: Int, create_date: Long, suppliers: List[Supplier])
   implicit val EquipmentDecoder: Decoder[Equipment] = deriveDecoder[Equipment]
   implicit val EquipmentEncoder: Encoder[Equipment] = deriveEncoder[Equipment]
 
