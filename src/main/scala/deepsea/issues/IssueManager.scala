@@ -45,6 +45,7 @@ object IssueManager{
   case class GetIssues(user: String)
   case class GetAllIssues()
   case class GetAllIssuesShort()
+  case class GetIssuesCorrection()
   case class GetQuestions()
   case class StartIssue(issueJson: String)
   case class UpdateIssue(user: String, updateMessage: String, issueJson: String)
@@ -128,6 +129,9 @@ object IssueManager{
   implicit val IssueShortDecoder: Decoder[IssueShort] = deriveDecoder[IssueShort]
   implicit val IssueShortEncoder: Encoder[IssueShort] = deriveEncoder[IssueShort]
 
+  case class IssueCorrection(id: Int, status: String, doc_number: String, count: Int)
+  implicit val IssueCorrectionDecoder: Decoder[IssueCorrection] = deriveDecoder[IssueCorrection]
+  implicit val IssueCorrectionEncoder: Encoder[IssueCorrection] = deriveEncoder[IssueCorrection]
 }
 class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with FileManagerHelper with AuthManagerHelper{
   implicit val timeout: Timeout = Timeout(30, TimeUnit.SECONDS)
@@ -249,6 +253,8 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
       sender() ! getAllIssues.asJson.noSpaces
     case GetAllIssuesShort() =>
       sender() ! getAllIssuesShort.asJson.noSpaces
+    case GetIssuesCorrection() =>
+      sender() ! getIssuesCorrection.asJson.noSpaces
     case GetQuestions() =>
       sender() ! Json.toJson(getQuestions)
     case UpdateIssue(user, updateMessage, issueJson) =>

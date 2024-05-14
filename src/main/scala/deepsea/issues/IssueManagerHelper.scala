@@ -9,7 +9,7 @@ import deepsea.dbase.{DBManager, DatabaseManager, MongoCodecs}
 import deepsea.files.FileManager.{CloudFile, DocumentDirectories}
 import deepsea.files.FileManagerHelper
 import deepsea.files.classes.FileAttachment
-import deepsea.issues.IssueManager.{DailyTask, GroupFolder, IssueProject, IssueShort, Subscriber, UpdateDates}
+import deepsea.issues.IssueManager.{DailyTask, GroupFolder, IssueCorrection, IssueProject, IssueShort, Subscriber, UpdateDates}
 import deepsea.issues.classes.{ChildIssue, Issue, IssueAction, IssueCheck, IssueHistory, IssueMessage, IssuePeriod, SfiCode}
 import deepsea.mail.MailManager
 import deepsea.mail.MailManager.Mail
@@ -276,6 +276,41 @@ trait IssueManagerHelper extends MongoCodecs {
     }
     issues.toList
   }
+  def getIssuesCorrection: List[IssueShort] = {
+    val issues = ListBuffer.empty[IssueShort]
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val query = Source.fromResource("queries/issues-correction.sql").mkString
+        val rs = s.executeQuery(query)
+        while (rs.next()) {
+          issues += IssueCorrection(
+            rs.getInt("id") match {
+              case value: Int => value
+              case _ => 0
+            },
+            rs.getString("status") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getString("doc_number") match {
+              case value: String => value
+              case _ => ""
+            },
+            rs.getInt("count") match {
+              case value: Int => value
+              case _ => 0
+            }
+          )
+        }
+        rs.close()
+        s.close()
+        c.close()
+      case _ =>
+    }
+    issues.toList
+  }
+
   def getAllIssues: List[IssueShort] = {
     val issues = ListBuffer.empty[IssueShort]
     DBManager.GetPGConnection() match {

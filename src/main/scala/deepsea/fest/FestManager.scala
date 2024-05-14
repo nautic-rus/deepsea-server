@@ -6,13 +6,26 @@ import deepsea.fest.FestManager._
 import deepsea.fest.classes.{BestPlayer, Mark, TeamWon}
 import deepsea.files.FileManager.{TreeFile, treeFilesCollection}
 import deepsea.files.classes.FileAttachment
+import io.circe.{Decoder, Encoder}
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.syntax.EncoderOps
 import org.mongodb.scala.MongoCollection
 import io.circe.parser.decode
+import slick.lifted.Tag
+
 import java.util.Date
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
 import scala.concurrent.duration.{Duration, SECONDS}
+import io.circe.{Decoder, Encoder, jawn}
+import io.circe.syntax.EncoderOps
+import slick.jdbc.PostgresProfile.api._
+import slick.lifted.{ProvenShape, TableQuery}
+import io.circe.generic.JsonCodec
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
+import io.circe.parser._
+import io.circe.syntax.EncoderOps
+import io.circe.{Decoder, Encoder}
 
 object FestManager{
 
@@ -42,6 +55,7 @@ object FestManager{
   case class FestKaraoke(users: String, song: String, date: Long)
 
   case class FestSauna(kind: String, users: String, time: String)
+
 }
 class FestManager extends Actor with MongoCodecs{
   override def receive: Receive = {
