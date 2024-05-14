@@ -276,8 +276,8 @@ trait IssueManagerHelper extends MongoCodecs {
     }
     issues.toList
   }
-  def getIssuesCorrection: List[IssueShort] = {
-    val issues = ListBuffer.empty[IssueShort]
+  def getIssuesCorrection: List[IssueCorrection] = {
+    val issues = ListBuffer.empty[IssueCorrection]
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
