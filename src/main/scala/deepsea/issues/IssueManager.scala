@@ -37,7 +37,8 @@ import java.util.Date
 import java.util.concurrent.TimeUnit
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
-import scala.concurrent.duration.{Duration, SECONDS}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.{Duration, DurationInt, SECONDS}
 import scala.util.Try
 
 object IssueManager{
@@ -132,50 +133,22 @@ object IssueManager{
   case class IssueCorrection(id: Int, status: String, doc_number: String, count: Int)
   implicit val IssueCorrectionDecoder: Decoder[IssueCorrection] = deriveDecoder[IssueCorrection]
   implicit val IssueCorrectionEncoder: Encoder[IssueCorrection] = deriveEncoder[IssueCorrection]
+
+  case class UpdateIssues()
 }
 class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with FileManagerHelper with AuthManagerHelper{
   implicit val timeout: Timeout = Timeout(30, TimeUnit.SECONDS)
 
+  val issues: ListBuffer[Issue] = ListBuffer.empty[Issue]
+
   override def preStart(): Unit = {
-    //self ! GetIssueDetails(8704.toString)
-//    ActorManager.files ! GetDocumentFiles(602.toString)
-//    self ! GetIssues("op")
-//    self ! GetIssueDetails(1272.toString)
-//    DBManager.GetNextCloudConnection() match {
-//      case Some(connection) =>
-//        val stmt = connection.createStatement()
-//        val query = "select * from oc_activity where file like '%0101_revB.pdf%'"
-//        val rs = stmt.executeQuery(query)
-//        while (rs.next()){
-//          val jk = rs.getString("user")
-//          val jkk = jk
-//        }
-//      case _ => None
-//    }
-//    Await.result(ActorManager.auth ? GetUser("op"), timeout.duration) match {
-//      case user: User =>
-//        val issues = getIssuesForUser(user)
-//        val revisionFiles = getRevisionFiles.filter(_.removed_date == 0)
-//        val issuesFiltered = issues.filter(x => List("NR002").contains(x.project) && x.issue_type == "RKD")
-//        issuesFiltered.foreach(issue => {
-//          val files = revisionFiles.filter(_.issue_id == issue.id)
-//          if (files.nonEmpty){
-//            getIssueDetails(issue.id) match {
-//              case Some(details) =>
-//                copyFilesToDirectory(details.doc_number, details.department, files.toList, "C:\\documents")
-//              case _ => None
-//            }
-//          }
-//          val jkk = issue
-//        })
-//        val jk = 0
-//
-//
-//      case _ => sender() ! Json.toJson(ListBuffer.empty[Issue])
-//    }
+    ActorManager.system.scheduler.scheduleWithFixedDelay(0.seconds, 2.minutes, self, UpdateIssues())
   }
 
   override def receive: Receive = {
+    case UpdateIssues() =>
+      issues.clear()
+      issues ++= getIssuesForUser("op")
     case GetIssueProjects() => sender() ! getIssueProjects.asJson.noSpaces
     case GetProjectDetails(id) => sender() ! getProjectDetails(id).asJson
     case GetProjectContracts(project) => sender() ! getProjectContracts(project).asJson.noSpaces
@@ -236,7 +209,10 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
         case _ => None
       }
     case GetIssues(userName) =>
-      if (userName == "lvov"){
+      if (userName == "op"){
+        sender() ! Json.toJson(issues)
+      }
+      else if (userName == "lvov"){
         Await.result(ActorManager.auth ? GetUser("op"), timeout.duration) match {
           case opUser: User =>
             sender() ! Json.toJson(getIssuesForUser(opUser).filter(x => x.started_by == "lvov" || x.assigned_to == "lvov" || x.responsible == "lvov" || x.project == "170701" || x.project == "170707"))
