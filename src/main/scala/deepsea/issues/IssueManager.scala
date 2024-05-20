@@ -142,7 +142,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
   val issues: ListBuffer[Issue] = ListBuffer.empty[Issue]
 
   override def preStart(): Unit = {
-    ActorManager.system.scheduler.scheduleWithFixedDelay(0.seconds, 2.minutes, self, UpdateIssues())
+    ActorManager.system.scheduler.scheduleWithFixedDelay(0.seconds, 3.minutes, self, UpdateIssues())
   }
 
   override def receive: Receive = {
