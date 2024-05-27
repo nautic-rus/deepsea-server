@@ -46,7 +46,7 @@ class TimeAndWeatherManager extends Actor{
   override def preStart(): Unit = {
     system.scheduler.scheduleWithFixedDelay(0.seconds, 5.minutes, self, SetTimeAndWeather())
     system.scheduler.scheduleWithFixedDelay(0.seconds, 1.minutes, ActorManager.planHours, ConsumeTodayPlanHours())
-    system.scheduler.scheduleWithFixedDelay(0.seconds, 5.minutes, self, CheckMaster())
+    //system.scheduler.scheduleWithFixedDelay(0.seconds, 5.minutes, self, CheckMaster())
     system.scheduler.scheduleWithFixedDelay(0.seconds, 1.minutes, self, ClearIntervals())
     system.scheduler.scheduleWithFixedDelay(0.seconds, 60.minutes, self, CheckTempFiles())
   }
