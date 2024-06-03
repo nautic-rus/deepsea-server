@@ -82,12 +82,14 @@ object MaterialManager{
   case class WCNumberName(number: String, name: String, project: String)
 
 
-  case class MaterialComplect(id: String, project: String, name: String, materials: List[CMaterial])
-  case class CMaterial(material: Material, count: Int)
+  case class MaterialComplect(id: String, project: Int, name: String, kind: String, user_id: Int, date: Long, materials: List[CMaterial])
+  case class CMaterial(material: String, count: Int)
   case class GetMaterialComplects(project: String)
-  case class AddMaterialComplect(project: String, name: String)
+  case class AddMaterialComplect(project: String, name: String, kind: String, user_id: String)
   case class RemoveMaterialComplect(id: String)
   case class UpdateMaterialComplect(complectValue: String)
+
+
 
 
   case class GetEquipments()
@@ -423,17 +425,17 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
     case GetMaterialComplects(project) =>
       DBManager.GetMongoConnection() match {
         case Some(mongo) =>
-          Await.result(mongo.getCollection("material-complects").find[MaterialComplect](equal("project", project)).toFuture(), Duration(30, SECONDS)) match {
+          Await.result(mongo.getCollection("material-complects").find[MaterialComplect](equal("project", project.toIntOption.getOrElse(0))).toFuture(), Duration(30, SECONDS)) match {
             case dbValues => sender() ! dbValues.toList.asJson.noSpaces
             case _ => List.empty[MaterialComplect]
           }
         case _ => List.empty[WCNumberName]
       }
-    case AddMaterialComplect(project, name) =>
+    case AddMaterialComplect(project, name, kind, user_id) =>
       DBManager.GetMongoConnection() match {
         case Some(mongo) =>
           val complects: MongoCollection[MaterialComplect] = mongo.getCollection("material-complects")
-          Await.result(complects.insertOne(MaterialComplect(UUID.randomUUID().toString, project, name, List.empty[CMaterial])).toFuture(), Duration(30, SECONDS))
+          Await.result(complects.insertOne(MaterialComplect(UUID.randomUUID().toString, project.toIntOption.getOrElse(0), name, kind, user_id.toIntOption.getOrElse(0), new Date().getTime, List.empty[CMaterial])).toFuture(), Duration(30, SECONDS))
         case _ =>
       }
       sender() ! "success".asJson.noSpaces

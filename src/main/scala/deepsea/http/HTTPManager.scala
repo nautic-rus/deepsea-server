@@ -681,8 +681,8 @@ class HTTPManager extends Actor {
           askFor(ActorManager.plan, GetProjectStats(project, docType))
         },
 
-        (get & path("addMaterialComplect") & parameter("project", "name")) { (project, name) =>
-          askFor(ActorManager.materials, AddMaterialComplect(project, name))
+        (get & path("addMaterialComplect") & parameter("project", "name", "kind", "user_id")) { (project, name, kind, user_id) =>
+          askFor(ActorManager.materials, AddMaterialComplect(project, name, kind, user_id))
         },
         (get & path("removeMaterialComplect") & parameter("id")) { (id) =>
           askFor(ActorManager.materials, RemoveMaterialComplect(id))
