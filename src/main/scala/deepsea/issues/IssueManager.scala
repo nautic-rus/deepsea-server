@@ -808,6 +808,11 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
           prev_value = oldIssue.issue_comment
           new_value = issue.issue_comment
         }
+        else if (oldIssue.author_comment != issue.author_comment){
+          name_value = "author_comment"
+          prev_value = oldIssue.author_comment
+          new_value = issue.author_comment
+        }
         else if (oldIssue.revision != issue.revision){
           name_value = "revision"
           prev_value = oldIssue.revision

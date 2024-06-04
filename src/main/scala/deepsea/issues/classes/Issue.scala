@@ -39,6 +39,7 @@ object Issue{
         "closing_status" -> x.closing_status,
 
         "issue_comment" -> x.issue_comment,
+        "author_comment" -> x.author_comment,
         "first_send_date" -> x.first_send_date,
         "delivered_date" -> x.delivered_date,
         "revision" -> x.revision,
@@ -87,6 +88,7 @@ object Issue{
         action = (x \ "action").asOpt[String].getOrElse("")
         file_attachments = (x \ "file_attachments").asOpt[ListBuffer[FileAttachment]].getOrElse(ListBuffer.empty[FileAttachment])
 
+        author_comment = (x \ "author_comment").asOpt[String].getOrElse("")
         issue_comment = (x \ "issue_comment").asOpt[String].getOrElse("")
         first_send_date = (x \ "first_send_date").asOpt[Long].getOrElse(0)
         delivered_date = (x \ "delivered_date").asOpt[Long].getOrElse(0)
@@ -126,6 +128,7 @@ class Issue(var id: Int, var status: String, var project: String, var department
   var history: ListBuffer[IssueHistory] = ListBuffer.empty[IssueHistory]
   var closing_status: String = ""
   var issue_comment: String = ""
+  var author_comment: String = ""
   var first_send_date: Long = 0
   var delivered_date: Long = 0
   var revision: String = ""
