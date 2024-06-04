@@ -44,14 +44,10 @@ trait IssueManagerHelper extends MongoCodecs {
         var query = Source.fromResource("queries/issues.sql").mkString
         val filterUsers = s" and (assigned_to = '${user.login}' or started_by = '${user.login}' or responsible = '${user.login}'"
         query += filterUsers
-        //        if (user.permissions.contains("view_department_tasks")){
-        //          var groups = user.groups.map(x => "'" + x + "'").mkString("(", ",", ")")
-        //          if (user.groups.isEmpty){
-        //            groups = "('')"
-        //          }
-        //          query += s" or i.issue_type in ${groups}"
-        //        }
-        if (user.permissions.contains("view_all_tasks") || user.login == "op") {
+        if (user.permissions.contains("view_department_tasks")){
+          query += s" or i.department in ('${user.department}')"
+        }
+        else if (user.permissions.contains("view_all_tasks") || user.login == "op") {
           query += s" or (id > -100)"
         }
         query += s" or (i.department in (select name from issue_departments id where id.manager like '%${user.login}%'))"
