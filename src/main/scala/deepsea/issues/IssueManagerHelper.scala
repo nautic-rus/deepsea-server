@@ -161,6 +161,10 @@ trait IssueManagerHelper extends MongoCodecs {
               case value: String => value
               case _ => ""
             }
+            author_comment = rs.getString("author_comment") match {
+              case value: String => value
+              case _ => ""
+            }
             ready = rs.getString("ready") match {
               case value: String => value
               case _ => ""
@@ -498,6 +502,10 @@ trait IssueManagerHelper extends MongoCodecs {
               case _ => ""
             }
             issue_comment = rs.getString("issue_comment") match {
+              case value: String => value
+              case _ => ""
+            }
+            author_comment = rs.getString("author_comment") match {
               case value: String => value
               case _ => ""
             }
