@@ -300,6 +300,10 @@ trait IssueManagerHelper extends MongoCodecs {
             rs.getInt("count") match {
               case value: Int => value
               case _ => 0
+            },
+            rs.getLong("max_due_date") match {
+              case value: Long => value
+              case _ => 0
             }
           )
         }

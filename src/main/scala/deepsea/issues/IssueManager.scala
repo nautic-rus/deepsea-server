@@ -130,7 +130,7 @@ object IssueManager{
   implicit val IssueShortDecoder: Decoder[IssueShort] = deriveDecoder[IssueShort]
   implicit val IssueShortEncoder: Encoder[IssueShort] = deriveEncoder[IssueShort]
 
-  case class IssueCorrection(id: Int, status: String, doc_number: String, count: Int)
+  case class IssueCorrection(id: Int, status: String, doc_number: String, count: Int, max_due_date: Long)
   implicit val IssueCorrectionDecoder: Decoder[IssueCorrection] = deriveDecoder[IssueCorrection]
   implicit val IssueCorrectionEncoder: Encoder[IssueCorrection] = deriveEncoder[IssueCorrection]
 
