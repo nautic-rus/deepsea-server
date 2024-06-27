@@ -84,6 +84,10 @@ trait IssueManagerHelper extends MongoCodecs {
               case value: String => value
               case _ => ""
             },
+//            rs.getString("it_type") match {
+//              case value: String => value
+//              case _ => ""
+//            },
             rs.getString("issue_name") match {
               case value: String => value
               case _ => ""
@@ -185,6 +189,10 @@ trait IssueManagerHelper extends MongoCodecs {
               case _ => 0
             }
             assistant = rs.getString("assistant") match {
+              case value: String => value
+              case _ => ""
+            }
+            it_type = rs.getString("it_type") match {
               case value: String => value
               case _ => ""
             }
