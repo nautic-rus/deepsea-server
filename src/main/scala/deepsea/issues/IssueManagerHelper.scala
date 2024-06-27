@@ -104,6 +104,10 @@ trait IssueManagerHelper extends MongoCodecs {
               case value: Long => value
               case _ => 0
             },
+            rs.getString("it_type") match {
+              case value: String => value
+              case _ => ""
+            },
           ) {
             action = rs.getString("active_action") match {
               case value: String => value
@@ -192,10 +196,10 @@ trait IssueManagerHelper extends MongoCodecs {
               case value: String => value
               case _ => ""
             }
-            it_type = rs.getString("it_type") match {
-              case value: String => value
-              case _ => ""
-            }
+//            it_type = rs.getString("it_type") match {
+//              case value: String => value
+//              case _ => ""
+//            }
           }
         }
         rs.close()
@@ -460,6 +464,10 @@ trait IssueManagerHelper extends MongoCodecs {
               case value: Long => value
               case _ => 0
             },
+            rs.getString("it_type") match {
+              case value: String => value
+              case _ => ""
+            },
           ) {
             action = rs.getString("active_action") match {
               case value: String => value
@@ -614,6 +622,10 @@ trait IssueManagerHelper extends MongoCodecs {
               case value: Long => value
               case _ => 0
             },
+            rs.getString("it_type") match {
+              case value: String => value
+              case _ => ""
+            },
           ) {
             action = rs.getString("active_action") match {
               case value: String => value
@@ -743,6 +755,10 @@ trait IssueManagerHelper extends MongoCodecs {
             rs.getLong("due_date") match {
               case value: Long => value
               case _ => 0
+            },
+            rs.getString("it_type") match {
+              case value: String => value
+              case _ => ""
             },
           ) {
             action = rs.getString("active_action") match {
@@ -912,6 +928,10 @@ trait IssueManagerHelper extends MongoCodecs {
             rs.getLong("due_date") match {
               case value: Long => value
               case _ => 0
+            },
+            rs.getString("it_type") match {
+              case value: String => value
+              case _ => ""
             },
           ) {
             action = rs.getString("active_action") match {
@@ -1217,6 +1237,10 @@ trait IssueManagerHelper extends MongoCodecs {
               case value: Long => value
               case _ => 0
             },
+            rs.getString("it_type") match {
+              case value: String => value
+              case _ => ""
+            },
           ) {
             action = rs.getString("active_action") match {
               case value: String => value
@@ -1336,6 +1360,10 @@ trait IssueManagerHelper extends MongoCodecs {
             rs.getLong("due_date") match {
               case value: Long => value
               case _ => 0
+            },
+            rs.getString("it_type") match {
+              case value: String => value
+              case _ => ""
             },
           ) {
             action = rs.getString("active_action") match {

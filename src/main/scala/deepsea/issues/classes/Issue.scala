@@ -77,6 +77,7 @@ object Issue{
         details = (x \ "details").asOpt[String].getOrElse(""),
         assigned_to = (x \ "assigned_to").asOpt[String].getOrElse(""),
         due_date = (x \ "due_date").asOpt[Long].getOrElse(0),
+        it_type = (x \ "it_type").asOpt[String].getOrElse(""),
       ){
         priority = (x \ "priority").asOpt[String].getOrElse("")
         last_update = (x \ "last_update").asOpt[Long].getOrElse(0)
@@ -110,7 +111,7 @@ object Issue{
 }
 class Issue(var id: Int, var status: String, var project: String, var department: String, var started_by: String,
             var started_date: Long, var issue_type: String, var name: String, var details: String, var assigned_to: String,
-            var due_date: Long) {
+            var due_date: Long, var it_type: String) {
   var action: String = ""
   var actions: ListBuffer[IssueAction] = ListBuffer.empty[IssueAction]
   var file_attachments: ListBuffer[FileAttachment] = ListBuffer.empty[FileAttachment]
@@ -149,7 +150,7 @@ class Issue(var id: Int, var status: String, var project: String, var department
   var modification_of_existing: Int = 0
   var modification_description: String = ""
   var contract: String = ""
-  var it_type: String = ""
+//  var it_type: String = ""
   def toChildIssue: ChildIssue ={
     new ChildIssue(id, status, started_by, started_date, issue_type, name, assigned_to, responsible, doc_number, closing_status)
   }
