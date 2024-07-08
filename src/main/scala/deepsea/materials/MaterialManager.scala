@@ -83,7 +83,7 @@ object MaterialManager{
 
 
   case class MaterialComplect(id: String, project: Int, name: String, kind: String, user_id: Int, date: Long, materials: List[CMaterial])
-  case class CMaterial(material: String, count: Int)
+  case class CMaterial(material: String, count: Double)
   case class GetMaterialComplects(project: String)
   case class AddMaterialComplect(project: String, name: String, kind: String, user_id: String)
   case class RemoveMaterialComplect(id: String)
