@@ -608,6 +608,7 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
           while (rs.next()) {
             val roleName = Option(rs.getString("name")).getOrElse("")
             val visiblePages = rolesPages.filter(_.role == roleName).map(_.page)
+            //val visiblePages = getRolePages(roleName)
 
             res += Role(
               roleName,
@@ -701,7 +702,7 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
           val s = c.createStatement()
           s.execute(s"insert into roles (name, description, rights) values ('${role.name}', '${role.description}', '${role.rights.mkString(",")}')")
           s.execute(s"delete from roles_visibility_pages where role_id = '${role.name}'");
-          role.pages.foreach(page => {
+          role.pages.distinct.foreach(page => {
             s.execute(s"insert into roles_visibility_pages (role_id, page_id) values ('${role.name}', '$page')")
           })
           s.close()
@@ -752,9 +753,9 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
       case Some(c) =>
         try {
           val s = c.createStatement();
-          s.execute(s"update roles set name = '${role.name}', description = '${role.description}', rights = '${role.rights.mkString(",")}' where name = '$name'")
+          s.execute(s"update roles set name = '${role.name}', description = '${role.description}', rights = '${role.rights.distinct.mkString(",")}' where name = '$name'")
           s.execute(s"delete from roles_visibility_pages where role_id = '$name'")
-          role.pages.foreach(page => {
+          role.pages.distinct.foreach(page => {
             val q = s"insert into roles_visibility_pages (role_id, page_id) values ('${role.name}', (select id from pages where name = '$page'))"
             s.execute(q)
           })
@@ -800,7 +801,7 @@ trait AuthManagerHelper extends MongoCodecs with IssueManagerHelper {
       case Some(c) =>
         try {
           val s = c.createStatement()
-          val query = s"select name from pages p, roles_visibility_pages rvp where rvp.role_id = $name and p.id = rvp.page_id"
+          val query = s"select name from pages p, roles_visibility_pages rvp where rvp.role_id = '$name' and p.id = rvp.page_id"
           val rs = s.executeQuery(query)
           while (rs.next()) {
             res += Option(rs.getString("name")).getOrElse("")
