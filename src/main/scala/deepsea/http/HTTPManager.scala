@@ -212,6 +212,9 @@ class HTTPManager extends Actor {
         (post & path("startIssue") & entity(as[String])) { (issue) =>
           askFor(ActorManager.issue, StartIssue(issue))
         },
+        (post & path("addFilesInIssue") & entity(as[String])) { (file) =>
+          askFor(ActorManager.issue, AddFilesInIssue(file))
+        },
         (post & path("updateIssue") & parameter("user") & parameter("message") & entity(as[String])) { (user, message, issue) =>
           askFor(ActorManager.issue, UpdateIssue(user, message, issue))
         },
