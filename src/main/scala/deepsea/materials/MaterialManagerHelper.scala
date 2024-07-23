@@ -65,7 +65,7 @@ trait MaterialManagerHelper extends IssueManagerHelper {
             val id = rs.getInt("id")
             res += Equipment(
               id,
-              rs.getInt("sfi"),
+              rs.getString("sfi"),
               rs.getString("name"),
               rs.getString("descriptions"),
               rs.getString("department"),
@@ -106,7 +106,7 @@ trait MaterialManagerHelper extends IssueManagerHelper {
             val id = rs.getInt("id")
             res += Equipment(
               id,
-              rs.getInt("sfi"),
+              rs.getString("sfi"),
               rs.getString("name"),
               rs.getString("descriptions"),
               rs.getString("department"),
@@ -177,6 +177,7 @@ trait MaterialManagerHelper extends IssueManagerHelper {
     res.toList
   }
   def getSFIs: List[SFI] = {
+    println("getSFIS");
     val res = ListBuffer.empty[SFI]
     DBManager.GetPGConnection() match {
       case Some(c) =>
