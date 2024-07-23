@@ -49,6 +49,7 @@ object IssueManager{
   case class GetIssuesCorrection()
   case class GetQuestions()
   case class StartIssue(issueJson: String)
+  case class AddFilesInIssue(fileJson: String)
   case class UpdateIssue(user: String, updateMessage: String, issueJson: String)
   case class RemoveIssue(id: String, user: String)
   case class GetIssueProjects()
@@ -170,6 +171,16 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     case GetIssueTypes() => sender() ! Json.toJson(getIssueTypes)
     case GetIssueDepartments() => sender() ! Json.toJson(getIssueDepartments)
     case GetIssuePriorities() => sender() ! Json.toJson(getIssuePriorities)
+    case AddFilesInIssue(fileJson) =>
+      println(fileJson)
+      Json.parse(fileJson).asOpt[FileAttachment] match {
+        case Some(file) =>
+          println("Im shocked")
+          println(file.issue_id)
+          val result = setIssueFileAttachments(file.issue_id, file)
+          sender() ! result.asJson.noSpaces
+        case _ => sender() ! "error".asJson
+      }
     case StartIssue(issueJson) =>
       Json.parse(issueJson).asOpt[Issue] match {
         case Some(issue) =>
@@ -604,6 +615,7 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     result
   }
   def setIssueFileAttachments(id: Int, file: FileAttachment): Unit ={
+    println(id)
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
@@ -611,7 +623,8 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
         s.execute(s"insert into file_attachments (issue_id, file_name, url, upload_date, author) values ($id, '${file.name}', '${file.url}', $date, '${file.author}')")
         s.close()
         c.close()
-      case _ =>
+        "success";
+      case _ => "error";
     }
   }
   def setMessageFileAttachments(id: Int, file: FileAttachment): Unit ={

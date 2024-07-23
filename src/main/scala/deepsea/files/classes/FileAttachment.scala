@@ -13,7 +13,9 @@ object FileAttachment{
         revision = (x \ "revision").asOpt[String].getOrElse(""),
         group = (x \ "group").asOpt[String].getOrElse(""),
         cloud = (x \ "cloud").asOpt[Int].getOrElse(0),
-      ))
+      ){
+        issue_id = (x \ "issue_id").asOpt[Int].getOrElse(0)
+      })
       case _ => JsSuccess(null)
     }
   }
