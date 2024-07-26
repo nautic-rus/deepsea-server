@@ -5,6 +5,8 @@ import akka.http.scaladsl.model.headers
 import com.mongodb.BasicDBObject
 import deepsea.dbase.{DBManager, MongoCodecs}
 import deepsea.materials.MaterialManager._
+import io.circe.Encoder.AsArray.importedAsArrayEncoder
+import io.circe.Encoder.AsObject.importedAsObjectEncoder
 import io.circe.generic.JsonCodec
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.parser._
@@ -23,6 +25,7 @@ import scala.concurrent.duration.{Duration, SECONDS}
 import scala.language.postfixOps
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.{ProvenShape, TableQuery}
+import slick.jdbc.GetResult
 
 import java.util.concurrent.TimeUnit
 import scala.io.Source
@@ -161,8 +164,12 @@ object MaterialManager{
   implicit val RelatedTaskDecoder: Decoder[RelatedTask] = deriveDecoder[RelatedTask]
   implicit val RelatedTaskEncoder: Encoder[RelatedTask] = deriveEncoder[RelatedTask]
 
-
-  case class SpecMaterial(code: String, name: String, descr: String, units: String, weight: Double, supplier: String, statem_id: Int, dir_id: Int, user_id: Int, label: String, last_upd: Long, note: String, manufacturer: String, coef: Double, id: Int, removed: Int)
+//  case class gSpecMaterialClass(code: String, name: String, descr: String, units: String, weight: Double, statem_id: Int, dir_id: Int, user_id: Int, label: String, last_upd: Long, note: String, manufacturer: String, coef: Double, id: Int, removed: Int, supplier_name: String, supplier_id: Int)
+//
+//  implicit val getSpecMaterialClassDecoder: Decoder[gSpecMaterialClass] = deriveDecoder[gSpecMaterialClass]
+//  implicit val getSpecMaterialClassEncoder: Encoder[gSpecMaterialClass] = deriveEncoder[gSpecMaterialClass]
+  case class SpecMaterial(code: String, name: String, descr: String, units: String, weight: Double, supplier: String,   statem_id: Int, dir_id: Int, user_id: Int, label: String, last_upd: Long, note: String, manufacturer: String, coef: Double, id: Int, removed: Int)
+//  case class SpecMaterial(code: String, name: String, descr: String, units: String, weight: Double, supplier_name: String = "", supplier_id: Int = -1, statem_id: Int, dir_id: Int, user_id: Int, label: String, last_upd: Long, note: String, manufacturer: String, coef: Double, id: Int, removed: Int)
   class SpecMaterialTable(tag: Tag) extends Table[SpecMaterial](tag, "materials") {
     val code = column[String]("stock_code")
     val name = column[String]("name")
@@ -184,6 +191,8 @@ object MaterialManager{
   }
   implicit val SpecMaterialDecoder: Decoder[SpecMaterial] = deriveDecoder[SpecMaterial]
   implicit val SpecMaterialEncoder: Encoder[SpecMaterial] = deriveEncoder[SpecMaterial]
+
+
 
 
   case class MaterialDirectory(id: Int, name: String, parent_id: Int, user_id: Int, date: Long, old_code: String, project_id: Int, removed: Int)
@@ -618,6 +627,7 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
         case response: List[SpecMaterial] => response.asJson.noSpaces
         case _ => "error: wrong sql query".asJson.noSpaces
       })
+
     case GetSpecDirectories() =>
       sender() ! (Await.result(getMaterialDirectories, Duration(5, SECONDS)) match {
         case response: List[MaterialDirectory] => response.asJson.noSpaces
@@ -645,8 +655,8 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
     case UpdateSpecMaterial(jsonValue) =>
       sender() ! (decode[SpecMaterial](jsonValue) match {
         case Right(value) =>
-          updateSpecMaterial(value.copy(last_upd = new Date().getTime))
-          "success".asJson.noSpaces
+          val id = updateSpecMaterial(value.copy(last_upd = new Date().getTime))
+          id.asJson.noSpaces
         case Left(error) => "error: wrong post data".asJson.noSpaces
       })
     case UpdateMaterialDirectory(jsonValue) =>
@@ -694,7 +704,16 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
   def getSpecMaterials: Future[List[SpecMaterial]] = {
     DBManager.PostgresSQL.run(TableQuery[SpecMaterialTable].filter(_.removed === 0).result).map(_.toList)
   }
-  def updateSpecMaterial(specMaterial: SpecMaterial) = {
+
+//  def getSpecMaterials: Future[Seq[gSpecMaterialClass]] = {
+//    val q = scala.io.Source.fromResource("getSpecMaterials.sql").mkString
+//    implicit val rezult = GetResult(r => gSpecMaterialClass(r.nextString, r.nextString, r.nextString, r.nextString, r.nextDouble, r.nextInt,
+//      r.nextInt, r.nextInt, r.nextString, r.nextLong, r.nextString, r.nextString, r.nextDouble, r.nextInt, r.nextInt, r.nextString, r.nextInt))
+//    val r = DBManager.PostgresSQL.run(sql"$q".as[gSpecMaterialClass])
+//    println(r)
+//    r
+//  }
+  def updateSpecMaterial(specMaterial: SpecMaterial): Int = {
     val material = if (specMaterial.id == 0){
       val id = Await.result(DBManager.PostgresSQL.run(TableQuery[SpecMaterialTable].map(_.id).max.result), Duration(5, SECONDS)) match {
         case response: Option[Int] =>
@@ -710,7 +729,9 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
     else{
       specMaterial
     }
-    DBManager.PostgresSQL.run(TableQuery[SpecMaterialTable].insertOrUpdate(material))
+    val table = TableQuery[SpecMaterialTable]
+    val id = Await.result(DBManager.PostgresSQL.run((table returning table.map(_.id)).insertOrUpdate(material)), Duration(5, SECONDS)).getOrElse(0)
+    id
   }
   def alz(input: String, length: Int = 14) = {
     ("0" * length + input).takeRight(length)
