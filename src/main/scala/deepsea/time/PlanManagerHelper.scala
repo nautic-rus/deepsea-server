@@ -644,7 +644,11 @@ trait PlanManagerHelper {
         val consumedByTask = getConsumedHoursByTaskId(tasks.head.task_id).sortBy(_.date_consumed)
         if (consumedByTask.nonEmpty && tasks.head.task_type == 0) {
           val consumedByTaskSum = Math.ceil(consumedByTask.map(_.amount).sum).toInt
-          val hours = tasks.flatMap(x => getHoursOfInterval(x.date_start, x.date_finish))
+//          val hoursFlat = tasks.map(x => getHoursOfInterval(x.date_start, x.date_finish))
+//          tasks.sortBy(_.date_start).foreach(t => {
+//            println(getHoursOfInterval(t.date_start, t.date_finish).length)
+//          })
+          val hours = tasks.flatMap(x => getHoursOfIntervalFull(x.date_start, x.date_finish))
           if (hours.nonEmpty && hours.length >= consumedByTaskSum) {
             val splitHour = hours(consumedByTaskSum - 1)
             val nextHourPlan = nextHour(splitHour)
@@ -1201,6 +1205,16 @@ trait PlanManagerHelper {
     }
     res.toList
   }
+  private def getHoursOfIntervalFull(dateStart: Long, dateFinish: Long): List[Long] = {
+    val res = ListBuffer.empty[Long]
+    var hour = dateStart
+    while (hour <= dateFinish){
+      res += hour
+      hour = nextHourAny(hour)
+    }
+    res.toList
+  }
+
   private def nextHourN(date: Long, hours: Int): Long = {
     hours match {
       case 0 => date
@@ -1233,7 +1247,7 @@ trait PlanManagerHelper {
     }
     nH
   }
-  def nextHour(date: Long, ignoreShort: Boolean = false): Long = {
+  def nextHour1(date: Long, ignoreShort: Boolean = false): Long = {
     var d = new Date(date + msOneHour)
     val hours = d.getHours
     if (hours == 12){
@@ -1247,6 +1261,28 @@ trait PlanManagerHelper {
     }
     while (isWeekend(d)){
       d = new Date(d.getTime + msOneHour * 24)
+    }
+    new Date(d.getYear, d.getMonth, d.getDate, d.getHours, 0, 0).getTime
+  }
+
+  def nextHour(date: Long, ignoreShort: Boolean = false): Long = {
+    var d = new Date(date + msOneHour)
+    val hours = d.getHours
+    if (!ignoreShort && isShort(d) && hours == 16) {
+      d = new Date(date + msOneHour * 16)
+    }
+    else if (hours == 17){
+      d = new Date(date + msOneHour * 16)
+    }
+    while (isWeekend(d)){
+      d = new Date(d.getTime + msOneHour * 24)
+    }
+    new Date(d.getYear, d.getMonth, d.getDate, d.getHours, 0, 0).getTime
+  }
+  def nextHourAny(date: Long): Long = {
+    var d = new Date(date + msOneHour)
+    while (isWeekend(d)){
+      d = new Date(d.getTime + msOneHour)
     }
     new Date(d.getYear, d.getMonth, d.getDate, d.getHours, 0, 0).getTime
   }
