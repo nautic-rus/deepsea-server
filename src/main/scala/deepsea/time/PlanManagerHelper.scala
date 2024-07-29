@@ -1247,7 +1247,7 @@ trait PlanManagerHelper {
     }
     nH
   }
-  def nextHour1(date: Long, ignoreShort: Boolean = false): Long = {
+  def nextHour(date: Long, ignoreShort: Boolean = false): Long = {
     var d = new Date(date + msOneHour)
     val hours = d.getHours
     if (hours == 12){
@@ -1265,7 +1265,7 @@ trait PlanManagerHelper {
     new Date(d.getYear, d.getMonth, d.getDate, d.getHours, 0, 0).getTime
   }
 
-  def nextHour(date: Long, ignoreShort: Boolean = false): Long = {
+  def nextHour2(date: Long, ignoreShort: Boolean = false): Long = {
     var d = new Date(date + msOneHour)
     val hours = d.getHours
     if (!ignoreShort && isShort(d) && hours == 16) {
