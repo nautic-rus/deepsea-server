@@ -23,6 +23,7 @@ object PlanManager{
   case class GetPlanNotOrdinary(from: String)
   case class PlanInterval(id: Int, task_id: Int, user_id: Int, date_start: Long, date_finish: Long, task_type: Int, hours_amount: Int, consumed: Int)
   case class AddInterval(taskId: String, userId: String, from: String, hoursAmount: String, taskType: String, fromUser: String)
+  case class AddIntervalAllowPast(taskId: String, userId: String, from: String, hoursAmount: String, taskType: String, fromUser: String)
   case class InsertInterval(taskId: String, userId: String, from: String, hoursAmount: String, taskType: String, fromUser: String)
   case class InsertConsumedInterval(taskId: String, userId: String, from: String, hoursAmount: String, taskType: String)
   case class DayInterval(taskId: Int, hours: Double, hours_total: Double, id: Int, date_start: Long, consumed: Int, taskType: Int)
@@ -240,6 +241,19 @@ class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
           case _ => None
         }
       }
+      val response = res match {
+        case -3 => "error: нельзя назначить задачу нескольким пользователям"
+        case -2 => "error: critical code error"
+        case -1 => "error: wrong planing date"
+        case _ => "success"
+      }
+      sender() ! response.asJson.noSpaces
+    case AddIntervalAllowPast(taskId, userId, from, hoursAmount, taskType, fromUser) =>
+      val res = addInterval(taskId.toIntOption.getOrElse(0),
+        userId.toIntOption.getOrElse(0),
+        from.toLongOption.getOrElse(0),
+        hoursAmount.toIntOption.getOrElse(0),
+        taskType.toIntOption.getOrElse(0), allowPast = true)
       val response = res match {
         case -3 => "error: нельзя назначить задачу нескольким пользователям"
         case -2 => "error: critical code error"
