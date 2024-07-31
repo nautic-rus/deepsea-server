@@ -648,8 +648,9 @@ trait PlanManagerHelper {
 //          tasks.sortBy(_.date_start).foreach(t => {
 //            println(getHoursOfInterval(t.date_start, t.date_finish).length)
 //          })
-          val hours = tasks.flatMap(x => getHoursOfInterval(x.date_start, x.date_finish))
-          if (hours.nonEmpty && hours.length >= consumedByTaskSum) {
+          val skip = tasks.map(_.user_id).distinct.flatMap(skipIntervals)
+          val hours = tasks.flatMap(x => getHoursOfIntervalWithSkip(x.date_start, x.date_finish, skip))
+          if (hours.nonEmpty && hours.length > consumedByTaskSum) {
             val splitHour = hours(consumedByTaskSum - 1)
             val nextHourPlan = nextHour(splitHour)
             splitTask(nextHourPlan, consumedByTask.last.user_id)
@@ -1202,6 +1203,15 @@ trait PlanManagerHelper {
     while (hour <= dateFinish){
       res += hour
       hour = nextHour(hour)
+    }
+    res.toList
+  }
+  private def getHoursOfIntervalWithSkip(dateStart: Long, dateFinish: Long, skip: List[PlanInterval]): List[Long] = {
+    val res = ListBuffer.empty[Long]
+    var hour = dateStart
+    while (hour <= dateFinish){
+      res += hour
+      hour = nextHourWithSkip(hour, skip)
     }
     res.toList
   }
