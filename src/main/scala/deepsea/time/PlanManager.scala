@@ -19,6 +19,7 @@ import scala.collection.mutable.ListBuffer
 object PlanManager{
   case class GetPlan()
   case class GetPlanByDays(date: String)
+  case class GetPlanByDaysOfUser(date: String, user_id: Int)
   case class GetUserPlan(user: String, from: String)
   case class GetPlanNotOrdinary(from: String)
   case class PlanInterval(id: Int, task_id: Int, user_id: Int, date_start: Long, date_finish: Long, task_type: Int, hours_amount: Int, consumed: Int)
@@ -200,6 +201,8 @@ class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
       sender() ! getPlan.asJson.noSpaces
     case GetPlanByDays(date) =>
       sender() ! getPlanByDays(date.toLongOption.getOrElse(0)).asJson.noSpaces
+    case GetPlanByDaysOfUser(date, user_id) =>
+      sender() ! getPlanByDaysOfUser(date.toLongOption.getOrElse(0), user_id).asJson.noSpaces
     case GetUserPlan(user, from) =>
       sender() ! getUserPlan(user.toIntOption.getOrElse(0), from.toLongOption.getOrElse(0)).asJson
     case GetPlanNotOrdinary(from: String) => (from)

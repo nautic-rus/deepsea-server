@@ -273,6 +273,63 @@ trait PlanManagerHelper {
 
     res.toList
   }
+  def getPlanByDaysOfUser(dateLong: Long, user_id: Int): List[UserPlan] = {
+    val plan = getPlan
+    //val issues = getIssuesByChunk(plan.map(_.task_id), plan)
+    val res = ListBuffer.empty[UserPlan]
+    val cal = Calendar.getInstance()
+    cal.setTime(new Date(dateLong))
+    val month = cal.get(Calendar.MONTH)
+    val year = cal.get(Calendar.YEAR)
+    val daysInMonth = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
+    val planByDays = ListBuffer.empty[PlanByDays]
+    val skip = skipIntervals(user_id)
+
+
+    List(user_id).foreach(user => {
+      1.to(daysInMonth).foreach(d => {
+        val dayIntervals = ListBuffer.empty[DayInterval]
+        cal.set(year, month, d)
+        var hours = hoursOfDay(cal.getTime.getTime)
+        if (hours.nonEmpty){
+          val intervals = plan.filter(x => x.user_id == user && intervalSameDay(hours.head, hours.last, x.date_start, x.date_finish))
+          if (intervals.exists(_.task_type != 0)){
+            hours = hoursOfDay(cal.getTime.getTime, ignoreShort = true)
+          }
+          intervals.foreach(int => {
+            val intervalHours = hours.filter(x => int.date_start <= x && x <= int.date_finish).filter(h => int.task_type != 0 || !inInterval(h, skip))
+            dayIntervals += DayInterval(int.task_id, intervalHours.length, int.hours_amount, int.id, int.date_start, int.consumed, int.task_type)
+          })
+          planByDays += PlanByDays(d, month, year, dayIntervals.sortBy(_.date_start).toList)
+        }
+      })
+
+    })
+
+    cal.add(Calendar.DAY_OF_MONTH, 1)
+    List(user_id).foreach(user => {
+      1.to(daysInMonth).foreach(d => {
+        val dayIntervals = ListBuffer.empty[DayInterval]
+        cal.set(year, cal.get(Calendar.MONTH), d)
+        var hours = hoursOfDay(cal.getTime.getTime)
+        if (hours.nonEmpty){
+          val intervals = plan.filter(x => x.user_id == user && intervalSameDay(hours.head, hours.last, x.date_start, x.date_finish))
+          if (intervals.exists(_.task_type != 0)){
+            hours = hoursOfDay(cal.getTime.getTime, ignoreShort = true)
+          }
+          intervals.foreach(int => {
+            val intervalHours = hours.filter(x => int.date_start <= x && x <= int.date_finish).filter(h => int.task_type != 0 || !inInterval(h, skip))
+            dayIntervals += DayInterval(int.task_id, intervalHours.length, int.hours_amount, int.id, int.date_start, int.consumed, int.task_type)
+          })
+          planByDays += PlanByDays(d, cal.get(Calendar.MONTH), year, dayIntervals.sortBy(_.date_start).toList)
+        }
+      })
+    })
+
+    res += UserPlan(user_id, planByDays.toList)
+    res.toList
+  }
+
   def getIssuesByChunk(ids: List[Int], plan: List[PlanInterval]): List[IssuePlan] = {
     val res = ListBuffer.empty[IssuePlan]
     DBManager.GetPGConnection() match {
