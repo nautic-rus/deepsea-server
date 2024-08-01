@@ -653,8 +653,9 @@ trait PlanManagerHelper {
           val hours = tasks.flatMap(x => getHoursOfIntervalWithSkip(x.date_start, x.date_finish, skip))
           if (hours.nonEmpty && hours.length > consumedByTaskSum) {
             val splitHour = hours(consumedByTaskSum - 1)
-            val nextHourPlan = nextHour(splitHour)
-            splitTask(nextHourPlan, consumedByTask.last.user_id)
+            val nextHourPlan = nextHourWithSkip(splitHour, skip)
+            //splitTask(nextHourPlan, consumedByTask.last.user_id)
+            splitTask(nextHourPlan, ints.head.user_id)
             getTaskPlan(tasks.head.task_id).filter(_.date_start >= nextHourPlan).foreach(t => {
               deleteInterval(t.id)
             })
