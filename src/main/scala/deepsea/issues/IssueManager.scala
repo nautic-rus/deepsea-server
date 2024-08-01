@@ -172,11 +172,8 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
     case GetIssueDepartments() => sender() ! Json.toJson(getIssueDepartments)
     case GetIssuePriorities() => sender() ! Json.toJson(getIssuePriorities)
     case AddFilesInIssue(fileJson) =>
-      println(fileJson)
       Json.parse(fileJson).asOpt[FileAttachment] match {
         case Some(file) =>
-          println("Im shocked")
-          println(file.issue_id)
           val result = setIssueFileAttachments(file.issue_id, file)
           sender() ! result.asJson.noSpaces
         case _ => sender() ! "error".asJson

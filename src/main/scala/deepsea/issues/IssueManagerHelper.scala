@@ -836,9 +836,9 @@ trait IssueManagerHelper extends MongoCodecs {
               case _ => ""
             }
             contract_due_date = rs.getLong("stage_date") match {
-              case value: Long => value
+              case value if !rs.wasNull() => value
               case _ => rs.getLong("contract_due_date") match {
-                case value: Long => value
+                case value if !rs.wasNull() => value
                 case _ => 0
               }
             }
