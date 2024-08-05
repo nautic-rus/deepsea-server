@@ -673,8 +673,15 @@ trait PlanManagerHelper {
       val consumedByTask = getConsumedHoursByTaskId(id).sortBy(_.date_consumed)
       if (consumedByTask.nonEmpty) {
         val consumedByTaskSum = Math.ceil(consumedByTask.map(_.amount).sum).toInt
-        val hours = tasks.flatMap(x => getHoursOfInterval(x.date_start, x.date_finish))
-        if (hours.nonEmpty && hours.length >= consumedByTaskSum){
+        val hours = ListBuffer.empty[Long]
+        tasks.foreach(t => {
+          val skip = skipIntervals(t.user_id)
+          getHoursOfIntervalWithSkip(t.date_start, t.date_finish, skip)
+        })
+        val caltoday = Calendar.getInstance()
+        caltoday.set(caltoday.get(Calendar.YEAR), caltoday.get(Calendar.MONTH), caltoday.get(Calendar.DAY_OF_MONTH), 8, 0, 0)
+        val filterHours = hours.filter(x => x > caltoday.getTime.getTime)
+        if (hours.nonEmpty && hours.length >= consumedByTaskSum && filterHours.nonEmpty && hours(consumedByTaskSum - 1) > caltoday.getTime.getTime){
           val splitHour = hours(consumedByTaskSum - 1)
           val nextHourPlan = nextHour(splitHour)
           splitTask(nextHourPlan, consumedByTask.last.user_id)
