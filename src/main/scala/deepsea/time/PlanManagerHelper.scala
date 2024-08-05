@@ -627,10 +627,13 @@ trait PlanManagerHelper {
             val userPlan = getUserPlan(int.user_id, int.date_start).filter(x => x.id != int.id).filter(_.task_type == 0)
             val skipInts = skipIntervals(int.user_id).filter(_.id != int.id)
             var hourStart = int.date_start
-            userPlan.filter(_.date_finish < caltoday.getTime.getTime).sortBy(_.date_start).foreach(p => {
+            if (hourStart < caltoday.getTime.getTime){
+              hourStart = nextHourWithSkip(caltoday.getTime.getTime, skipInts)
+            }
+            userPlan.filter(_.date_start > caltoday.getTime.getTime).sortBy(_.date_start).foreach(p => {
               val hourFinish = nextHourNWithSkip(hourStart, p.hours_amount - 1, skipInts)
               s.execute(s"update plan set date_start = $hourStart, date_finish = $hourFinish where id = ${p.id}")
-              hourStart = nextHour(hourFinish)
+              hourStart = nextHourWithSkip(hourFinish, skipInts)
               needToUpdateInts += p.task_id
             })
             s.execute(s"delete from plan where id = $id")
