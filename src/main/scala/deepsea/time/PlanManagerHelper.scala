@@ -606,6 +606,8 @@ trait PlanManagerHelper {
   }
 
   def deleteInterval(id: Int): Unit = {
+    val caltoday = Calendar.getInstance()
+    caltoday.set(caltoday.get(Calendar.YEAR), caltoday.get(Calendar.MONTH), caltoday.get(Calendar.DAY_OF_MONTH), 8, 0, 0)
     val needToUpdateInts = ListBuffer.empty[Int]
     DBManager.GetPGConnection() match {
       case Some(c) =>
@@ -625,7 +627,7 @@ trait PlanManagerHelper {
             val userPlan = getUserPlan(int.user_id, int.date_start).filter(x => x.id != int.id).filter(_.task_type == 0)
             val skipInts = skipIntervals(int.user_id).filter(_.id != int.id)
             var hourStart = int.date_start
-            userPlan.sortBy(_.date_start).foreach(p => {
+            userPlan.filter(_.date_finish < caltoday.getTime.getTime).sortBy(_.date_start).foreach(p => {
               val hourFinish = nextHourNWithSkip(hourStart, p.hours_amount - 1, skipInts)
               s.execute(s"update plan set date_start = $hourStart, date_finish = $hourFinish where id = ${p.id}")
               hourStart = nextHour(hourFinish)
@@ -678,10 +680,10 @@ trait PlanManagerHelper {
           val skip = skipIntervals(t.user_id)
           getHoursOfIntervalWithSkip(t.date_start, t.date_finish, skip)
         })
-        val caltoday = Calendar.getInstance()
-        caltoday.set(caltoday.get(Calendar.YEAR), caltoday.get(Calendar.MONTH), caltoday.get(Calendar.DAY_OF_MONTH), 8, 0, 0)
-        val filterHours = hours.filter(x => x > caltoday.getTime.getTime)
-        if (hours.nonEmpty && hours.length >= consumedByTaskSum && filterHours.nonEmpty && hours(consumedByTaskSum - 1) > caltoday.getTime.getTime){
+//        val caltoday = Calendar.getInstance()
+//        caltoday.set(caltoday.get(Calendar.YEAR), caltoday.get(Calendar.MONTH), caltoday.get(Calendar.DAY_OF_MONTH), 8, 0, 0)
+//        val filterHours = hours.filter(x => x > caltoday.getTime.getTime)
+        if (hours.nonEmpty && hours.length >= consumedByTaskSum){
           val splitHour = hours(consumedByTaskSum - 1)
           val nextHourPlan = nextHour(splitHour)
           splitTask(nextHourPlan, consumedByTask.last.user_id)
