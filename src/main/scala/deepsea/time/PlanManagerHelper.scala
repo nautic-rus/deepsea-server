@@ -607,7 +607,7 @@ trait PlanManagerHelper {
 
   def deleteInterval(id: Int): Unit = {
     val caltoday = Calendar.getInstance()
-    caltoday.set(caltoday.get(Calendar.YEAR), caltoday.get(Calendar.MONTH), caltoday.get(Calendar.DAY_OF_MONTH), 7, 0, 0)
+    caltoday.set(caltoday.get(Calendar.YEAR), caltoday.get(Calendar.MONTH), caltoday.get(Calendar.DAY_OF_MONTH), 8, 0, 0)
     val needToUpdateInts = ListBuffer.empty[Int]
     DBManager.GetPGConnection() match {
       case Some(c) =>
@@ -681,7 +681,7 @@ trait PlanManagerHelper {
         val hours = ListBuffer.empty[Long]
         tasks.foreach(t => {
           val skip = skipIntervals(t.user_id)
-          getHoursOfIntervalWithSkip(t.date_start, t.date_finish, skip)
+          hours ++= getHoursOfIntervalWithSkip(t.date_start, t.date_finish, skip)
         })
 //        val caltoday = Calendar.getInstance()
 //        caltoday.set(caltoday.get(Calendar.YEAR), caltoday.get(Calendar.MONTH), caltoday.get(Calendar.DAY_OF_MONTH), 8, 0, 0)
