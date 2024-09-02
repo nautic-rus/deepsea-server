@@ -45,17 +45,17 @@ class BackupManager extends Actor{
   override def preStart(): Unit = {
     //backupForan()
     //uploadForanBackup()
-    system.scheduler.scheduleWithFixedDelay(0.seconds, 60.minutes, self, BackupForan())
+    system.scheduler.scheduleWithFixedDelay(0.seconds, 1.minutes, self, BackupForan())
   }
   override def receive: Receive = {
     case BackupForan() =>
-      if (Calendar.getInstance().get(Calendar.HOUR_OF_DAY) == 23){
+      if (Calendar.getInstance().get(Calendar.HOUR_OF_DAY) == 1 && Calendar.getInstance().get(Calendar.MINUTE) == 0){
         val start = new Date().toString
         backupForan()
         val complete = new Date().toString
         ActorManager.mail ! Mail("Bogdan Isaev", "redeeming.fury@gmail.com", "Foran Backup Notification", s"Foran Backup started at $start and successfully completed at $complete")
       }
-      if (Calendar.getInstance().get(Calendar.HOUR_OF_DAY) == 2) {
+      if (Calendar.getInstance().get(Calendar.HOUR_OF_DAY) == 3) {
         uploadForanBackup()
       }
   }
