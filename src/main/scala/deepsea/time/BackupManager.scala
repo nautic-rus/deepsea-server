@@ -49,7 +49,8 @@ class BackupManager extends Actor{
   }
   override def receive: Receive = {
     case BackupForan() =>
-      if (Calendar.getInstance().get(Calendar.HOUR_OF_DAY) == 1 && Calendar.getInstance().get(Calendar.MINUTE) == 0){
+      val c = Calendar.getInstance()
+      if (c.get(Calendar.HOUR_OF_DAY) == 1 && c.get(Calendar.MINUTE) == 0){
         val start = new Date().toString
         backupForan()
         val complete = new Date().toString
