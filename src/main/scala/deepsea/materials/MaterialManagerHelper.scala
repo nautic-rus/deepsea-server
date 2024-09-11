@@ -536,7 +536,7 @@ trait MaterialManagerHelper extends IssueManagerHelper {
         val res = ListBuffer.empty[String]
         val q = s"insert into material_check values ('$value')"
         val stmt = connection.createStatement()
-        val rs = stmt.execute(q)
+        stmt.execute(q)
         stmt.close()
         connection.close()
         res.toList
