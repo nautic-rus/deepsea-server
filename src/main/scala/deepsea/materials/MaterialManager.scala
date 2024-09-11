@@ -284,6 +284,11 @@ object MaterialManager{
   case class AddSupMatRelation(jsonValue: String)
   case class GetEqSupMatRelations(supId: String)
 
+
+  case class GetMaterialCheck()
+  case class AddMaterialCheck(value: String)
+  case class DeleteMaterialCheck(value: String)
+
 }
 class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper {
 
@@ -696,6 +701,14 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
       sender() ! getEqSupMatRelations(supId).asJson.noSpaces
     case UpdateMaterials() =>
       //updateMaterials()
+    case GetMaterialCheck() =>
+      sender() ! getMaterialChecks.asJson.noSpaces
+    case AddMaterialCheck(value) =>
+      sender() ! addMaterialCheck(value)
+      sender() ! "success".asJson.noSpaces
+    case DeleteMaterialCheck(value) =>
+      sender() ! deleteMaterialCheck(value)
+      sender() ! "success".asJson.noSpaces
     case _ => None
   }
   def getSupNames: Future[List[SupName]] = {

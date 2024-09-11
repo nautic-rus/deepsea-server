@@ -4,12 +4,16 @@ import com.mongodb.BasicDBObject
 import deepsea.App
 import deepsea.dbase.DBManager.RsIterator
 import deepsea.dbase.{DBManager, DatabaseManager}
+import deepsea.files.FileManager.{TreeFile, TreeFileHistory, treeFilesCollection, treeFilesHistoryCollection}
 import deepsea.files.classes.FileAttachment
 import deepsea.issues.IssueManagerHelper
 import deepsea.materials.MaterialManager._
 import deepsea.time.PlanManager.IssuePlan
+import deepsea.time.TimeControlManager.SpyWatch
 import org.aarboard.nextcloud.api.NextcloudConnector
+import org.mongodb.scala.MongoCollection
 import org.mongodb.scala.model.Filters
+import org.mongodb.scala.model.Filters.{and, equal}
 import slick.lifted.TableQuery
 
 import scala.language.postfixOps
@@ -509,4 +513,47 @@ trait MaterialManagerHelper extends IssueManagerHelper {
     res.toList
   }
 
+  def getMaterialChecks: List[String] ={
+    DBManager.GetPGConnection() match {
+      case Some(connection) =>
+        val res = ListBuffer.empty[String]
+        val q = "select * from material_check"
+        val stmt = connection.createStatement()
+        val rs = stmt.executeQuery(q)
+        while (rs.next()){
+          res += rs.getString("code")
+        }
+        rs.close()
+        stmt.close()
+        connection.close()
+        res.toList
+      case _ => List.empty[String]
+    }
+  }
+  def addMaterialCheck(value: String): Unit ={
+    DBManager.GetPGConnection() match {
+      case Some(connection) =>
+        val res = ListBuffer.empty[String]
+        val q = s"insert into material_check values ('$value')"
+        val stmt = connection.createStatement()
+        val rs = stmt.execute(q)
+        stmt.close()
+        connection.close()
+        res.toList
+      case _ => List.empty[String]
+    }
+  }
+  def deleteMaterialCheck(value: String): Unit ={
+    DBManager.GetPGConnection() match {
+      case Some(connection) =>
+        val res = ListBuffer.empty[String]
+        val q = s"delete from material_check where code = '$value'"
+        val stmt = connection.createStatement()
+        stmt.execute(q)
+        stmt.close()
+        connection.close()
+        res.toList
+      case _ => List.empty[String]
+    }
+  }
 }
