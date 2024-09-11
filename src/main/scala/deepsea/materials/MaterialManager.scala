@@ -704,10 +704,10 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
     case GetMaterialCheck() =>
       sender() ! getMaterialChecks.asJson.noSpaces
     case AddMaterialCheck(value) =>
-      sender() ! addMaterialCheck(value)
+      addMaterialCheck(value)
       sender() ! "success".asJson.noSpaces
     case DeleteMaterialCheck(value) =>
-      sender() ! deleteMaterialCheck(value)
+      deleteMaterialCheck(value)
       sender() ! "success".asJson.noSpaces
     case _ => None
   }
