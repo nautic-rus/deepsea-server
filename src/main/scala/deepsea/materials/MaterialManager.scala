@@ -743,7 +743,16 @@ class MaterialManager extends Actor with MongoCodecs with MaterialManagerHelper 
       specMaterial
     }
     val table = TableQuery[SpecMaterialTable]
-    val id = Await.result(DBManager.PostgresSQL.run((table returning table.map(_.id)).insertOrUpdate(material)), Duration(5, SECONDS)).getOrElse(0)
+    val id = {
+      try{
+        Await.result(DBManager.PostgresSQL.run((table returning table.map(_.id)).insertOrUpdate(material)), Duration(5, SECONDS)).getOrElse(0)
+      }
+      catch {
+        case e: Throwable =>
+          println(e.toString)
+          0
+      }
+    }
     id
   }
   def alz(input: String, length: Int = 14) = {
