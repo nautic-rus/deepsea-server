@@ -241,6 +241,7 @@ trait PlanManagerHelper {
   }
   def getPlanByDays(dateLong: Long): List[UserPlan] = {
     val plan = getPlan
+    val skipUserIntervals = skipIntervals()
     //val issues = getIssuesByChunk(plan.map(_.task_id), plan)
     val res = ListBuffer.empty[UserPlan]
     val cal = Calendar.getInstance()
@@ -251,7 +252,7 @@ trait PlanManagerHelper {
 
     getUsers.foreach(user => {
       val planByDays = ListBuffer.empty[PlanByDays]
-      val skip = skipIntervals(user)
+      val skip = skipUserIntervals.filter(_.user_id == user)
       1.to(daysInMonth).foreach(d => {
         val dayIntervals = ListBuffer.empty[DayInterval]
         cal.set(year, month, d)
@@ -514,7 +515,7 @@ trait PlanManagerHelper {
       case Some(c) =>
         try {
           val s = c.createStatement();
-          val rs = s.executeQuery(s"select id from users where removed = 0 order by id")
+          val rs = s.executeQuery(s"select id from users where removed = 0 and id_department > 0 and id_department < 12 order by id")
           while (rs.next()) {
             res += Option(rs.getInt("id")).getOrElse(0)
           }
@@ -1101,6 +1102,30 @@ trait PlanManagerHelper {
       case _ => List.empty[PlanInterval]
     }
   }
+  private def skipIntervals(): List[PlanInterval] = {
+    DBManager.GetPGConnection() match {
+      case Some(c) =>
+        val s = c.createStatement()
+        val query = s"select * from plan where task_type != 0"
+        val plan = RsIterator(s.executeQuery(query)).map(rs => {
+          PlanInterval(
+            rs.getInt("id"),
+            rs.getInt("task_id"),
+            rs.getInt("user_id"),
+            rs.getLong("date_start"),
+            rs.getLong("date_finish"),
+            rs.getInt("task_type"),
+            rs.getInt("hours_amount"),
+            rs.getInt("consumed"),
+          )
+        }).toList
+        s.close()
+        c.close()
+        plan
+      case _ => List.empty[PlanInterval]
+    }
+  }
+
   private def moveRight(splitDate: Long, userId: Int, amount: Int): List[PlanInterval] = {
     DBManager.GetPGConnection() match {
       case Some(c) =>
