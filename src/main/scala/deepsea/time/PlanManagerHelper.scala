@@ -422,16 +422,16 @@ trait PlanManagerHelper {
     res.toList
   }
 
-  def getIssues: List[IssuePlan] = {
+  def getIssues(short: Int = 0): List[IssuePlan] = {
     val res = ListBuffer.empty[IssuePlan]
     val plan = getPlan
     val planConsumed = getConsumedHours()
     DBManager.GetPGConnection() match {
       case Some(c) =>
         val s = c.createStatement()
-        val query = Source.fromResource("queries/plan-issues.sql").mkString
-        val rSet = RsIterator(s.executeQuery(query))
-        res ++= rSet.map(rs => {
+        val query = Source.fromResource("queries/plan-issues.sql").mkString + (if (short != 0) " where to_timestamp(i.started_date / 1000) > (now() - interval '3 week')" else "")
+        val rs = s.executeQuery(query)
+        while (rs.next()){
           val id = rs.getInt("id")
           val consumed = planConsumed.filter(_.task_id == id).map(_.amount).sum
           val planHours = rs.getInt("plan_hours")
@@ -439,14 +439,7 @@ trait PlanManagerHelper {
           val available = planHours - inPlan
           val docNumber = rs.getString("doc_number").trim
           val docName = rs.getString("issue_name").trim
-          val docNameTrim = if (docName.length > 50) {
-            docName.toLowerCase.take(50) + "..."
-          }
-          else {
-            docName.toLowerCase
-          }
-          val docNumberTrim = if (docNumber != "") docNumber else "Без номера"
-          IssuePlan(
+          res += IssuePlan(
             id,
             docName,
             docNumber,
@@ -462,8 +455,8 @@ trait PlanManagerHelper {
             Option(rs.getLong("stage_date")).getOrElse(0),
             consumed, inPlan, available, available
           )
-        }).toList
-        rSet.rs.close()
+        }
+        rs.close()
         s.close()
         c.close()
       case _ => None
@@ -1460,7 +1453,7 @@ trait PlanManagerHelper {
   def getProjectStats(project: String, docType: String): ProjectStats = {
     val closedStatuses = List("Delivered", "Closed", "Joined")
 
-    val issues = getIssues.filter(_.project == project).filter(_.issue_type == docType).filter(_.removed == 0)
+    val issues = getIssues().filter(_.project == project).filter(_.issue_type == docType).filter(_.removed == 0)
     val plan = getPlan.filter(x => issues.map(_.id).contains(x.task_id))
     val departments = issues.map(_.department).distinct.sorted
     val consumed = getConsumedHours()

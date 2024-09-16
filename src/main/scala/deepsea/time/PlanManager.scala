@@ -40,7 +40,7 @@ object PlanManager{
   implicit val IssuePlanDecoder: Decoder[IssuePlan] = deriveDecoder[IssuePlan]
   implicit val IssuePlanEncoder: Encoder[IssuePlan] = deriveEncoder[IssuePlan]
 
-  case class GetPlanIssues()
+  case class GetPlanIssues(short: Int)
   case class GetPlanIssue(id: String)
   case class DeletePausedInterval(id: Int)
   case class UserTCID(id: Int, tcid: Int)
@@ -322,8 +322,8 @@ class PlanManager extends Actor with PlanManagerHelper with MongoCodecs {
           "man_hours", "", hoursAmount, new Date().getTime, comment)
       }
       sender() ! res.asJson.noSpaces
-    case GetPlanIssues() =>
-      sender() ! getIssues.asJson.noSpaces
+    case GetPlanIssues(short) =>
+      sender() ! getIssues(short).asJson.noSpaces
     case DeletePausedInterval(id) =>
       deletePausedIntervalByTaskId(id)
       sender() ! "success".asJson.noSpaces

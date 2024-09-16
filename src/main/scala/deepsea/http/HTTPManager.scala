@@ -640,8 +640,8 @@ class HTTPManager extends Actor {
         (get & path("plan")) {
           askFor(ActorManager.plan, GetPlan())
         },
-        (get & path("planIssues")) {
-          askFor(ActorManager.plan, GetPlanIssues())
+        (get & path("planIssues") & parameter("short")) { (short) =>
+          askFor(ActorManager.plan, GetPlanIssues(short.toIntOption.getOrElse(0)))
         },
         (get & path("planIssue") & parameter("id")) { (id) =>
           askFor(ActorManager.plan, GetPlanIssue(id))
