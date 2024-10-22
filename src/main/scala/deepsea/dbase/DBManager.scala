@@ -47,8 +47,8 @@ object DBManager extends MongoCodecs {
   configPG.setJdbcUrl("jdbc:postgresql://192.168.1.26/deepsea")
   configPG.setUsername("deepsea")
   configPG.setPassword("Ship1234")
-  configPG.setMaximumPoolSize(20)
-  val dsPG = new HikariDataSource(configPG)
+  configPG.setMaximumPoolSize(10)
+  var dsPG = new HikariDataSource(configPG)
 
   val PostgresSQL: JdbcBackend.Database = Database.forDataSource(dsPG, Option(5))
 
@@ -91,7 +91,15 @@ object DBManager extends MongoCodecs {
     }
   }
   def GetPGConnection(): Option[Connection] = {
-    Option(dsPG.getConnection)
+    try {
+      Option(dsPG.getConnection)
+    }
+    catch {
+      case e: Throwable =>
+        println(e.getMessage)
+        dsPG = new HikariDataSource(configPG)
+        Option.empty
+    }
   }
   def GetPGFestConnection(): Option[Connection] = {
     Option(dsPGFest.getConnection)

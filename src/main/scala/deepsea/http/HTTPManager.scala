@@ -65,7 +65,7 @@ class HTTPManager extends Actor {
   val logger: Logger = LogManager.getLogger("HttpManager")
   val routes: Route = cors() {
     extractClientIP { ip =>
-      logIp(ip)
+      //logIp(ip)
       concat(
         //AUTHORIZATION COMMANDS
         (get & path("login") & parameter("login", "password")) { (login, password) =>
