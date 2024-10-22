@@ -15,6 +15,7 @@ import deepsea.issues.IssueManager._
 import deepsea.issues.classes.{ChildIssue, Issue, IssueAction, IssueCheck, IssueHistory, IssueMessage, IssuePeriod, IssueType, IssueView, SfiCode}
 import deepsea.mail.MailManager.Mail
 import deepsea.rocket.RocketChatManager.SendNotification
+import deepsea.time.BackupManager.NullHostKeyVerifier
 import deepsea.time.PlanManager.DeletePausedInterval
 import deepsea.time.TimeControlManager.UserWatch
 import io.circe
@@ -28,11 +29,17 @@ import io.circe.parser._
 import io.circe.generic.auto._
 import io.circe.syntax._
 import io.circe.generic.semiauto._
+import net.schmizz.sshj.SSHClient
+import net.schmizz.sshj.sftp.{RemoteResourceInfo, SFTPClient}
 import org.mongodb.scala.bson.BsonDateTime
 import org.mongodb.scala.model.Filters.{and, equal}
 import play.api.libs.json.Json
 
-import java.io.File
+import scala.sys.process._
+import java.io.{File, FileOutputStream, FileWriter}
+import java.net.URL
+import java.nio.channels.Channels
+import java.nio.file.{Files, Paths, StandardCopyOption}
 import java.util.Date
 import java.util.concurrent.TimeUnit
 import scala.collection.mutable.ListBuffer
@@ -145,7 +152,36 @@ class IssueManager extends Actor with MongoCodecs with IssueManagerHelper with F
   override def preStart(): Unit = {
     ActorManager.system.scheduler.scheduleWithFixedDelay(0.seconds, 3.minutes, self, UpdateIssues())
   }
-
+  def transfer(): Unit = {
+    val issues = getAllIssuesShort
+    val files = getRevisionFiles
+    val dir = "d:/export/"
+    files.filter(_.revision == "PROD").filter(_.removed_date == 0).foreach(file => {
+      //val file = gr._2.sortBy(_.upload_date).reverse.head
+      issues.find(_.id == file.issue_id) match {
+        case Some(issue) =>
+          if (issue.doc_number != "" && issue.project == "NR002"){
+            val path = dir + issue.issue_type + "/" + issue.doc_number + "/" + file.group + "/"
+            Files.createDirectories(Paths.get(path))
+            if (!Files.exists(Paths.get(path + file.name))){
+              try{
+                Files.copy(
+                  Paths.get(file.url.replace("https://deep-sea.ru/rest/files", "c:/cloud")),
+                  Paths.get(path + file.name),
+                  StandardCopyOption.REPLACE_EXISTING)
+              }
+              catch{
+                case e: Throwable =>
+                  println(path + file.name)
+                  println("ERROR: " + path + file.name)
+              }
+            }
+          }
+        case _ =>
+      }
+    })
+    val q = 0
+  }
   override def receive: Receive = {
     case UpdateIssues() =>
       issues.clear()

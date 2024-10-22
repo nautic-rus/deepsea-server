@@ -1,6 +1,7 @@
 package deepsea.time
 
 import akka.actor.{Actor, ActorSystem}
+import akka.io.Inet
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import deepsea.App
 import deepsea.actors.ActorManager
@@ -13,6 +14,7 @@ import net.schmizz.sshj.transport.verification.HostKeyVerifier
 import org.aarboard.nextcloud.api.NextcloudConnector
 
 import java.io.{BufferedInputStream, File, FileInputStream, FileOutputStream}
+import java.net.InetAddress
 import java.nio.file.Files
 import java.security.PublicKey
 import java.time.LocalDate
@@ -42,6 +44,8 @@ class BackupManager extends Actor{
   implicit val executionContext: ExecutionContextExecutor = system.dispatcher
   val executor: ExecutionContextExecutor = system.dispatcher
 
+  var backupedToday = false
+
   override def preStart(): Unit = {
     //backupForan()
     //uploadForanBackup()
@@ -50,7 +54,8 @@ class BackupManager extends Actor{
   override def receive: Receive = {
     case BackupForan() =>
       val c = Calendar.getInstance()
-      if (c.get(Calendar.HOUR_OF_DAY) == 1 && c.get(Calendar.MINUTE) == 0){
+      if (c.get(Calendar.HOUR_OF_DAY) == 1 && c.get(Calendar.MINUTE) == 0 && !backupedToday && InetAddress.getLocalHost.getHostAddress == "192.168.1.28") {
+        backupedToday = true
         val start = new Date().toString
         backupForan()
         val complete = new Date().toString
