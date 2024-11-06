@@ -44,7 +44,6 @@ class BackupManager extends Actor{
   implicit val executionContext: ExecutionContextExecutor = system.dispatcher
   val executor: ExecutionContextExecutor = system.dispatcher
 
-  var backupedToday = false
 
   override def preStart(): Unit = {
     //backupForan()
@@ -54,8 +53,7 @@ class BackupManager extends Actor{
   override def receive: Receive = {
     case BackupForan() =>
       val c = Calendar.getInstance()
-      if (c.get(Calendar.HOUR_OF_DAY) == 1 && c.get(Calendar.MINUTE) == 0 && !backupedToday && InetAddress.getLocalHost.getHostAddress == "192.168.1.28") {
-        backupedToday = true
+      if (c.get(Calendar.HOUR_OF_DAY) == 1 && c.get(Calendar.MINUTE) == 0 && InetAddress.getLocalHost.getHostAddress == "192.168.1.28") {
         val start = new Date().toString
         backupForan()
         val complete = new Date().toString
