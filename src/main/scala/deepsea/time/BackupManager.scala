@@ -37,14 +37,13 @@ object BackupManager{
   }
 }
 class BackupManager extends Actor{
-  val foranProjects: List[String] = List("P701", "P707", "N002", "N003", "N004", "N005", "N006", "N007", "SC01", "LV01", "KA01", "AN01", "WH02")
+  val foranProjects: List[String] = List("P701", "P707", "N002", "N003", "N004", "N005", "N006", "N007", "N008", "SC01", "LV01", "KA01", "AN01", "WH02")
   val procedure: String = Source.fromResource("queries/backupForan.sql").mkString
 
   implicit val system: ActorSystem = ActorSystem()
   implicit val executionContext: ExecutionContextExecutor = system.dispatcher
   val executor: ExecutionContextExecutor = system.dispatcher
 
-  var backupedToday = false
 
   override def preStart(): Unit = {
     //backupForan()
@@ -54,8 +53,7 @@ class BackupManager extends Actor{
   override def receive: Receive = {
     case BackupForan() =>
       val c = Calendar.getInstance()
-      if (c.get(Calendar.HOUR_OF_DAY) == 1 && c.get(Calendar.MINUTE) == 0 && !backupedToday && InetAddress.getLocalHost.getHostAddress == "192.168.1.28") {
-        backupedToday = true
+      if (c.get(Calendar.HOUR_OF_DAY) == 20 && c.get(Calendar.MINUTE) == 0) {
         val start = new Date().toString
         backupForan()
         val complete = new Date().toString
