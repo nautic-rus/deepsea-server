@@ -59,6 +59,7 @@ object Issue{
         "modification_description" -> x.modification_description,
         "contract" -> x.contract,
         "it_type" -> x.it_type,
+        "actual_man_hours" -> x.actual_man_hours
       )
       case _ => JsNull
     }
@@ -150,6 +151,7 @@ class Issue(var id: Int, var status: String, var project: String, var department
   var modification_of_existing: Int = 0
   var modification_description: String = ""
   var contract: String = ""
+  var actual_man_hours: Double = 0
 //  var it_type: String = ""
   def toChildIssue: ChildIssue ={
     new ChildIssue(id, status, started_by, started_date, issue_type, name, assigned_to, responsible, doc_number, closing_status)

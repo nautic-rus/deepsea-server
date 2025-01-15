@@ -67,6 +67,10 @@ object PlanManager{
   implicit val ConsumedHoursDecoder: Decoder[ConsumedHours] = deriveDecoder[ConsumedHours]
   implicit val ConsumedHoursEncoder: Encoder[ConsumedHours] = deriveEncoder[ConsumedHours]
 
+  case class ActualManHours(task_id: Int, actual_man_hours: Double)
+  implicit val ActualManHoursDecoder: Decoder[ActualManHours] = deriveDecoder[ActualManHours]
+  implicit val ActualManHoursEncoder: Encoder[ActualManHours] = deriveEncoder[ActualManHours]
+
   case class UserDiary(interval: ConsumedHours, issue: IssuePlan)
   implicit val UserDiaryDecoder: Decoder[UserDiary] = deriveDecoder[UserDiary]
   implicit val UserDiaryEncoder: Encoder[UserDiary] = deriveEncoder[UserDiary]
