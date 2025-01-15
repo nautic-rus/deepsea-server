@@ -703,6 +703,10 @@ trait IssueManagerHelper extends MongoCodecs {
               case value: String => value
               case _ => ""
             }
+            actual_man_hours = rs.getDouble("actual_man_hours") match {
+              case value: Double => value
+              case _ => 0
+            }
           }
         }
         rs.close()
