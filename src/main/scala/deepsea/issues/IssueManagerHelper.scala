@@ -1657,66 +1657,66 @@ trait IssueManagerHelper extends MongoCodecs {
   def getCloudFiles(project: String, docNumber: String, department: String): List[FileAttachment] = {
     val spCloud: String = "/"
     val res = ListBuffer.empty[FileAttachment]
-    getProjectNames.find(_.pdsp == project) match {
-      case Some(projectName) =>
-        getDocumentDirectories.find(x => x.project == projectName.rkd && x.department == department) match {
-          case Some(docDirectories) =>
-            val filter = List(projectName.cloudRkd, "Documents", department, docNumber).mkString(spCloud)
-            val cloudFiles = getCloudFiles(filter)
-            docDirectories.directories.foreach(p => {
-              val path = filter + spCloud + p
-              cloudFiles.filter(x => x.url.contains(path) && x.name.contains(".")).foreach(cFile => {
-                res += new FileAttachment(
-                  cFile.name,
-                  cFile.url,
-                  cFile.upload_date,
-                  cFile.author,
-                  "",
-                  p,
-                  1
-                )
-              })
-            })
-          case _ =>
-        }
-      case _ =>
-    }
+//    getProjectNames.find(_.pdsp == project) match {
+//      case Some(projectName) =>
+//        getDocumentDirectories.find(x => x.project == projectName.rkd && x.department == department) match {
+//          case Some(docDirectories) =>
+//            val filter = List(projectName.cloudRkd, "Documents", department, docNumber).mkString(spCloud)
+//            val cloudFiles = getCloudFiles(filter)
+//            docDirectories.directories.foreach(p => {
+//              val path = filter + spCloud + p
+//              cloudFiles.filter(x => x.url.contains(path) && x.name.contains(".")).foreach(cFile => {
+//                res += new FileAttachment(
+//                  cFile.name,
+//                  cFile.url,
+//                  cFile.upload_date,
+//                  cFile.author,
+//                  "",
+//                  p,
+//                  1
+//                )
+//              })
+//            })
+//          case _ =>
+//        }
+//      case _ =>
+//    }
     res.toList
   }
 
   def getCloudFiles(id: Int): List[FileAttachment] = {
     val spCloud: String = "/"
     val res = ListBuffer.empty[FileAttachment]
-    getIssueDetails(id) match {
-      case Some(issue) =>
-        getProjectNames.find(_.pdsp == issue.project) match {
-          case Some(projectName) =>
-            getDocumentDirectories.find(x => x.project == projectName.rkd && x.department == issue.department) match {
-              case Some(docDirectories) =>
-                val pathFull = List(projectName.cloudRkd, "Documents", issue.department, issue.doc_number).mkString(spCloud)
-
-                val cloudFiles = getCloudFiles(pathFull)
-
-                docDirectories.directories.foreach(p => {
-                  val path = pathFull + spCloud + p
-                  cloudFiles.filter(x => x.url.contains(path) && x.name.contains(".")).foreach(cFile => {
-                    res += new FileAttachment(
-                      cFile.name,
-                      cFile.url,
-                      cFile.upload_date,
-                      cFile.author,
-                      "",
-                      p,
-                      1
-                    )
-                  })
-                })
-              case _ =>
-            }
-          case _ =>
-        }
-      case _ => None
-    }
+//    getIssueDetails(id) match {
+//      case Some(issue) =>
+//        getProjectNames.find(_.pdsp == issue.project) match {
+//          case Some(projectName) =>
+//            getDocumentDirectories.find(x => x.project == projectName.rkd && x.department == issue.department) match {
+//              case Some(docDirectories) =>
+//                val pathFull = List(projectName.cloudRkd, "Documents", issue.department, issue.doc_number).mkString(spCloud)
+//
+//                val cloudFiles = getCloudFiles(pathFull)
+//
+//                docDirectories.directories.foreach(p => {
+//                  val path = pathFull + spCloud + p
+//                  cloudFiles.filter(x => x.url.contains(path) && x.name.contains(".")).foreach(cFile => {
+//                    res += new FileAttachment(
+//                      cFile.name,
+//                      cFile.url,
+//                      cFile.upload_date,
+//                      cFile.author,
+//                      "",
+//                      p,
+//                      1
+//                    )
+//                  })
+//                })
+//              case _ =>
+//            }
+//          case _ =>
+//        }
+//      case _ => None
+//    }
     res.toList
   }
 
@@ -1744,202 +1744,202 @@ trait IssueManagerHelper extends MongoCodecs {
 
   def getCloudFiles(filter: String): List[FileAttachment] = {
     val res = ListBuffer.empty[FileAttachment]
-    val groupFolders = ListBuffer.empty[GroupFolder]
-    DBManager.GetNextCloudConnection() match {
-      case Some(cloudConnection) =>
-        val stmt = cloudConnection.createStatement()
-        var query = s"select * from oc_group_folders"
-        var rs = stmt.executeQuery(query)
-        while (rs.next()) {
-          groupFolders += GroupFolder(
-            rs.getInt("folder_id"),
-            rs.getString("mount_point")
-          )
-        }
-        var searchFilter = filter
-        groupFolders.find(x => filter.startsWith(x.name)) match {
-          case Some(value) => searchFilter = filter.replace(value.name + "/", "__groupfolders/" + value.id.toString + "/")
-          case _ => None
-        }
-
-        query = Source.fromResource("queries/cloud-files.sql").mkString.replace("&filter", searchFilter)
-
-        rs = stmt.executeQuery(query)
-        while (rs.next()) {
-          val name = rs.getString("name")
-          val path = rs.getString("path")
-          res += new FileAttachment(
-            name,
-            App.HTTPServer.RestUrl + "/" + "cloud/" + name + "?path=" + (groupFolders.find(x => path.startsWith("__groupfolders/" + x.id)) match {
-              case Some(value) =>
-                path.replace("__groupfolders/" + value.id.toString + "/", value.name + "/")
-              case _ => path
-            }),
-            Option(rs.getLong("mtime")).getOrElse(0),
-            Option(rs.getString("user")).getOrElse("op"),
-            "",
-            "",
-            1
-          )
-        }
-        rs.close()
-        stmt.close()
-        cloudConnection.close()
-      case _ => None
-    }
+//    val groupFolders = ListBuffer.empty[GroupFolder]
+//    DBManager.GetNextCloudConnection() match {
+//      case Some(cloudConnection) =>
+//        val stmt = cloudConnection.createStatement()
+//        var query = s"select * from oc_group_folders"
+//        var rs = stmt.executeQuery(query)
+//        while (rs.next()) {
+//          groupFolders += GroupFolder(
+//            rs.getInt("folder_id"),
+//            rs.getString("mount_point")
+//          )
+//        }
+//        var searchFilter = filter
+//        groupFolders.find(x => filter.startsWith(x.name)) match {
+//          case Some(value) => searchFilter = filter.replace(value.name + "/", "__groupfolders/" + value.id.toString + "/")
+//          case _ => None
+//        }
+//
+//        query = Source.fromResource("queries/cloud-files.sql").mkString.replace("&filter", searchFilter)
+//
+//        rs = stmt.executeQuery(query)
+//        while (rs.next()) {
+//          val name = rs.getString("name")
+//          val path = rs.getString("path")
+//          res += new FileAttachment(
+//            name,
+//            App.HTTPServer.RestUrl + "/" + "cloud/" + name + "?path=" + (groupFolders.find(x => path.startsWith("__groupfolders/" + x.id)) match {
+//              case Some(value) =>
+//                path.replace("__groupfolders/" + value.id.toString + "/", value.name + "/")
+//              case _ => path
+//            }),
+//            Option(rs.getLong("mtime")).getOrElse(0),
+//            Option(rs.getString("user")).getOrElse("op"),
+//            "",
+//            "",
+//            1
+//          )
+//        }
+//        rs.close()
+//        stmt.close()
+//        cloudConnection.close()
+//      case _ => None
+//    }
     res.toList
   }
 
   def getCloudFilesAux(filter: String): List[FileAttachment] = {
     val res = ListBuffer.empty[FileAttachment]
-    val cloudFiles = DBManager.GetNextCloudConnection() match {
-      case Some(cloudConnection) =>
-        val stmt = cloudConnection.createStatement()
-        val query = s"select * from oc_activity where file like '%$filter%' and subject = 'created_self' and object_id not in (select fileid from oc_filecache where path like '%/trash/%' or path like '%/arh/%') and object_id not in (select object_id from oc_activity where subject = 'deleted_self')"
-        //val query = s"select * from oc_filecache where path like '%$filter%' and path not like '%/trash/%'"
-        val resultSet = RsIterator(stmt.executeQuery(query))
-        val res = resultSet.map(rs => {
-          CloudFile(
-            rs.getLong("timestamp"),
-            rs.getString("type"),
-            rs.getString("subject"),
-            rs.getString("user"),
-            rs.getString("file"),
-            rs.getString("link"),
-            rs.getInt("object_id")
-          )
-        }).toList
-        resultSet.rs.close()
-        stmt.close()
-        cloudConnection.close()
-        res
-      case _ => List.empty[CloudFile]
-    }
-    val cloudFilesActive = cloudFiles
-    cloudFilesActive.foreach(cFile => {
-      res += new FileAttachment(
-        cFile.file.split("/").last,
-        App.HTTPServer.RestUrl + "/" + "cloud/" + cFile.file.split("/").last + "?path=" + cFile.file,
-        cFile.timeStamp,
-        cFile.user,
-        "",
-        "",
-        1
-      )
-    })
+//    val cloudFiles = DBManager.GetNextCloudConnection() match {
+//      case Some(cloudConnection) =>
+//        val stmt = cloudConnection.createStatement()
+//        val query = s"select * from oc_activity where file like '%$filter%' and subject = 'created_self' and object_id not in (select fileid from oc_filecache where path like '%/trash/%' or path like '%/arh/%') and object_id not in (select object_id from oc_activity where subject = 'deleted_self')"
+//        //val query = s"select * from oc_filecache where path like '%$filter%' and path not like '%/trash/%'"
+//        val resultSet = RsIterator(stmt.executeQuery(query))
+//        val res = resultSet.map(rs => {
+//          CloudFile(
+//            rs.getLong("timestamp"),
+//            rs.getString("type"),
+//            rs.getString("subject"),
+//            rs.getString("user"),
+//            rs.getString("file"),
+//            rs.getString("link"),
+//            rs.getInt("object_id")
+//          )
+//        }).toList
+//        resultSet.rs.close()
+//        stmt.close()
+//        cloudConnection.close()
+//        res
+//      case _ => List.empty[CloudFile]
+//    }
+//    val cloudFilesActive = cloudFiles
+//    cloudFilesActive.foreach(cFile => {
+//      res += new FileAttachment(
+//        cFile.file.split("/").last,
+//        App.HTTPServer.RestUrl + "/" + "cloud/" + cFile.file.split("/").last + "?path=" + cFile.file,
+//        cFile.timeStamp,
+//        cFile.user,
+//        "",
+//        "",
+//        1
+//      )
+//    })
     res.toList
   }
 
   def getCloudFilesAux(id: Int): List[FileAttachment] = {
     val spCloud: String = "/"
     val res = ListBuffer.empty[FileAttachment]
-    getIssueDetails(id) match {
-      case Some(issue) =>
-        getProjectNames.find(_.pdsp == issue.project) match {
-          case Some(projectName) =>
-            getDocumentDirectories.find(x => x.project == projectName.rkd && x.department == issue.department) match {
-              case Some(docDirectories) =>
-                val pathFull = List(projectName.cloud, "Documents", issue.department, issue.doc_number).mkString(spCloud)
-
-                val cloudFiles = DBManager.GetNextCloudConnection() match {
-                  case Some(cloudConnection) =>
-                    val stmt = cloudConnection.createStatement()
-                    val query = s"select * from oc_activity where file like '%$pathFull%'"
-                    val resultSet = RsIterator(stmt.executeQuery(query))
-                    val res = resultSet.map(rs => {
-                      CloudFile(
-                        rs.getLong("timestamp"),
-                        rs.getString("type"),
-                        rs.getString("subject"),
-                        rs.getString("user"),
-                        rs.getString("file"),
-                        rs.getString("link"),
-                        rs.getInt("object_id")
-                      )
-                    }).toList
-                    resultSet.rs.close()
-                    stmt.close()
-                    cloudConnection.close()
-                    res
-                  case _ => List.empty[CloudFile]
-                }
-
-                val cloudFilesActive = cloudFiles.filter(x => x.typeAction == "file_created" && !cloudFiles.exists(y => y.typeAction == "file_deleted" && y.id == x.id))
-
-                docDirectories.directories.foreach(p => {
-                  val path = pathFull + spCloud + p
-                  cloudFilesActive.filter(x => x.file.contains(path) && x.file.split("/").last.contains(".")).foreach(cFile => {
-                    res += new FileAttachment(
-                      cFile.file.split("/").last,
-                      App.HTTPServer.RestUrl + "/" + "cloud/" + cFile.file.split("/").last + "?path=" + cFile.file,
-                      cFile.timeStamp,
-                      cFile.user,
-                      "",
-                      p,
-                      1
-                    )
-                  })
-                })
-              case _ =>
-            }
-          case _ =>
-        }
-      case _ => None
-    }
+//    getIssueDetails(id) match {
+//      case Some(issue) =>
+//        getProjectNames.find(_.pdsp == issue.project) match {
+//          case Some(projectName) =>
+//            getDocumentDirectories.find(x => x.project == projectName.rkd && x.department == issue.department) match {
+//              case Some(docDirectories) =>
+//                val pathFull = List(projectName.cloud, "Documents", issue.department, issue.doc_number).mkString(spCloud)
+//
+//                val cloudFiles = DBManager.GetNextCloudConnection() match {
+//                  case Some(cloudConnection) =>
+//                    val stmt = cloudConnection.createStatement()
+//                    val query = s"select * from oc_activity where file like '%$pathFull%'"
+//                    val resultSet = RsIterator(stmt.executeQuery(query))
+//                    val res = resultSet.map(rs => {
+//                      CloudFile(
+//                        rs.getLong("timestamp"),
+//                        rs.getString("type"),
+//                        rs.getString("subject"),
+//                        rs.getString("user"),
+//                        rs.getString("file"),
+//                        rs.getString("link"),
+//                        rs.getInt("object_id")
+//                      )
+//                    }).toList
+//                    resultSet.rs.close()
+//                    stmt.close()
+//                    cloudConnection.close()
+//                    res
+//                  case _ => List.empty[CloudFile]
+//                }
+//
+//                val cloudFilesActive = cloudFiles.filter(x => x.typeAction == "file_created" && !cloudFiles.exists(y => y.typeAction == "file_deleted" && y.id == x.id))
+//
+//                docDirectories.directories.foreach(p => {
+//                  val path = pathFull + spCloud + p
+//                  cloudFilesActive.filter(x => x.file.contains(path) && x.file.split("/").last.contains(".")).foreach(cFile => {
+//                    res += new FileAttachment(
+//                      cFile.file.split("/").last,
+//                      App.HTTPServer.RestUrl + "/" + "cloud/" + cFile.file.split("/").last + "?path=" + cFile.file,
+//                      cFile.timeStamp,
+//                      cFile.user,
+//                      "",
+//                      p,
+//                      1
+//                    )
+//                  })
+//                })
+//              case _ =>
+//            }
+//          case _ =>
+//        }
+//      case _ => None
+//    }
     res.toList
   }
 
   def getCloudFilesAux(project: String, docNumber: String, department: String): List[FileAttachment] = {
     val spCloud: String = "/"
     val res = ListBuffer.empty[FileAttachment]
-    getProjectNames.find(_.pdsp == project) match {
-      case Some(projectName) =>
-        getDocumentDirectories.find(x => x.project == projectName.rkd && x.department == department) match {
-          case Some(docDirectories) =>
-            val filter = List(projectName.cloudRkd, "Documents", department, docNumber).mkString(spCloud)
-
-            val cloudFiles = DBManager.GetNextCloudConnection() match {
-              case Some(cloudConnection) =>
-                val stmt = cloudConnection.createStatement()
-                val query = s"select * from oc_activity where file like '%$filter%' and subject = 'created_self' and object_id not in (select fileid from oc_filecache where path like '%/trash/%' or path like '%/arh/%') and object_id not in (select object_id from oc_activity where subject = 'deleted_self')"
-                val resultSet = RsIterator(stmt.executeQuery(query))
-                val res = resultSet.map(rs => {
-                  CloudFile(
-                    rs.getLong("timestamp"),
-                    rs.getString("type"),
-                    rs.getString("subject"),
-                    rs.getString("user"),
-                    rs.getString("file"),
-                    rs.getString("link"),
-                    rs.getInt("object_id")
-                  )
-                }).toList
-                resultSet.rs.close()
-                stmt.close()
-                cloudConnection.close()
-                res
-              case _ => List.empty[CloudFile]
-            }
-
-            docDirectories.directories.foreach(p => {
-              val path = filter + spCloud + p
-              cloudFiles.filter(x => x.file.contains(path) && x.file.split("/").last.contains(".")).foreach(cFile => {
-                res += new FileAttachment(
-                  cFile.file.split("/").last,
-                  App.HTTPServer.RestUrl + "/" + "cloud/" + cFile.file.split("/").last + "?path=" + cFile.file,
-                  //                  "http://192.168.1.122:1112" + "/" + "cloud?path=" + cFile.file,
-                  cFile.timeStamp,
-                  cFile.user,
-                  "",
-                  p,
-                  1
-                )
-              })
-            })
-          case _ =>
-        }
-      case _ =>
-    }
+//    getProjectNames.find(_.pdsp == project) match {
+//      case Some(projectName) =>
+//        getDocumentDirectories.find(x => x.project == projectName.rkd && x.department == department) match {
+//          case Some(docDirectories) =>
+//            val filter = List(projectName.cloudRkd, "Documents", department, docNumber).mkString(spCloud)
+//
+//            val cloudFiles = DBManager.GetNextCloudConnection() match {
+//              case Some(cloudConnection) =>
+//                val stmt = cloudConnection.createStatement()
+//                val query = s"select * from oc_activity where file like '%$filter%' and subject = 'created_self' and object_id not in (select fileid from oc_filecache where path like '%/trash/%' or path like '%/arh/%') and object_id not in (select object_id from oc_activity where subject = 'deleted_self')"
+//                val resultSet = RsIterator(stmt.executeQuery(query))
+//                val res = resultSet.map(rs => {
+//                  CloudFile(
+//                    rs.getLong("timestamp"),
+//                    rs.getString("type"),
+//                    rs.getString("subject"),
+//                    rs.getString("user"),
+//                    rs.getString("file"),
+//                    rs.getString("link"),
+//                    rs.getInt("object_id")
+//                  )
+//                }).toList
+//                resultSet.rs.close()
+//                stmt.close()
+//                cloudConnection.close()
+//                res
+//              case _ => List.empty[CloudFile]
+//            }
+//
+//            docDirectories.directories.foreach(p => {
+//              val path = filter + spCloud + p
+//              cloudFiles.filter(x => x.file.contains(path) && x.file.split("/").last.contains(".")).foreach(cFile => {
+//                res += new FileAttachment(
+//                  cFile.file.split("/").last,
+//                  App.HTTPServer.RestUrl + "/" + "cloud/" + cFile.file.split("/").last + "?path=" + cFile.file,
+//                  //                  "http://192.168.1.122:1112" + "/" + "cloud?path=" + cFile.file,
+//                  cFile.timeStamp,
+//                  cFile.user,
+//                  "",
+//                  p,
+//                  1
+//                )
+//              })
+//            })
+//          case _ =>
+//        }
+//      case _ =>
+//    }
     res.toList
   }
 
