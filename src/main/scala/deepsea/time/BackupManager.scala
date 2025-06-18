@@ -58,7 +58,7 @@ class BackupManager extends Actor{
         val start = new Date().toString
         backupForan()
         val complete = new Date().toString
-        ActorManager.mail ! Mail("Bogdan Isaev", "redeeming.fury@gmail.com", "Foran Backup Notification", s"Foran Backup started at $start and successfully completed at $complete")
+        ActorManager.mail ! Mail("Dinara", "dulanova@nautic-rus.ru", "Foran Backup Notification", s"Foran Backup started at $start and successfully completed at $complete")
       }
       if (Calendar.getInstance().get(Calendar.HOUR_OF_DAY) == 3 && c.get(Calendar.MINUTE) == 0) {
         uploadForanBackup()
