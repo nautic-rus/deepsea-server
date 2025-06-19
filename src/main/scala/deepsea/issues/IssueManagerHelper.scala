@@ -413,7 +413,7 @@ trait IssueManagerHelper extends MongoCodecs {
   }
 
   def getIssuesForUser(user: String): ListBuffer[Issue] = {
-    println("getIssuesForUser 2")
+    println("getIssuesForUser 22")
     val issues = ListBuffer.empty[Issue]
     DBManager.GetPGConnection() match {
       case Some(c) =>
