@@ -49,20 +49,20 @@ class BackupManager extends Actor{
   override def preStart(): Unit = {
     //backupForan()
     //uploadForanBackup()
-  //  system.scheduler.scheduleWithFixedDelay(0.seconds, 1.minutes, self, BackupForan())
+    system.scheduler.scheduleWithFixedDelay(0.seconds, 1.minutes, self, BackupForan())
   }
   override def receive: Receive = {
     case BackupForan() =>
-//      val c = Calendar.getInstance()
-//      if (c.get(Calendar.HOUR_OF_DAY) == 20 && c.get(Calendar.MINUTE) == 0) {
-//        val start = new Date().toString
-//        backupForan()
-//        val complete = new Date().toString
-//        ActorManager.mail ! Mail("Dinara", "dulanova@nautic-rus.ru", "Foran Backup Notification", s"Foran Backup started at $start and successfully completed at $complete")
-//      }
-//      if (Calendar.getInstance().get(Calendar.HOUR_OF_DAY) == 3 && c.get(Calendar.MINUTE) == 0) {
-//        uploadForanBackup()
-//      }
+      val c = Calendar.getInstance()
+      if (c.get(Calendar.HOUR_OF_DAY) == 20 && c.get(Calendar.MINUTE) == 0) {
+        val start = new Date().toString
+        backupForan()
+        val complete = new Date().toString
+        ActorManager.mail ! Mail("Dinara", "dulanova@nautic-rus.ru", "Foran Backup Notification", s"Foran Backup started at $start and successfully completed at $complete")
+      }
+      if (Calendar.getInstance().get(Calendar.HOUR_OF_DAY) == 3 && c.get(Calendar.MINUTE) == 0) {
+        uploadForanBackup()
+      }
   }
   def backupForan(): Unit ={
     val configOracle = new HikariConfig()
